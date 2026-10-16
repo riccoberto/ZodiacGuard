@@ -55,24 +55,27 @@ class DashboardFragment : Fragment() {
                     binding.btnCheckOut.isEnabled = false
                     binding.btnCheckOut.text = "USCITO ALLE $checkOut"
                 } else {
-                    // Abilita il tasto uscita solo se c'è un'entrata
-                    binding.btnCheckOut.isEnabled = binding.btnCheckIn.isEnabled.not() 
+                    binding.btnCheckOut.isEnabled = binding.btnCheckIn.isEnabled.not()
                 }
             }
         }
 
-        // 3. Logica Pulsante ENTRATA
+        // 3. Logica Pulsante ENTRATA (avvolta in coroutine)
         binding.btnCheckIn.setOnClickListener {
-            val currentTime = getCurrentTime()
-            workDataStore.saveCheckIn(currentTime)
-            Toast.makeText(requireContext(), "Entrata registrata alle $currentTime", Toast.LENGTH_SHORT).show()
+            viewLifecycleOwner.lifecycleScope.launch {
+                val currentTime = getCurrentTime()
+                workDataStore.saveCheckIn(currentTime)
+                Toast.makeText(requireContext(), "Entrata registrata alle $currentTime", Toast.LENGTH_SHORT).show()
+            }
         }
 
-        // 4. Logica Pulsante USCITA
+        // 4. Logica Pulsante USCITA (avvolta in coroutine)
         binding.btnCheckOut.setOnClickListener {
-            val currentTime = getCurrentTime()
-            workDataStore.saveCheckOut(currentTime)
-            Toast.makeText(requireContext(), "Uscita registrata alle $currentTime", Toast.LENGTH_SHORT).show()
+            viewLifecycleOwner.lifecycleScope.launch {
+                val currentTime = getCurrentTime()
+                workDataStore.saveCheckOut(currentTime)
+                Toast.makeText(requireContext(), "Uscita registrata alle $currentTime", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
