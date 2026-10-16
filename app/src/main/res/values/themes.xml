@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.ZodiacGuard" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+        <item name="colorPrimary">@color/zodiac_navy</item>
+        <item name="colorPrimaryVariant">@color/zodiac_navy</item>
+        <item name="colorOnPrimary">@color/zodiac_gold</item>
+        <item name="colorSecondary">@color/zodiac_gold</item>
+        <item name="colorSecondaryVariant">@color/zodiac_gold</item>
+        <item name="colorOnSecondary">@color/zodiac_navy</item>
+    </style>
+
+    <style name="Theme.ZodiacGuard.Splash" parent="Theme.ZodiacGuard">
+        <item name="android:windowBackground">@color/zodiac_navy</item>
+    </style>
+</resources>
