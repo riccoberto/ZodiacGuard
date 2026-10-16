@@ -9,8 +9,9 @@
         android:theme="@style/Theme.ZodiacGuard"
         tools:targetApi="34">
 
+        <!-- Splash Screen come attività principale -->
         <activity
-            android:name=".MainActivity"
+            android:name=".SplashActivity"
             android:exported="true"
             android:theme="@style/Theme.ZodiacGuard.Splash">
             <intent-filter>
@@ -18,6 +19,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- MainActivity -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ZodiacGuard" />
+
     </application>
 
 </manifest>
