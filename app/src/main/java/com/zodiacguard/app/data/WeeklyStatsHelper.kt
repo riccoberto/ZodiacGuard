@@ -1,5 +1,7 @@
 package com.zodiacguard.app.data
-   import java.util.Calendar
+
+import java.util.Calendar
+
 object WeeklyStatsHelper {
 
     data class WeeklyStats(
@@ -24,7 +26,6 @@ object WeeklyStatsHelper {
         weeklyHours: Int,
         workDays: Int
     ): WeeklyStats {
-        // Filtra le entry per la settimana selezionata
         val weekEntries = allEntries.filter { entry ->
             val cal = Calendar.getInstance()
             cal.timeInMillis = entry.timestamp
