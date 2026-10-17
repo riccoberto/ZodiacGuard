@@ -17,7 +17,7 @@ class WorkDataStore(private val context: Context) {
     companion object {
         val KEY_ENTRIES = stringPreferencesKey("work_entries")
         val KEY_NOTES = stringPreferencesKey("daily_notes")
-        val KEY_PRODUCTION_DAYS = stringPreferencesKey("production_days") // NUOVO
+        val KEY_PRODUCTION_DAYS = stringPreferencesKey("production_days")
     }
 
     suspend fun addEntry(entry: WorkEntry) {
@@ -50,7 +50,6 @@ class WorkDataStore(private val context: Context) {
         }
     }
 
-    // NUOVO: Salva se un giorno è di Produzione
     suspend fun saveProductionMode(date: String, isProduction: Boolean) {
         context.dataStore.edit { prefs ->
             val current = prefs[KEY_PRODUCTION_DAYS] ?: ""
@@ -76,9 +75,30 @@ class WorkDataStore(private val context: Context) {
         else notesString.split("|").firstOrNull { it.startsWith("$date:") }?.substringAfter("$date:") ?: ""
     }
 
-    // NUOVO: Legge se un giorno è di Produzione
     fun getProductionModeForDate(date: String): Flow<Boolean> = context.dataStore.data.map { prefs ->
         val current = prefs[KEY_PRODUCTION_DAYS] ?: ""
         current.split(",").contains(date)
+    }
+
+    // NUOVO: Aggiorna la sede di tutte le marcature di una data
+    suspend fun updateAllEntriesLocation(date: String, newLocation: String) {
+        val currentList = entriesFlow.first()
+        val updatedList = currentList.map { entry ->
+            if (entry.date == date) {
+                WorkEntry(entry.timestamp, entry.type, entry.activity, newLocation, entry.date)
+            } else entry
+        }
+        saveAllEntries(updatedList)
+    }
+
+    // NUOVO: Aggiorna l'attività di tutte le marcature di una data
+    suspend fun updateAllEntriesActivity(date: String, newActivity: String) {
+        val currentList = entriesFlow.first()
+        val updatedList = currentList.map { entry ->
+            if (entry.date == date) {
+                WorkEntry(entry.timestamp, entry.type, newActivity, entry.location, entry.date)
+            } else entry
+        }
+        saveAllEntries(updatedList)
     }
 }
