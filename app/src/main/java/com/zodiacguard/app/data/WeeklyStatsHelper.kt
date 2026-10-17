@@ -15,7 +15,9 @@ object WeeklyStatsHelper {
         val teatriniCount: Map<String, Int>,
         val locationsCount: Map<String, Int>,
         val outOfTownDays: Int,
-        val mealTickets: Int
+        val mealTickets: Int,
+        val weekStartDate: String, // NUOVO
+        val weekEndDate: String     // NUOVO
     )
 
     fun calculateWeeklyStats(
@@ -32,8 +34,18 @@ object WeeklyStatsHelper {
             cal.get(Calendar.YEAR) == year && cal.get(Calendar.WEEK_OF_YEAR) == weekOfYear
         }
         
+        // Calcola date inizio e fine settimana
+        val cal = Calendar.getInstance()
+        cal.set(Calendar.YEAR, year)
+        cal.set(Calendar.WEEK_OF_YEAR, weekOfYear)
+        cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
+        val startDate = String.format("%02d/%02d", cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.MONTH) + 1)
+        
+        cal.add(Calendar.DAY_OF_MONTH, 5) // Sabato (6 giorni lavorativi)
+        val endDate = String.format("%02d/%02d", cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.MONTH) + 1)
+
         if (weekEntries.isEmpty()) {
-            return WeeklyStats(0, 0, 0, 0, 0, 0, 0, emptyMap(), emptyMap(), 0, 0)
+            return WeeklyStats(0, 0, 0, 0, 0, 0, 0, emptyMap(), emptyMap(), 0, 0, startDate, endDate)
         }
 
         val entriesByDate = weekEntries.groupBy { it.date }
@@ -114,7 +126,8 @@ object WeeklyStatsHelper {
         return WeeklyStats(
             totalOrdinary, totalOvertime, totalBank, totalTravel,
             totalWorked, totalContractMinutes, balance,
-            teatriniCount, locationsCount, outOfTownDays, mealTickets
+            teatriniCount, locationsCount, outOfTownDays, mealTickets,
+            startDate, endDate
         )
     }
 }
