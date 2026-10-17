@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/zodiac_navy"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Il Mio Contratto"
+            android:textColor="@color/zodiac_gold"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Ore Settimanali -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ore settimanali contrattuali"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:layout_marginBottom="8dp" />
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:boxStrokeColor="@color/zodiac_gold"
+            app:hintTextColor="@color/zodiac_gold">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etWeeklyHours"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Es. 38"
+                android:inputType="number"
+                android:textColor="@color/white" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Giorni Lavorativi -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Giorni lavorativi a settimana"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:layout_marginBottom="8dp" />
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            app:boxStrokeColor="@color/zodiac_gold"
+            app:hintTextColor="@color/zodiac_gold">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etWorkDays"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Es. 6"
+                android:inputType="number"
+                android:textColor="@color/white" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSaveContract"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="SALVA PARAMETRI"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:backgroundTint="@color/zodiac_gold"
+            android:textColor="@color/zodiac_navy" />
+
+    </LinearLayout>
+</ScrollView>
