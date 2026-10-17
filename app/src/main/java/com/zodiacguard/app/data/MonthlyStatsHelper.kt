@@ -12,12 +12,13 @@ object MonthlyStatsHelper {
         val totalTravelMinutes: Int,
         val totalWorkedMinutes: Int,
         val totalContractMinutes: Int,
-        val balanceMinutes: Int, // Positivo = extra, Negativo = debito
-        val teatriniCount: Map<String, Int>, // Montaggio, Smontaggio, Intero
-        val locationsCount: Map<String, Int>, // Modena, Vignola, ecc.
-        val outOfTownDays: Int, // Giornate con 🚗
-        val mealTickets: Int, // Buoni pasto
-        val dailyStats: List<DailySummary> // Per il dettaglio giorno per giorno
+        val balanceMinutes: Int,
+        val teatriniCount: Map<String, Int>,
+        val teatriniDays: List<String>, // NUOVO: giorni con teatrini
+        val locationsCount: Map<String, Int>,
+        val outOfTownDays: Int,
+        val mealTickets: Int,
+        val dailyStats: List<DailySummary>
     )
 
     data class DailySummary(
@@ -27,7 +28,8 @@ object MonthlyStatsHelper {
         val isProduction: Boolean,
         val location: String,
         val activity: String,
-        val hasMealTicket: Boolean // true se pausa < 2 ore
+        val hasMealTicket: Boolean,
+        val isTeatrino: Boolean // NUOVO
     )
 
     fun calculateMonthlyStats(
@@ -38,15 +40,13 @@ object MonthlyStatsHelper {
         weeklyHours: Int,
         workDays: Int
     ): MonthlyStats {
-        // Filtra le entry per il mese selezionato
         val monthPrefix = String.format("%04d-%02d", year, month)
         val monthEntries = allEntries.filter { it.date.startsWith(monthPrefix) }
         
         if (monthEntries.isEmpty()) {
-            return MonthlyStats(0, 0, 0, 0, 0, 0, 0, emptyMap(), emptyMap(), 0, 0, emptyList())
+            return MonthlyStats(0, 0, 0, 0, 0, 0, 0, emptyMap(), emptyList(), emptyMap(), 0, 0, emptyList())
         }
 
-        // Raggruppa per data
         val entriesByDate = monthEntries.groupBy { it.date }
         
         var totalOrdinary = 0
@@ -55,20 +55,22 @@ object MonthlyStatsHelper {
         var totalTravel = 0
         var totalWorked = 0
         val teatriniCount = mutableMapOf<String, Int>()
+        val teatriniDaysList = mutableListOf<String>()
         val locationsCount = mutableMapOf<String, Int>()
         var outOfTownDays = 0
         var mealTickets = 0
         val dailySummaries = mutableListOf<DailySummary>()
 
-        // Calcola giorni lavorativi nel mese (approssimazione: 4 settimane)
-        val workingDaysInMonth = (workDays * 4).coerceAtMost(entriesByDate.size)
-        val totalContractMinutes = (weeklyHours * 60 * workingDaysInMonth) / 6
+        // Calcola giorni lavorativi nel mese (conta i giorni con marcature)
+        val workingDaysInMonth = entriesByDate.size
+        // Ore contrattuali attese = (ore settimanali / giorni lavorativi settimanali) * giorni nel mese
+        val dailyContractMinutes = (weeklyHours * 60) / workDays
+        val totalContractMinutes = dailyContractMinutes * workingDaysInMonth
 
         for ((date, entries) in entriesByDate) {
             val sorted = entries.sortedBy { it.timestamp }
             val isProduction = productionDays.contains(date)
             
-            // Calcola ore lavorate
             var workMinutes = 0
             var lastEntryTime: Long? = null
             for (entry in sorted) {
@@ -80,7 +82,6 @@ object MonthlyStatsHelper {
                 }
             }
 
-            // Calcola viaggio
             val location = sorted.first().location
             val travelMinutes = when (location) {
                 "Vignola", "Castelfranco" -> 90
@@ -103,18 +104,17 @@ object MonthlyStatsHelper {
                 totalOrdinary += ordinaryDay
             }
 
-            // Conteggia teatrini
             val activity = sorted.first().activity
-            if (activity.startsWith("Teatrino")) {
+            val isTeatrino = activity.startsWith("Teatrino")
+            
+            if (isTeatrino) {
                 teatriniCount[activity] = teatriniCount.getOrDefault(activity, 0) + 1
+                teatriniDaysList.add(date)
             }
 
-            // Conteggia sedi
             locationsCount[location] = locationsCount.getOrDefault(location, 0) + 1
-
             if (location != "Modena") outOfTownDays++
 
-            // Calcola buoni pasto (pause < 2 ore tra turni)
             var hasMealTicket = false
             var lastExitTime: Long? = null
             for (entry in sorted) {
@@ -131,7 +131,7 @@ object MonthlyStatsHelper {
             }
 
             dailySummaries.add(
-                DailySummary(date, totalDayMinutes, travelMinutes, isProduction, location, activity, hasMealTicket)
+                DailySummary(date, totalDayMinutes, travelMinutes, isProduction, location, activity, hasMealTicket, isTeatrino)
             )
         }
 
@@ -140,7 +140,7 @@ object MonthlyStatsHelper {
         return MonthlyStats(
             totalOrdinary, totalOvertime, totalBank, totalTravel,
             totalWorked, totalContractMinutes, balance,
-            teatriniCount, locationsCount, outOfTownDays, mealTickets,
+            teatriniCount, teatriniDaysList.sorted(), locationsCount, outOfTownDays, mealTickets,
             dailySummaries
         )
     }
@@ -149,5 +149,16 @@ object MonthlyStatsHelper {
         val h = minutes / 60
         val m = minutes % 60
         return "${h}h ${m}m"
+    }
+    
+    fun formatDate(dateStr: String): String {
+        val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val outputFormat = SimpleDateFormat("dd MMM", Locale.getDefault())
+        return try {
+            val date = inputFormat.parse(dateStr)
+            outputFormat.format(date!!)
+        } catch (e: Exception) {
+            dateStr
+        }
     }
 }
