@@ -100,8 +100,9 @@ class MonthlyFragment : Fragment() {
         }
     }
 
-    private fun displayStats(stats: MonthlyStatsHelper.MonthlyStats) {
+        private fun displayStats(stats: MonthlyStatsHelper.MonthlyStats) {
         binding.tvTotalWorked.text = "Totale lavorate: ${MonthlyStatsHelper.minutesToText(stats.totalWorkedMinutes)}"
+        binding.tvContractExpected.text = "Contratto attese (${stats.dailyStats.size} gg): ${MonthlyStatsHelper.minutesToText(stats.totalContractMinutes)}"
         binding.tvTotalOrdinary.text = "Ordinarie: ${MonthlyStatsHelper.minutesToText(stats.totalOrdinaryMinutes)}"
         binding.tvTotalOvertime.text = "Straordinari: ${MonthlyStatsHelper.minutesToText(stats.totalOvertimeMinutes)}"
         binding.tvTotalBank.text = "Banca ore: ${MonthlyStatsHelper.minutesToText(stats.totalBankMinutes)}"
@@ -116,10 +117,10 @@ class MonthlyFragment : Fragment() {
 
         // Grafico a torta
         val pieData = listOf(
-            Pair(stats.totalOrdinaryMinutes.toFloat(), Color.parseColor("#FFD700")), // Oro
-            Pair(stats.totalOvertimeMinutes.toFloat(), Color.parseColor("#C41E3A")), // Rosso
-            Pair(stats.totalBankMinutes.toFloat(), Color.parseColor("#4A90E2")), // Blu
-            Pair(stats.totalTravelMinutes.toFloat(), Color.parseColor("#9C27B0")) // Viola
+            Pair(stats.totalOrdinaryMinutes.toFloat(), Color.parseColor("#FFD700")),
+            Pair(stats.totalOvertimeMinutes.toFloat(), Color.parseColor("#C41E3A")),
+            Pair(stats.totalBankMinutes.toFloat(), Color.parseColor("#4A90E2")),
+            Pair(stats.totalTravelMinutes.toFloat(), Color.parseColor("#9C27B0"))
         )
         binding.pieChart.setData(pieData)
 
@@ -127,9 +128,17 @@ class MonthlyFragment : Fragment() {
         binding.tvLegendOrdinary.text = "🟡 Ordinarie: ${MonthlyStatsHelper.minutesToText(stats.totalOrdinaryMinutes)}"
         binding.tvLegendOvertime.text = " Straordinari: ${MonthlyStatsHelper.minutesToText(stats.totalOvertimeMinutes)}"
         binding.tvLegendBank.text = "🔵 Banca Ore: ${MonthlyStatsHelper.minutesToText(stats.totalBankMinutes)}"
-        binding.tvLegendTravel.text = "🟣 Viaggio: ${MonthlyStatsHelper.minutesToText(stats.totalTravelMinutes)}"
+        binding.tvLegendTravel.text = " Viaggio: ${MonthlyStatsHelper.minutesToText(stats.totalTravelMinutes)}"
 
-        // Teatrini
+        // NUOVO: Giorni con teatrini
+        if (stats.teatriniDays.isEmpty()) {
+            binding.tvTeatriniDays.text = "Nessun teatrino"
+        } else {
+            val daysText = stats.teatriniDays.joinToString(", ") { MonthlyStatsHelper.formatDate(it) }
+            binding.tvTeatriniDays.text = daysText
+        }
+
+        // Teatrini count
         if (stats.teatriniCount.isEmpty()) {
             binding.tvTeatriniCount.text = "Nessun teatrino"
         } else {
@@ -145,10 +154,14 @@ class MonthlyFragment : Fragment() {
             binding.tvLocationsCount.text = locationsText
         }
 
-        binding.tvOutOfTown.text = "🚗 Giornate fuori sede: ${stats.outOfTownDays}"
+        binding.tvOutOfTown.text = " Giornate fuori sede: ${stats.outOfTownDays}"
         binding.tvMealTickets.text = " Buoni pasto: ${stats.mealTickets}"
-    }
 
+        // NUOVO: Agenda
+        val agendaAdapter = DailyAgendaAdapter(stats.dailyStats)
+        binding.recyclerViewAgenda.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(requireContext())
+        binding.recyclerViewAgenda.adapter = agendaAdapter
+    }
     private fun shareReport() {
         viewLifecycleOwner.lifecycleScope.launch {
             val allEntries = workDataStore.entriesFlow.first()
