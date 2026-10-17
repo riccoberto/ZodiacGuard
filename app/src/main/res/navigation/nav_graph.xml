@@ -9,4 +9,9 @@
         android:name="com.zodiacguard.app.ui.dashboard.DashboardFragment"
         android:label="Dashboard" />
 
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.zodiacguard.app.ui.settings.SettingsFragment"
+        android:label="Impostazioni" />
+
 </navigation>
