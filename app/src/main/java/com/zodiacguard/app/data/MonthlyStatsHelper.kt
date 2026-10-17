@@ -14,11 +14,12 @@ object MonthlyStatsHelper {
         val totalContractMinutes: Int,
         val balanceMinutes: Int,
         val teatriniCount: Map<String, Int>,
-        val teatriniDays: List<String>, // NUOVO: giorni con teatrini
+        val teatriniDays: List<String>,
         val locationsCount: Map<String, Int>,
         val outOfTownDays: Int,
         val mealTickets: Int,
-        val dailyStats: List<DailySummary>
+        val dailyStats: List<DailySummary>,
+        val workingDaysInMonth: Int // NUOVO: giorni lavorativi reali del mese
     )
 
     data class DailySummary(
@@ -29,22 +30,46 @@ object MonthlyStatsHelper {
         val location: String,
         val activity: String,
         val hasMealTicket: Boolean,
-        val isTeatrino: Boolean // NUOVO
+        val isTeatrino: Boolean
     )
+
+    // NUOVO: Conta i giorni lavorativi (lun-sab) in un mese
+    fun countWorkingDaysInMonth(year: Int, month: Int): Int {
+        val cal = Calendar.getInstance()
+        cal.set(year, month - 1, 1)
+        val daysInMonth = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
+        var workingDays = 0
+        for (day in 1..daysInMonth) {
+            cal.set(Calendar.DAY_OF_MONTH, day)
+            val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
+            // Escludi domenica (Calendar.SUNDAY = 1)
+            if (dayOfWeek != Calendar.SUNDAY) {
+                workingDays++
+            }
+        }
+        return workingDays
+    }
 
     fun calculateMonthlyStats(
         allEntries: List<WorkEntry>,
         productionDays: Set<String>,
         year: Int,
-        month: Int, // 1-12
+        month: Int,
         weeklyHours: Int,
         workDays: Int
     ): MonthlyStats {
         val monthPrefix = String.format("%04d-%02d", year, month)
         val monthEntries = allEntries.filter { it.date.startsWith(monthPrefix) }
+
+        val workingDaysInMonth = countWorkingDaysInMonth(year, month)
         
+        // Ore contrattuali mensili = (ore settimanali / giorni lavorativi settimanali) * giorni lavorativi del mese
+        val dailyContractMinutes = (weeklyHours * 60) / workDays
+        val totalContractMinutes = dailyContractMinutes * workingDaysInMonth
+
         if (monthEntries.isEmpty()) {
-            return MonthlyStats(0, 0, 0, 0, 0, 0, 0, emptyMap(), emptyList(), emptyMap(), 0, 0, emptyList())
+            return MonthlyStats(0, 0, 0, 0, 0, totalContractMinutes, -totalContractMinutes, 
+                emptyMap(), emptyList(), emptyMap(), 0, 0, emptyList(), workingDaysInMonth)
         }
 
         val entriesByDate = monthEntries.groupBy { it.date }
@@ -60,12 +85,6 @@ object MonthlyStatsHelper {
         var outOfTownDays = 0
         var mealTickets = 0
         val dailySummaries = mutableListOf<DailySummary>()
-
-        // Calcola giorni lavorativi nel mese (conta i giorni con marcature)
-        val workingDaysInMonth = entriesByDate.size
-        // Ore contrattuali attese = (ore settimanali / giorni lavorativi settimanali) * giorni nel mese
-        val dailyContractMinutes = (weeklyHours * 60) / workDays
-        val totalContractMinutes = dailyContractMinutes * workingDaysInMonth
 
         for ((date, entries) in entriesByDate) {
             val sorted = entries.sortedBy { it.timestamp }
@@ -98,11 +117,10 @@ object MonthlyStatsHelper {
 
             if (isProduction) {
                 totalOvertime += extraDay
-                totalOrdinary += ordinaryDay
             } else {
                 totalBank += extraDay
-                totalOrdinary += ordinaryDay
             }
+            totalOrdinary += ordinaryDay
 
             val activity = sorted.first().activity
             val isTeatrino = activity.startsWith("Teatrino")
@@ -141,7 +159,7 @@ object MonthlyStatsHelper {
             totalOrdinary, totalOvertime, totalBank, totalTravel,
             totalWorked, totalContractMinutes, balance,
             teatriniCount, teatriniDaysList.sorted(), locationsCount, outOfTownDays, mealTickets,
-            dailySummaries
+            dailySummaries, workingDaysInMonth
         )
     }
 
