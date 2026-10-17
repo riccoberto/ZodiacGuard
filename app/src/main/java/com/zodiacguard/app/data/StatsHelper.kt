@@ -8,15 +8,20 @@ object StatsHelper {
         val totalMinutes: Int,
         val ordinaryMinutes: Int,
         val extraMinutes: Int,
+        val travelMinutes: Int, // NUOVO: ore di viaggio
         val isOvertime: Boolean, 
         val locations: Set<String>,
-        val isOutOfTown: Boolean
+        val isOutOfTown: Boolean,
+        val currentMinutes: Int = 0 // NUOVO: minuti attuali per la linea
     )
 
-    // Aggiungiamo currentTime per il calcolo in tempo reale
-    fun calculateDailyStats(entries: List<WorkEntry>, currentActivity: String, currentTime: Long = System.currentTimeMillis()): DailyStats {
+    fun calculateDailyStats(
+        entries: List<WorkEntry>, 
+        currentActivity: String, 
+        currentTime: Long = System.currentTimeMillis()
+    ): DailyStats {
         if (entries.isEmpty()) {
-            return DailyStats(0, 0, 0, false, emptySet(), false)
+            return DailyStats(0, 0, 0, 0, false, emptySet(), false, 0)
         }
 
         val sorted = entries.sortedBy { it.timestamp }
@@ -36,11 +41,16 @@ object StatsHelper {
             }
         }
 
-        // CALCOLO LIVE: Se stiamo lavorando, aggiungi i minuti da ultimo ingresso a ORA
+        // Calcolo live
+        var currentMinutes = 0
         if (isCurrentlyWorking && lastEntryTime != null) {
-            val liveMinutes = ((currentTime - lastEntryTime) / 60000).toInt()
-            totalMinutes += liveMinutes
+            currentMinutes = ((currentTime - lastEntryTime) / 60000).toInt()
+            totalMinutes += currentMinutes
         }
+
+        // NUOVO: Calcolo ore viaggio in base alla sede
+        val travelMinutes = calculateTravelTime(sorted)
+        totalMinutes += travelMinutes
 
         val isProduzione = currentActivity == "Produzione"
         val ordinaryMinutes = minOf(totalMinutes, DAILY_TARGET_MINUTES)
@@ -53,10 +63,26 @@ object StatsHelper {
             totalMinutes = totalMinutes,
             ordinaryMinutes = ordinaryMinutes,
             extraMinutes = extraMinutes,
+            travelMinutes = travelMinutes,
             isOvertime = isProduzione, 
             locations = locations,
-            isOutOfTown = isOutOfTown
+            isOutOfTown = isOutOfTown,
+            currentMinutes = currentMinutes
         )
+    }
+
+    // NUOVO: Calcola le ore di viaggio in base alla sede
+    private fun calculateTravelTime(entries: List<WorkEntry>): Int {
+        if (entries.isEmpty()) return 0
+        
+        // Prendi la sede dalla prima marcatura
+        val location = entries.first().location
+        
+        return when (location) {
+            "Vignola", "Castelfranco" -> 90 // 1,5 ore = 90 minuti
+            "Bologna" -> 120 // 2 ore = 120 minuti
+            else -> 0 // Modena = 0
+        }
     }
     
     fun minutesToText(minutes: Int): String {
