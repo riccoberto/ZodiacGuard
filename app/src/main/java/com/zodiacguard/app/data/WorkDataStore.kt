@@ -17,6 +17,7 @@ class WorkDataStore(private val context: Context) {
     companion object {
         val KEY_ENTRIES = stringPreferencesKey("work_entries")
         val KEY_NOTES = stringPreferencesKey("daily_notes")
+        val KEY_PRODUCTION_DAYS = stringPreferencesKey("production_days") // NUOVO
     }
 
     suspend fun addEntry(entry: WorkEntry) {
@@ -27,14 +28,12 @@ class WorkDataStore(private val context: Context) {
         }
     }
 
-    // NUOVO: Salva l'intera lista (usato per modifiche)
     suspend fun saveAllEntries(entries: List<WorkEntry>) {
         context.dataStore.edit { prefs ->
             prefs[KEY_ENTRIES] = entries.joinToString("\n") { WorkEntry.toJson(it) }
         }
     }
 
-    // NUOVO: Cancella una marcatura specifica
     suspend fun deleteEntry(entry: WorkEntry) {
         val currentList = entriesFlow.first()
         val newList = currentList.filter { it.timestamp != entry.timestamp }
@@ -51,6 +50,16 @@ class WorkDataStore(private val context: Context) {
         }
     }
 
+    // NUOVO: Salva se un giorno è di Produzione
+    suspend fun saveProductionMode(date: String, isProduction: Boolean) {
+        context.dataStore.edit { prefs ->
+            val current = prefs[KEY_PRODUCTION_DAYS] ?: ""
+            val dates = current.split(",").filter { it.isNotEmpty() }.toMutableSet()
+            if (isProduction) dates.add(date) else dates.remove(date)
+            prefs[KEY_PRODUCTION_DAYS] = dates.joinToString(",")
+        }
+    }
+
     val entriesFlow: Flow<List<WorkEntry>> = context.dataStore.data.map { prefs ->
         val entriesString = prefs[KEY_ENTRIES] ?: ""
         if (entriesString.isEmpty()) emptyList()
@@ -64,9 +73,12 @@ class WorkDataStore(private val context: Context) {
     fun getNoteForDate(date: String): Flow<String> = context.dataStore.data.map { prefs ->
         val notesString = prefs[KEY_NOTES] ?: ""
         if (notesString.isEmpty()) ""
-        else {
-            notesString.split("|").firstOrNull { it.startsWith("$date:") }
-                ?.substringAfter("$date:") ?: ""
-        }
+        else notesString.split("|").firstOrNull { it.startsWith("$date:") }?.substringAfter("$date:") ?: ""
+    }
+
+    // NUOVO: Legge se un giorno è di Produzione
+    fun getProductionModeForDate(date: String): Flow<Boolean> = context.dataStore.data.map { prefs ->
+        val current = prefs[KEY_PRODUCTION_DAYS] ?: ""
+        current.split(",").contains(date)
     }
 }
