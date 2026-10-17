@@ -65,7 +65,7 @@
             <TextView android:id="@+id/tvExtraLabel" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Extra: 0h 00m" android:textColor="#C41E3A" android:textSize="12sp" android:gravity="end" />
         </LinearLayout>
 
-        <!-- NUOVO: Tendine Affiancate -->
+        <!-- Tendine Affiancate -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -92,7 +92,7 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- NUOVO: Pulsanti Affiancati -->
+        <!-- Pulsanti Affiancati -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -135,30 +135,15 @@
             android:minLines="2"
             android:layout_marginBottom="16dp" />
 
-        <!-- Elenco Marcature -->
-        <LinearLayout
+        <!-- Elenco Marcature (Senza tasto manuale) -->
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="8dp">
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Marcature di Oggi"
-                android:textColor="@color/zodiac_gold"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnAddManual"
-                android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:text="+ MANUALE"
-                android:textSize="12sp"
-                app:backgroundTint="@color/zodiac_gold"
-                android:textColor="@color/zodiac_navy" />
-        </LinearLayout>
+            android:text="Marcature di Oggi"
+            android:textColor="@color/zodiac_gold"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerViewEntries"
