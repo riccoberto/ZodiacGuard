@@ -86,9 +86,9 @@ class DashboardFragment : Fragment() {
             }
         })
 
-        binding.btnCheckIn.setOnClickListener { registerEntry("ENTRATA") }
-        binding.btnCheckOut.setOnClickListener { registerEntry("USCITA") }
-        binding.btnAddManual.setOnClickListener { showAddEditDialog(null) }
+        // I pulsanti principali ora aprono l'orologio
+        binding.btnCheckIn.setOnClickListener { showTimePickerAndRegister("ENTRATA") }
+        binding.btnCheckOut.setOnClickListener { showTimePickerAndRegister("USCITA") }
     }
 
     private fun setupSpinner(spinner: android.widget.Spinner, arrayResId: Int, onSelect: (String) -> Unit) {
@@ -103,12 +103,30 @@ class DashboardFragment : Fragment() {
         }
     }
 
-    private fun registerEntry(type: String) {
-        viewLifecycleOwner.lifecycleScope.launch {
-            val entry = WorkEntry(System.currentTimeMillis(), type, selectedActivity, selectedLocation, todayDate)
-            workDataStore.addEntry(entry)
-            Toast.makeText(requireContext(), "$type registrata!", Toast.LENGTH_SHORT).show()
+    // NUOVA FUNZIONE: Apre l'orologio e poi registra
+    private fun showTimePickerAndRegister(type: String) {
+        val calendar = Calendar.getInstance()
+        val picker = MaterialTimePicker.Builder()
+            .setTimeFormat(TimeFormat.CLOCK_24H)
+            .setHour(calendar.get(Calendar.HOUR_OF_DAY))
+            .setMinute(calendar.get(Calendar.MINUTE))
+            .setTitleText("Orario $type")
+            .build()
+
+        picker.addOnPositiveButtonClickListener {
+            val newCal = Calendar.getInstance()
+            newCal.set(Calendar.HOUR_OF_DAY, picker.hour)
+            newCal.set(Calendar.MINUTE, picker.minute)
+            newCal.set(Calendar.SECOND, 0)
+            newCal.set(Calendar.MILLISECOND, 0)
+
+            val entry = WorkEntry(newCal.timeInMillis, type, selectedActivity, selectedLocation, todayDate)
+            viewLifecycleOwner.lifecycleScope.launch {
+                workDataStore.addEntry(entry)
+                Toast.makeText(requireContext(), "$type registrata alle ${picker.hour}:${picker.minute}", Toast.LENGTH_SHORT).show()
+            }
         }
+        picker.show(parentFragmentManager, "time_picker_$type")
     }
 
     private fun deleteEntry(entry: WorkEntry) {
@@ -118,46 +136,33 @@ class DashboardFragment : Fragment() {
         }
     }
 
-    // DIALOG CON OROLOGIO E SCELTA TIPO
+    // Dialog per modificare una riga esistente
     private fun showAddEditDialog(existingEntry: WorkEntry?) {
-        val isEdit = existingEntry != null
         val calendar = Calendar.getInstance()
-        if (isEdit) calendar.timeInMillis = existingEntry!!.timestamp
+        calendar.timeInMillis = existingEntry!!.timestamp
         
         val picker = MaterialTimePicker.Builder()
             .setTimeFormat(TimeFormat.CLOCK_24H)
             .setHour(calendar.get(Calendar.HOUR_OF_DAY))
             .setMinute(calendar.get(Calendar.MINUTE))
-            .setTitleText(if (isEdit) "Modifica Orario" else "Nuovo Orario")
+            .setTitleText("Modifica Orario")
             .build()
 
         picker.addOnPositiveButtonClickListener {
-            val hour = picker.hour
-            val minute = picker.minute
-            
             val newCal = Calendar.getInstance()
-            newCal.set(Calendar.HOUR_OF_DAY, hour)
-            newCal.set(Calendar.MINUTE, minute)
+            newCal.set(Calendar.HOUR_OF_DAY, picker.hour)
+            newCal.set(Calendar.MINUTE, picker.minute)
             newCal.set(Calendar.SECOND, 0)
             newCal.set(Calendar.MILLISECOND, 0)
 
-            val newTimestamp = newCal.timeInMillis
-            
-            // Se è una modifica, mantieni il tipo originale, altrimenti chiedi (per ora default ENTRATA se nuovo)
-            // Per semplicità, se è nuovo mettiamo ENTRATA, l'utente può modificare dopo cliccando la matita
-            val type = existingEntry?.type ?: "ENTRATA" 
-            val activity = existingEntry?.activity ?: selectedActivity
-            val location = existingEntry?.location ?: selectedLocation
-            
-            val newEntry = WorkEntry(newTimestamp, type, activity, location, todayDate)
+            val newEntry = WorkEntry(newCal.timeInMillis, existingEntry.type, existingEntry.activity, existingEntry.location, todayDate)
 
             viewLifecycleOwner.lifecycleScope.launch {
-                if (isEdit) workDataStore.deleteEntry(existingEntry!!)
+                workDataStore.deleteEntry(existingEntry)
                 workDataStore.addEntry(newEntry)
             }
         }
-        
-        picker.show(parentFragmentManager, "time_picker")
+        picker.show(parentFragmentManager, "time_picker_edit")
     }
 
     private fun updateStatsUI() {
