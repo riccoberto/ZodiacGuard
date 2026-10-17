@@ -11,42 +11,124 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
+        <!-- Intestazione -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="ZODIAC GUARD"
             android:textColor="@color/zodiac_gold"
-            android:textSize="28sp"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+            
+        <TextView
+            android:id="@+id/tvDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Riepilogo Ore -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ore Lavorate Oggi"
+            android:textColor="@color/zodiac_gold"
+            android:textSize="16sp"
             android:textStyle="bold"
             android:layout_marginBottom="8dp" />
 
         <TextView
+            android:id="@+id/tvTotalHours"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Gestione ore di lavoro"
-            android:textColor="@color/zodiac_gold"
-            android:textSize="14sp"
-            android:layout_marginBottom="24dp" />
+            android:text="0h 00m"
+            android:textColor="@color/white"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp" />
 
-        <!-- Selettore Categoria -->
+        <!-- Barra Visiva -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="24dp"
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp">
+            
+            <View
+                android:id="@+id/barOrdinary"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@color/zodiac_gold" />
+                
+            <View
+                android:id="@+id/barExtra"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="0"
+                android:background="#C41E3A" /> <!-- Rosso per extra -->
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="24dp">
+            
+            <TextView
+                android:id="@+id/tvOrdinaryLabel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Ordinarie: 0h 00m"
+                android:textColor="@color/zodiac_gold"
+                android:textSize="12sp" />
+                
+            <TextView
+                android:id="@+id/tvExtraLabel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Extra: 0h 00m"
+                android:textColor="#C41E3A"
+                android:textSize="12sp"
+                android:gravity="end" />
+        </LinearLayout>
+
+        <!-- Menu a Tendina -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Categoria per questa azione:"
+            android:text="Attività"
             android:textColor="@color/white"
             android:textSize="14sp"
-            android:layout_marginBottom="8dp" />
-            
+            android:layout_marginBottom="4dp" />
         <Spinner
-            android:id="@+id/spinnerCategory"
+            android:id="@+id/spinnerActivity"
             android:layout_width="match_parent"
             android:layout_height="48dp"
+            android:entries="@array/activity_types"
             android:background="@color/zodiac_navy"
-            android:spinnerMode="dropdown"
-            android:entries="@array/work_categories"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sede"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            android:layout_marginBottom="4dp" />
+        <Spinner
+            android:id="@+id/spinnerLocation"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:entries="@array/locations"
+            android:background="@color/zodiac_navy"
             android:layout_marginBottom="24dp" />
 
-        <!-- Pulsanti Entrata e Uscita -->
+        <!-- Pulsanti Marcatura -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnCheckIn"
             android:layout_width="match_parent"
@@ -67,36 +149,47 @@
             app:backgroundTint="#C41E3A"
             android:layout_marginBottom="24dp" />
 
-        <!-- Registro Giornaliero -->
+        <!-- Note Giornaliere -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Registro di Oggi:"
+            android:text="Note di giornata"
+            android:textColor="@color/zodiac_gold"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etDailyNotes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Scrivi qui le note..."
+            android:textColor="@color/white"
+            android:textColorHint="#80FFFFFF"
+            android:background="#1AFFFFFF"
+            android:padding="12dp"
+            android:minLines="3"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Elenco Marcature -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Elenco Marcature di Oggi"
             android:textColor="@color/zodiac_gold"
             android:textSize="16sp"
             android:textStyle="bold"
             android:layout_marginBottom="8dp" />
 
         <TextView
-            android:id="@+id/tvDailyLog"
+            android:id="@+id/tvEntriesList"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Nessun registro per oggi."
+            android:text="Nessuna marcatura oggi."
             android:textColor="@color/white"
             android:textSize="14sp"
             android:background="#1AFFFFFF"
-            android:padding="12dp"
-            android:layout_marginBottom="24dp" />
-
-        <!-- Pulsante Impostazioni -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSettings"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:text="IMPOSTAZIONI CONTRATTO"
-            android:textSize="14sp"
-            app:backgroundTint="@color/zodiac_gold"
-            android:textColor="@color/zodiac_navy" />
+            android:padding="12dp" />
 
     </LinearLayout>
 </ScrollView>
