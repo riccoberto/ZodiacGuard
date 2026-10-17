@@ -11,6 +11,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
+        <!-- Intestazione -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -19,15 +20,15 @@
             android:textSize="24sp"
             android:textStyle="bold"
             android:layout_marginBottom="4dp" />
-            
         <TextView
             android:id="@+id/tvDate"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="@color/white"
             android:textSize="14sp"
-            android:layout_marginBottom="24dp" />
+            android:layout_marginBottom="16dp" />
 
+        <!-- Riepilogo Ore -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -36,7 +37,6 @@
             android:textSize="16sp"
             android:textStyle="bold"
             android:layout_marginBottom="8dp" />
-
         <TextView
             android:id="@+id/tvTotalHours"
             android:layout_width="wrap_content"
@@ -47,6 +47,7 @@
             android:textStyle="bold"
             android:layout_marginBottom="16dp" />
 
+        <!-- Barra Visiva -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="24dp"
@@ -55,7 +56,6 @@
             <View android:id="@+id/barOrdinary" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="@color/zodiac_gold" />
             <View android:id="@+id/barExtra" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0" android:background="#C41E3A" />
         </LinearLayout>
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -65,36 +65,106 @@
             <TextView android:id="@+id/tvExtraLabel" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Extra: 0h 00m" android:textColor="#C41E3A" android:textSize="12sp" android:gravity="end" />
         </LinearLayout>
 
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Attività" android:textColor="@color/white" android:textSize="14sp" android:layout_marginBottom="4dp" />
-        <Spinner android:id="@+id/spinnerActivity" android:layout_width="match_parent" android:layout_height="48dp" android:entries="@array/activity_types" android:background="@color/zodiac_navy" android:layout_marginBottom="16dp" />
+        <!-- NUOVO: Tendine Affiancate -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+            
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginEnd="8dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Attività" android:textColor="@color/white" android:textSize="12sp" android:layout_marginBottom="4dp" />
+                <Spinner android:id="@+id/spinnerActivity" android:layout_width="match_parent" android:layout_height="40dp" android:entries="@array/activity_types" android:background="@color/zodiac_navy" />
+            </LinearLayout>
 
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Sede" android:textColor="@color/white" android:textSize="14sp" android:layout_marginBottom="4dp" />
-        <Spinner android:id="@+id/spinnerLocation" android:layout_width="match_parent" android:layout_height="48dp" android:entries="@array/locations" android:background="@color/zodiac_navy" android:layout_marginBottom="24dp" />
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Sede" android:textColor="@color/white" android:textSize="12sp" android:layout_marginBottom="4dp" />
+                <Spinner android:id="@+id/spinnerLocation" android:layout_width="match_parent" android:layout_height="40dp" android:entries="@array/locations" android:background="@color/zodiac_navy" />
+            </LinearLayout>
+        </LinearLayout>
 
-        <com.google.android.material.button.MaterialButton android:id="@+id/btnCheckIn" android:layout_width="match_parent" android:layout_height="56dp" android:text="REGISTRA ENTRATA" android:textSize="16sp" android:textStyle="bold" app:backgroundTint="#34C759" android:layout_marginBottom="12dp" />
-        <com.google.android.material.button.MaterialButton android:id="@+id/btnCheckOut" android:layout_width="match_parent" android:layout_height="56dp" android:text="REGISTRA USCITA" android:textSize="16sp" android:textStyle="bold" app:backgroundTint="#C41E3A" android:layout_marginBottom="24dp" />
+        <!-- NUOVO: Pulsanti Affiancati -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="24dp">
+            
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCheckIn"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="ENTRATA"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                app:backgroundTint="#34C759"
+                android:layout_marginEnd="8dp" />
 
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Note di giornata" android:textColor="@color/zodiac_gold" android:textSize="16sp" android:textStyle="bold" android:layout_marginBottom="8dp" />
-        <com.google.android.material.textfield.TextInputEditText android:id="@+id/etDailyNotes" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Scrivi qui le note..." android:textColor="@color/white" android:textColorHint="#80FFFFFF" android:background="#1AFFFFFF" android:padding="12dp" android:minLines="3" android:layout_marginBottom="24dp" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCheckOut"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="USCITA"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                app:backgroundTint="#C41E3A" />
+        </LinearLayout>
 
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Elenco Marcature di Oggi" android:textColor="@color/zodiac_gold" android:textSize="16sp" android:textStyle="bold" android:layout_marginBottom="8dp" />
+        <!-- Note -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Note di giornata" android:textColor="@color/zodiac_gold" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="4dp" />
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etDailyNotes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Scrivi qui..."
+            android:textColor="@color/white"
+            android:textColorHint="#80FFFFFF"
+            android:background="#1AFFFFFF"
+            android:padding="8dp"
+            android:minLines="2"
+            android:layout_marginBottom="16dp" />
 
-        <!-- NUOVA LISTA SCORREVOLE -->
+        <!-- Elenco Marcature -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Marcature di Oggi"
+                android:textColor="@color/zodiac_gold"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAddManual"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="+ MANUALE"
+                android:textSize="12sp"
+                app:backgroundTint="@color/zodiac_gold"
+                android:textColor="@color/zodiac_navy" />
+        </LinearLayout>
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerViewEntries"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp" />
-
-        <!-- NUOVO PULSANTE AGGIUNGI A MANO -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnAddManual"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="AGGIUNGI MARCATURA A MANO"
-            app:backgroundTint="@color/zodiac_gold"
-            android:textColor="@color/zodiac_navy"
-            android:layout_marginBottom="24dp" />
 
     </LinearLayout>
 </ScrollView>
