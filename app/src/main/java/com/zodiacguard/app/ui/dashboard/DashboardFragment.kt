@@ -53,7 +53,7 @@ class DashboardFragment : Fragment() {
 
         setupSpinner(binding.spinnerActivity, R.array.activity_types) { 
             selectedActivity = it
-            updateStatsUI() // Aggiorna i colori subito se cambi attività
+            updateStatsUI()
         }
         setupSpinner(binding.spinnerLocation, R.array.locations) { selectedLocation = it }
 
@@ -118,11 +118,9 @@ class DashboardFragment : Fragment() {
         }
     }
 
-    // NUOVA FUNZIONE CON L'OROLOGIO A RUOTA
+    // DIALOG CON OROLOGIO E SCELTA TIPO
     private fun showAddEditDialog(existingEntry: WorkEntry?) {
         val isEdit = existingEntry != null
-        
-        // Prepara l'orologio
         val calendar = Calendar.getInstance()
         if (isEdit) calendar.timeInMillis = existingEntry!!.timestamp
         
@@ -144,7 +142,10 @@ class DashboardFragment : Fragment() {
             newCal.set(Calendar.MILLISECOND, 0)
 
             val newTimestamp = newCal.timeInMillis
-            val type = existingEntry?.type ?: "ENTRATA" // Semplificato per ora
+            
+            // Se è una modifica, mantieni il tipo originale, altrimenti chiedi (per ora default ENTRATA se nuovo)
+            // Per semplicità, se è nuovo mettiamo ENTRATA, l'utente può modificare dopo cliccando la matita
+            val type = existingEntry?.type ?: "ENTRATA" 
             val activity = existingEntry?.activity ?: selectedActivity
             val location = existingEntry?.location ?: selectedLocation
             
@@ -156,12 +157,10 @@ class DashboardFragment : Fragment() {
             }
         }
         
-        // Se è una modifica, mostriamo anche un tasto per cambiare tipo (Entrata/Uscita) in un secondo momento, per ora teniamo semplice
         picker.show(parentFragmentManager, "time_picker")
     }
 
     private fun updateStatsUI() {
-        // PASSIAMO selectedActivity AL CALCOLATORE
         val stats = StatsHelper.calculateDailyStats(currentEntries, selectedActivity)
         
         binding.tvTotalHours.text = StatsHelper.minutesToText(stats.totalMinutes)
@@ -171,10 +170,10 @@ class DashboardFragment : Fragment() {
         val extraLabel: String
         
         if (stats.isOvertime) {
-            extraColor = Color.parseColor("#C41E3A") // Rosso
+            extraColor = Color.parseColor("#C41E3A")
             extraLabel = "Straordinari: ${StatsHelper.minutesToText(stats.extraMinutes)}"
         } else {
-            extraColor = Color.parseColor("#4A90E2") // Blu
+            extraColor = Color.parseColor("#4A90E2")
             extraLabel = "Banca Ore: ${StatsHelper.minutesToText(stats.extraMinutes)}"
         }
         
