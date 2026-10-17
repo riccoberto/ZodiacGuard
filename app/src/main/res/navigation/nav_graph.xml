@@ -4,29 +4,11 @@
     android:id="@+id/nav_graph"
     app:startDestination="@id/homeFragment">
 
-    <fragment
-        android:id="@+id/homeFragment"
-        android:name="com.zodiacguard.app.ui.home.HomeFragment"
-        android:label="Home" />
-
-    <fragment
-        android:id="@+id/dashboardFragment"
-        android:name="com.zodiacguard.app.ui.dashboard.DashboardFragment"
-        android:label="Dashboard" />
-
-    <fragment
-        android:id="@+id/settingsFragment"
-        android:name="com.zodiacguard.app.ui.settings.SettingsFragment"
-        android:label="Impostazioni" />
-
-    <fragment
-        android:id="@+id/monthlyFragment"
-        android:name="com.zodiacguard.app.ui.monthly.MonthlyFragment"
-        android:label="Riepilogo Mensile" />
-
-    <fragment
-        android:id="@+id/weeklyFragment"
-        android:name="com.zodiacguard.app.ui.weekly.WeeklyFragment"
-        android:label="Riepilogo Settimanale" />
+    <fragment android:id="@+id/homeFragment" android:name="com.zodiacguard.app.ui.home.HomeFragment" android:label="Home" />
+    <fragment android:id="@+id/dashboardFragment" android:name="com.zodiacguard.app.ui.dashboard.DashboardFragment" android:label="Dashboard" />
+    <fragment android:id="@+id/settingsFragment" android:name="com.zodiacguard.app.ui.settings.SettingsFragment" android:label="Impostazioni" />
+    <fragment android:id="@+id/monthlyFragment" android:name="com.zodiacguard.app.ui.monthly.MonthlyFragment" android:label="Riepilogo Mensile" />
+    <fragment android:id="@+id/weeklyFragment" android:name="com.zodiacguard.app.ui.weekly.WeeklyFragment" android:label="Riepilogo Settimanale" />
+    <fragment android:id="@+id/dayDetailFragment" android:name="com.zodiacguard.app.ui.monthly.DayDetailFragment" android:label="Dettaglio Giorno" />
 
 </navigation>
