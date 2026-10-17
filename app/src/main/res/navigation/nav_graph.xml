@@ -2,7 +2,12 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/dashboardFragment">
+    app:startDestination="@id/homeFragment">
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.zodiacguard.app.ui.home.HomeFragment"
+        android:label="Home" />
 
     <fragment
         android:id="@+id/dashboardFragment"
@@ -13,5 +18,15 @@
         android:id="@+id/settingsFragment"
         android:name="com.zodiacguard.app.ui.settings.SettingsFragment"
         android:label="Impostazioni" />
+
+    <fragment
+        android:id="@+id/monthlyFragment"
+        android:name="com.zodiacguard.app.ui.monthly.MonthlyFragment"
+        android:label="Riepilogo Mensile" />
+
+    <fragment
+        android:id="@+id/weeklyFragment"
+        android:name="com.zodiacguard.app.ui.weekly.WeeklyFragment"
+        android:label="Riepilogo Settimanale" />
 
 </navigation>
