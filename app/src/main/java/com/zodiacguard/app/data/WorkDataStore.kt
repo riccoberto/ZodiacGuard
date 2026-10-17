@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "work_prefs")
@@ -18,7 +19,6 @@ class WorkDataStore(private val context: Context) {
         val KEY_NOTES = stringPreferencesKey("daily_notes")
     }
 
-    // Aggiunge una nuova marcatura
     suspend fun addEntry(entry: WorkEntry) {
         context.dataStore.edit { prefs ->
             val currentEntries = prefs[KEY_ENTRIES] ?: ""
@@ -27,7 +27,20 @@ class WorkDataStore(private val context: Context) {
         }
     }
 
-    // Salva le note per una data specifica
+    // NUOVO: Salva l'intera lista (usato per modifiche)
+    suspend fun saveAllEntries(entries: List<WorkEntry>) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_ENTRIES] = entries.joinToString("\n") { WorkEntry.toJson(it) }
+        }
+    }
+
+    // NUOVO: Cancella una marcatura specifica
+    suspend fun deleteEntry(entry: WorkEntry) {
+        val currentList = entriesFlow.first()
+        val newList = currentList.filter { it.timestamp != entry.timestamp }
+        saveAllEntries(newList)
+    }
+
     suspend fun saveNote(date: String, note: String) {
         context.dataStore.edit { prefs ->
             val currentNotes = prefs[KEY_NOTES] ?: ""
@@ -38,19 +51,16 @@ class WorkDataStore(private val context: Context) {
         }
     }
 
-    // Ottieni tutte le marcature
     val entriesFlow: Flow<List<WorkEntry>> = context.dataStore.data.map { prefs ->
         val entriesString = prefs[KEY_ENTRIES] ?: ""
         if (entriesString.isEmpty()) emptyList()
         else entriesString.split("\n").mapNotNull { WorkEntry.fromJson(it) }
     }
 
-    // Ottieni le marcature di una data specifica
     fun getEntriesForDate(date: String): Flow<List<WorkEntry>> = entriesFlow.map { entries ->
         entries.filter { it.date == date }
     }
 
-    // Ottieni la nota per una data specifica
     fun getNoteForDate(date: String): Flow<String> = context.dataStore.data.map { prefs ->
         val notesString = prefs[KEY_NOTES] ?: ""
         if (notesString.isEmpty()) ""
