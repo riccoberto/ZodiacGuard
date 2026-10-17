@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/zodiac_navy"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="32dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="ZODIAC GUARD"
+        android:textColor="@color/zodiac_gold"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="48dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnDashboard"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:text="📝 REGISTRA ORE"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:backgroundTint="#34C759"
+        android:textColor="@color/white"
+        android:layout_marginBottom="16dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnWeekly"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:text="📈 RIEPILOGO SETTIMANALE"
+        android:textSize="16sp"
+        app:backgroundTint="@color/zodiac_gold"
+        android:textColor="@color/zodiac_navy"
+        android:layout_marginBottom="16dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnMonthly"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:text="📊 RIEPILOGO MENSILE"
+        android:textSize="16sp"
+        app:backgroundTint="@color/zodiac_gold"
+        android:textColor="@color/zodiac_navy"
+        android:layout_marginBottom="16dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSettings"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:text="⚙️ IMPOSTAZIONI"
+        android:textSize="16sp"
+        app:backgroundTint="@color/zodiac_gold"
+        android:textColor="@color/zodiac_navy" />
+
+</LinearLayout>
