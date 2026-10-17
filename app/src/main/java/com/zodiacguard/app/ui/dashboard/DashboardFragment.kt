@@ -7,6 +7,8 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
+import com.zodiacguard.app.R
 import com.zodiacguard.app.data.WorkDataStore
 import com.zodiacguard.app.databinding.FragmentDashboardBinding
 import kotlinx.coroutines.flow.collectLatest
@@ -60,7 +62,7 @@ class DashboardFragment : Fragment() {
             }
         }
 
-        // 3. Logica Pulsante ENTRATA (avvolta in coroutine)
+        // 3. Logica Pulsante ENTRATA
         binding.btnCheckIn.setOnClickListener {
             viewLifecycleOwner.lifecycleScope.launch {
                 val currentTime = getCurrentTime()
@@ -69,7 +71,7 @@ class DashboardFragment : Fragment() {
             }
         }
 
-        // 4. Logica Pulsante USCITA (avvolta in coroutine)
+        // 4. Logica Pulsante USCITA
         binding.btnCheckOut.setOnClickListener {
             viewLifecycleOwner.lifecycleScope.launch {
                 val currentTime = getCurrentTime()
@@ -77,9 +79,13 @@ class DashboardFragment : Fragment() {
                 Toast.makeText(requireContext(), "Uscita registrata alle $currentTime", Toast.LENGTH_SHORT).show()
             }
         }
+
+        // 5. NUOVO: Logica Pulsante IMPOSTAZIONI
+        binding.btnSettings.setOnClickListener {
+            findNavController().navigate(R.id.settingsFragment)
+        }
     }
 
-    // Funzione per ottenere l'ora attuale (es. "14:30")
     private fun getCurrentTime(): String {
         val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
         return sdf.format(Date())
