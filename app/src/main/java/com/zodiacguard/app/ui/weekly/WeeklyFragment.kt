@@ -56,8 +56,6 @@ class WeeklyFragment : Fragment() {
         val year = calendar.get(Calendar.YEAR)
         val week = calendar.get(Calendar.WEEK_OF_YEAR)
         
-        binding.tvWeekLabel.text = "Settimana $week - $year"
-
         viewLifecycleOwner.lifecycleScope.launch {
             val allEntries = workDataStore.entriesFlow.first()
             val weeklyHours = contractDataStore.weeklyHoursFlow.first()
@@ -71,11 +69,13 @@ class WeeklyFragment : Fragment() {
             val stats = WeeklyStatsHelper.calculateWeeklyStats(
                 allEntries, productionDates, year, week, weeklyHours, workDays
             )
-            displayStats(stats)
+            displayStats(stats, weeklyHours, workDays)
         }
     }
 
-    private fun displayStats(stats: WeeklyStatsHelper.WeeklyStats) {
+    private fun displayStats(stats: WeeklyStatsHelper.WeeklyStats, weeklyHours: Int, workDays: Int) {
+        binding.tvWeekLabel.text = "Settimana ${calendar.get(Calendar.WEEK_OF_YEAR)} - ${stats.weekStartDate} / ${stats.weekEndDate}"
+        
         binding.tvTotalWorked.text = "Totale: ${formatMin(stats.totalWorkedMinutes)}"
         binding.tvTotalOrdinary.text = "Ordinarie: ${formatMin(stats.totalOrdinaryMinutes)}"
         binding.tvTotalOvertime.text = "Straordinari: ${formatMin(stats.totalOvertimeMinutes)}"
@@ -85,15 +85,22 @@ class WeeklyFragment : Fragment() {
         val sign = if (stats.balanceMinutes >= 0) "+" else ""
         binding.tvBalance.text = "Saldo: $sign${formatMin(stats.balanceMinutes)}"
 
-        binding.pieChart.setData(listOf(
-            Pair(stats.totalOrdinaryMinutes.toFloat(), Color.parseColor("#FFD700")),
-            Pair(stats.totalOvertimeMinutes.toFloat(), Color.parseColor("#C41E3A")),
-            Pair(stats.totalBankMinutes.toFloat(), Color.parseColor("#4A90E2")),
-            Pair(stats.totalTravelMinutes.toFloat(), Color.parseColor("#9C27B0"))
-        ))
+        // Grafico a torta con ore attese come sfondo
+        val dailyContractMinutes = (weeklyHours * 60) / workDays
+        val expectedMinutes = dailyContractMinutes * 6 // 6 giorni lavorativi
+        
+        binding.pieChart.setData(
+            listOf(
+                Pair(stats.totalOrdinaryMinutes.toFloat(), Color.parseColor("#FFD700")),
+                Pair(stats.totalOvertimeMinutes.toFloat(), Color.parseColor("#C41E3A")),
+                Pair(stats.totalBankMinutes.toFloat(), Color.parseColor("#4A90E2")),
+                Pair(stats.totalTravelMinutes.toFloat(), Color.parseColor("#9C27B0"))
+            ),
+            expectedMinutes.toFloat()
+        )
 
-        binding.tvLegendOrdinary.text = "🟡 Ordinarie: ${formatMin(stats.totalOrdinaryMinutes)}"
-        binding.tvLegendOvertime.text = " Straordinari: ${formatMin(stats.totalOvertimeMinutes)}"
+        binding.tvLegendOrdinary.text = " Ordinarie: ${formatMin(stats.totalOrdinaryMinutes)}"
+        binding.tvLegendOvertime.text = "🔴 Straordinari: ${formatMin(stats.totalOvertimeMinutes)}"
         binding.tvLegendBank.text = "🔵 Banca Ore: ${formatMin(stats.totalBankMinutes)}"
         binding.tvLegendTravel.text = "🟣 Viaggio: ${formatMin(stats.totalTravelMinutes)}"
 
@@ -110,13 +117,13 @@ class WeeklyFragment : Fragment() {
     private fun shareReport() {
         val text = """
             📈 RIEPILOGO SETTIMANALE - ${binding.tvWeekLabel.text}
-            Totale: ${binding.tvTotalWorked.text.toString().substringAfter(": ")}
-            Straordinari: ${binding.tvTotalOvertime.text.toString().substringAfter(": ")}
-            Banca ore: ${binding.tvTotalBank.text.toString().substringAfter(": ")}
-            Viaggio: ${binding.tvTotalTravel.text.toString().substringAfter(": ")}
-            Saldo: ${binding.tvBalance.text.toString().substringAfter(": ")}
-            🚗 Fuori sede: ${binding.tvOutOfTown.text.toString().substringAfter(": ")}
-            🍽️ Buoni pasto: ${binding.tvMealTickets.text.toString().substringAfter(": ")}
+            Totale: ${binding.tvTotalWorked.text.substringAfter(": ")}
+            Straordinari: ${binding.tvTotalOvertime.text.substringAfter(": ")}
+            Banca ore: ${binding.tvTotalBank.text.substringAfter(": ")}
+            Viaggio: ${binding.tvTotalTravel.text.substringAfter(": ")}
+            Saldo: ${binding.tvBalance.text.substringAfter(": ")}
+            🚗 Fuori sede: ${binding.tvOutOfTown.text.substringAfter(": ")}
+            ️ Buoni pasto: ${binding.tvMealTickets.text.substringAfter(": ")}
         """.trimIndent()
 
         val intent = Intent(Intent.ACTION_SEND).apply {
