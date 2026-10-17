@@ -66,15 +66,32 @@ class DashboardFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         updateDateDisplay()
-
-        setupSpinner(binding.spinnerActivity, R.array.activity_types) { 
-            selectedActivity = it
+        setupSpinner(binding.spinnerActivity, R.array.activity_types) { newActivity ->
+            if (newActivity != selectedActivity) {
+                selectedActivity = newActivity
+                viewLifecycleOwner.lifecycleScope.launch {
+                    workDataStore.updateAllEntriesActivity(selectedDate, newActivity)
+                    Toast.makeText(requireContext(), "Attività aggiornata per tutte le marcature", Toast.LENGTH_SHORT).show()
+                }
+            }
             updateStatsUI()
         }
-        setupSpinner(binding.spinnerLocation, R.array.locations) { 
-            selectedLocation = it
+        setupSpinner(binding.spinnerLocation, R.array.locations) { newLocation ->
+            if (newLocation != selectedLocation) {
+                selectedLocation = newLocation
+                viewLifecycleOwner.lifecycleScope.launch {
+                    workDataStore.updateAllEntriesLocation(selectedDate, newLocation)
+                    val travelText = when(newLocation) {
+                        "Vignola", "Castelfranco" -> "1h 30m di viaggio aggiunte"
+                        "Bologna" -> "2h 00m di viaggio aggiunte"
+                        else -> "Viaggio rimosso"
+                    }
+                    Toast.makeText(requireContext(), "Sede aggiornata. $travelText", Toast.LENGTH_LONG).show()
+                }
+            }
             updateStatsUI()
         }
+        
 
         binding.switchProduction.setOnCheckedChangeListener { _, isChecked ->
             isProductionMode = isChecked
