@@ -11,13 +11,22 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Data con due pulsanti: Cambia e Oggi -->
+        <!-- Data con frecce + Oggi + Cambia -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:layout_marginBottom="16dp">
+            
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPrevDay"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:text="◀"
+                android:textSize="14sp"
+                app:backgroundTint="@color/zodiac_gold"
+                android:textColor="@color/zodiac_navy" />
             
             <TextView
                 android:id="@+id/tvDate"
@@ -26,33 +35,46 @@
                 android:layout_weight="1"
                 android:textColor="@color/white"
                 android:textSize="16sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:gravity="center"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp" />
+            
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnNextDay"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:text="▶"
+                android:textSize="14sp"
+                app:backgroundTint="@color/zodiac_gold"
+                android:textColor="@color/zodiac_navy" />
             
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnToday"
                 android:layout_width="wrap_content"
                 android:layout_height="40dp"
-                android:text="📅 OGGI"
+                android:text="OGGI"
                 android:textSize="12sp"
                 app:backgroundTint="#34C759"
                 android:textColor="@color/white"
-                android:layout_marginEnd="8dp" />
+                android:layout_marginStart="8dp" />
             
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnChangeDate"
                 android:layout_width="wrap_content"
                 android:layout_height="40dp"
-                android:text=" CAMBIA"
+                android:text="CALENDARIO"
                 android:textSize="12sp"
                 app:backgroundTint="@color/zodiac_gold"
-                android:textColor="@color/zodiac_navy" />
+                android:textColor="@color/zodiac_navy"
+                android:layout_marginStart="4dp" />
         </LinearLayout>
 
         <!-- Riepilogo Ore -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Ore Lavorate Oggi"
+            android:text="Ore Lavorate"
             android:textColor="@color/zodiac_gold"
             android:textSize="16sp"
             android:textStyle="bold"
