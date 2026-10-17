@@ -26,18 +26,16 @@ class DailyAgendaAdapter(
         holder.binding.tvActivityLocation.text = "${day.activity} - ${day.location}"
         holder.binding.tvHours.text = MonthlyStatsHelper.minutesToText(day.totalMinutes)
         
-        if (day.isTeatrino) {
-            holder.binding.tvTeatrinoBadge.visibility = View.VISIBLE
-        } else {
-            holder.binding.tvTeatrinoBadge.visibility = View.GONE
-        }
+        // Simbolo teatrino
+        holder.binding.tvTeatrinoBadge.visibility = if (day.isTeatrino) View.VISIBLE else View.GONE
         
-        if (day.location != "Modena") {
-            holder.binding.tvTravelBadge.visibility = View.VISIBLE
-        } else {
-            holder.binding.tvTravelBadge.visibility = View.GONE
-        }
+        // Simbolo rimborsi km (fuori Modena)
+        holder.binding.tvTravelBadge.visibility = if (day.location != "Modena") View.VISIBLE else View.GONE
         
+        // NUOVO: Simbolo produzione
+        holder.binding.tvProductionBadge.visibility = if (day.isProduction) View.VISIBLE else View.GONE
+        
+        // Click sulla riga
         holder.binding.root.setOnClickListener {
             onDayClick(day)
         }
