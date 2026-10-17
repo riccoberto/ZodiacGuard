@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="12dp"
+    android:background="#1AFFFFFF"
+    android:layout_marginBottom="6dp"
+    android:gravity="center_vertical">
+
+    <TextView
+        android:id="@+id/tvEntryInfo"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textColor="@color/white"
+        android:textSize="14sp" />
+
+    <Button
+        android:id="@+id/btnEdit"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:text="️"
+        android:backgroundTint="@color/zodiac_gold"
+        android:textColor="@color/zodiac_navy"
+        android:layout_marginEnd="8dp"/>
+
+    <Button
+        android:id="@+id/btnDelete"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:text="️"
+        android:backgroundTint="#C41E3A"
+        android:textColor="@color/white"/>
+</LinearLayout>
