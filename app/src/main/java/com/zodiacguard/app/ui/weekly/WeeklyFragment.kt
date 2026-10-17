@@ -110,13 +110,13 @@ class WeeklyFragment : Fragment() {
     private fun shareReport() {
         val text = """
             📈 RIEPILOGO SETTIMANALE - ${binding.tvWeekLabel.text}
-            Totale: ${binding.tvTotalWorked.text.substringAfter(": ")}
-            Straordinari: ${binding.tvTotalOvertime.text.substringAfter(": ")}
-            Banca ore: ${binding.tvTotalBank.text.substringAfter(": ")}
-            Viaggio: ${binding.tvTotalTravel.text.substringAfter(": ")}
-            Saldo: ${binding.tvBalance.text.substringAfter(": ")}
-            🚗 Fuori sede: ${binding.tvOutOfTown.text.substringAfter(": ")}
-            🍽️ Buoni pasto: ${binding.tvMealTickets.text.substringAfter(": ")}
+            Totale: ${binding.tvTotalWorked.text.toString().substringAfter(": ")}
+            Straordinari: ${binding.tvTotalOvertime.text.toString().substringAfter(": ")}
+            Banca ore: ${binding.tvTotalBank.text.toString().substringAfter(": ")}
+            Viaggio: ${binding.tvTotalTravel.text.toString().substringAfter(": ")}
+            Saldo: ${binding.tvBalance.text.toString().substringAfter(": ")}
+            🚗 Fuori sede: ${binding.tvOutOfTown.text.toString().substringAfter(": ")}
+            🍽️ Buoni pasto: ${binding.tvMealTickets.text.toString().substringAfter(": ")}
         """.trimIndent()
 
         val intent = Intent(Intent.ACTION_SEND).apply {
