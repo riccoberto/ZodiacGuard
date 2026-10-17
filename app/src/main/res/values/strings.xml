@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Zodiac Guard</string>
+    
+    <string-array name="work_categories">
+        <item>Ordinario</item>
+        <item>Straordinario</item>
+        <item>Teatrino / Trasferta</item>
+    </string-array>
 </resources>
