@@ -2,23 +2,32 @@ package com.zodiacguard.app
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.view.Window
+import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 class SplashActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Rimuovi la title bar
+        supportActionBar?.hide()
+        
+        // Schermo intero
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_FULLSCREEN,
+            WindowManager.LayoutParams.FLAG_FULLSCREEN
+        )
+        
         setContentView(R.layout.activity_splash)
 
-        // Attendi 2 secondi e poi vai alla MainActivity
-        lifecycleScope.launch {
-            delay(2000)
-            val intent = Intent(this@SplashActivity, MainActivity::class.java)
-            startActivity(intent)
+        // Dopo 1 secondo vai alla MainActivity
+        Handler(Looper.getMainLooper()).postDelayed({
+            startActivity(Intent(this, MainActivity::class.java))
             finish()
-        }
+        }, 1000)
     }
 }
