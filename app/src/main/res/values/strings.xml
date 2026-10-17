@@ -2,9 +2,18 @@
 <resources>
     <string name="app_name">Zodiac Guard</string>
     
-    <string-array name="work_categories">
-        <item>Ordinario</item>
-        <item>Straordinario</item>
-        <item>Teatrino / Trasferta</item>
+    <string-array name="activity_types">
+        <item>Servizio</item>
+        <item>Teatrino Montaggio</item>
+        <item>Teatrino Smontaggio</item>
+        <item>Teatrino Intero</item>
+        <item>Produzione</item>
+    </string-array>
+
+    <string-array name="locations">
+        <item>Modena</item>
+        <item>Vignola</item>
+        <item>Castelfranco</item>
+        <item>Bologna</item>
     </string-array>
 </resources>
