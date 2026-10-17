@@ -11,7 +11,6 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Titolo -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -29,114 +28,30 @@
             android:textSize="14sp"
             android:layout_marginBottom="24dp" />
 
-        <!-- Card Ore Oggi -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
+        <!-- Selettore Categoria -->
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="4dp"
-            android:layout_marginBottom="16dp"
-            app:cardBackgroundColor="@color/zodiac_navy">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="20dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Ore Oggi"
-                    android:textColor="@color/zodiac_gold"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/tvTodayHours"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="0h 00m"
-                    android:textColor="@color/white"
-                    android:textSize="32sp"
-                    android:textStyle="bold"
-                    android:layout_marginTop="4dp" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Card Ore Settimana -->
-        <com.google.android.material.card.MaterialCardView
+            android:text="Categoria per questa azione:"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            android:layout_marginBottom="8dp" />
+            
+        <Spinner
+            android:id="@+id/spinnerCategory"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="4dp"
-            android:layout_marginBottom="16dp"
-            app:cardBackgroundColor="@color/zodiac_navy">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="20dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Ore Settimana"
-                    android:textColor="@color/zodiac_gold"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/tvWeekHours"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="0h 00m"
-                    android:textColor="@color/white"
-                    android:textSize="32sp"
-                    android:textStyle="bold"
-                    android:layout_marginTop="4dp" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Card Ore Mese -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="4dp"
-            android:layout_marginBottom="24dp"
-            app:cardBackgroundColor="@color/zodiac_navy">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="20dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Ore Mese"
-                    android:textColor="@color/zodiac_gold"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/tvMonthHours"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="0h 00m"
-                    android:textColor="@color/white"
-                    android:textSize="32sp"
-                    android:textStyle="bold"
-                    android:layout_marginTop="4dp" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+            android:layout_height="48dp"
+            android:background="@color/zodiac_navy"
+            android:spinnerMode="dropdown"
+            android:entries="@array/work_categories"
+            android:layout_marginBottom="24dp" />
 
         <!-- Pulsanti Entrata e Uscita -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnCheckIn"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="ENTRATA"
+            android:text="REGISTRA ENTRATA"
             android:textSize="16sp"
             android:textStyle="bold"
             app:backgroundTint="#34C759"
@@ -146,10 +61,33 @@
             android:id="@+id/btnCheckOut"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="USCITA"
+            android:text="REGISTRA USCITA"
             android:textSize="16sp"
             android:textStyle="bold"
-            app:backgroundTint="#C41E3A" />
+            app:backgroundTint="#C41E3A"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Registro Giornaliero -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Registro di Oggi:"
+            android:textColor="@color/zodiac_gold"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/tvDailyLog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Nessun registro per oggi."
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            android:background="#1AFFFFFF"
+            android:padding="12dp"
+            android:layout_marginBottom="24dp" />
+
         <!-- Pulsante Impostazioni -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSettings"
@@ -158,7 +96,7 @@
             android:text="IMPOSTAZIONI CONTRATTO"
             android:textSize="14sp"
             app:backgroundTint="@color/zodiac_gold"
-            android:textColor="@color/zodiac_navy"
-            android:layout_marginTop="24dp" />
+            android:textColor="@color/zodiac_navy" />
+
     </LinearLayout>
 </ScrollView>
