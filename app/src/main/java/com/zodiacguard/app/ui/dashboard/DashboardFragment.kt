@@ -37,6 +37,16 @@ class DashboardFragment : Fragment() {
     private var currentEntries: List<WorkEntry> = emptyList()
     private lateinit var entryAdapter: EntryAdapter
 
+    // Timer per aggiornare la barra in tempo reale
+    private val updateRunnable = object : Runnable {
+        override fun run() {
+            if (isAdded) { // Controlla se il fragment è ancora attivo
+                updateStatsUI()
+                binding.root.postDelayed(this, 60000) // Ripeti tra 60 secondi
+            }
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
@@ -86,9 +96,11 @@ class DashboardFragment : Fragment() {
             }
         })
 
-        // I pulsanti principali ora aprono l'orologio
         binding.btnCheckIn.setOnClickListener { showTimePickerAndRegister("ENTRATA") }
         binding.btnCheckOut.setOnClickListener { showTimePickerAndRegister("USCITA") }
+
+        // Avvia il timer live
+        binding.root.postDelayed(updateRunnable, 60000)
     }
 
     private fun setupSpinner(spinner: android.widget.Spinner, arrayResId: Int, onSelect: (String) -> Unit) {
@@ -103,7 +115,6 @@ class DashboardFragment : Fragment() {
         }
     }
 
-    // NUOVA FUNZIONE: Apre l'orologio e poi registra
     private fun showTimePickerAndRegister(type: String) {
         val calendar = Calendar.getInstance()
         val picker = MaterialTimePicker.Builder()
@@ -136,7 +147,6 @@ class DashboardFragment : Fragment() {
         }
     }
 
-    // Dialog per modificare una riga esistente
     private fun showAddEditDialog(existingEntry: WorkEntry?) {
         val calendar = Calendar.getInstance()
         calendar.timeInMillis = existingEntry!!.timestamp
@@ -166,7 +176,8 @@ class DashboardFragment : Fragment() {
     }
 
     private fun updateStatsUI() {
-        val stats = StatsHelper.calculateDailyStats(currentEntries, selectedActivity)
+        // Passiamo System.currentTimeMillis() per il calcolo live
+        val stats = StatsHelper.calculateDailyStats(currentEntries, selectedActivity, System.currentTimeMillis())
         
         binding.tvTotalHours.text = StatsHelper.minutesToText(stats.totalMinutes)
         binding.tvOrdinaryLabel.text = "Ordinarie: ${StatsHelper.minutesToText(stats.ordinaryMinutes)}"
@@ -204,5 +215,9 @@ class DashboardFragment : Fragment() {
         binding.barExtra.setBackgroundColor(extraColor)
     }
 
-    override fun onDestroyView() { super.onDestroyView(); _binding = null }
+    override fun onDestroyView() { 
+        super.onDestroyView()
+        binding.root.removeCallbacks(updateRunnable) // Ferma il timer quando esci
+        _binding = null 
+    }
 }
