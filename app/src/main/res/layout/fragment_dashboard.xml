@@ -11,15 +11,32 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Data (tenuta, ma senza la scritta grande sopra) -->
-        <TextView
-            android:id="@+id/tvDate"
-            android:layout_width="wrap_content"
+        <!-- NUOVO: Selettore Data -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@color/white"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="16dp">
+            
+            <TextView
+                android:id="@+id/tvDate"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+                
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnChangeDate"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="📅 CAMBIA DATA"
+                android:textSize="12sp"
+                app:backgroundTint="@color/zodiac_gold"
+                android:textColor="@color/zodiac_navy" />
+        </LinearLayout>
 
         <!-- Riepilogo Ore -->
         <TextView
@@ -40,15 +57,29 @@
             android:textStyle="bold"
             android:layout_marginBottom="16dp" />
 
-        <!-- Barra Visiva -->
-        <LinearLayout
+        <!-- Barra Visiva con linea di riferimento -->
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="24dp"
-            android:orientation="horizontal"
             android:layout_marginBottom="8dp">
-            <View android:id="@+id/barOrdinary" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="@color/zodiac_gold" />
-            <View android:id="@+id/barExtra" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0" android:background="#C41E3A" />
-        </LinearLayout>
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal">
+                <View android:id="@+id/barOrdinary" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="@color/zodiac_gold" />
+                <View android:id="@+id/barExtra" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0" android:background="#C41E3A" />
+            </LinearLayout>
+            
+            <!-- Linea di riferimento per ore attuali -->
+            <View
+                android:id="@+id/barCurrentTime"
+                android:layout_width="2dp"
+                android:layout_height="match_parent"
+                android:background="#FFFFFF"
+                android:layout_gravity="start" />
+        </FrameLayout>
+        
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -57,6 +88,17 @@
             <TextView android:id="@+id/tvOrdinaryLabel" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Ordinarie: 0h 00m" android:textColor="@color/zodiac_gold" android:textSize="12sp" />
             <TextView android:id="@+id/tvExtraLabel" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Extra: 0h 00m" android:textColor="#C41E3A" android:textSize="12sp" android:gravity="end" />
         </LinearLayout>
+
+        <!-- NUOVO: Info ore viaggio -->
+        <TextView
+            android:id="@+id/tvTravelTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ore viaggio: 0h 00m"
+            android:textColor="#4A90E2"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp" />
 
         <!-- Tendine Affiancate -->
         <LinearLayout
@@ -89,7 +131,7 @@
         <com.google.android.material.textfield.TextInputEditText android:id="@+id/etDailyNotes" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Scrivi qui..." android:textColor="@color/white" android:textColorHint="#80FFFFFF" android:background="#1AFFFFFF" android:padding="8dp" android:minLines="2" android:layout_marginBottom="16dp" />
 
         <!-- Elenco Marcature -->
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Marcature di Oggi" android:textColor="@color/zodiac_gold" android:textSize="16sp" android:textStyle="bold" android:layout_marginBottom="8dp" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Marcature" android:textColor="@color/zodiac_gold" android:textSize="16sp" android:textStyle="bold" android:layout_marginBottom="8dp" />
         <androidx.recyclerview.widget.RecyclerView android:id="@+id/recyclerViewEntries" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp" />
 
     </LinearLayout>
