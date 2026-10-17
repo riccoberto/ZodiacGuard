@@ -9,45 +9,32 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-// Estensione per creare il DataStore
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "work_prefs")
 
 class WorkDataStore(private val context: Context) {
 
     companion object {
-        val KEY_CHECK_IN = stringPreferencesKey("check_in")
-        val KEY_CHECK_OUT = stringPreferencesKey("check_out")
+        val KEY_DAILY_LOG = stringPreferencesKey("daily_log")
     }
 
-    // Salva l'ora di entrata
-    suspend fun saveCheckIn(time: String) {
+    // Aggiunge una nuova voce al registro di oggi
+    suspend fun addLogEntry(time: String, type: String, category: String) {
         context.dataStore.edit { prefs ->
-            prefs[KEY_CHECK_IN] = time
+            val currentLog = prefs[KEY_DAILY_LOG] ?: ""
+            val newEntry = "$time | $type | $category\n"
+            prefs[KEY_DAILY_LOG] = currentLog + newEntry
         }
     }
 
-    // Salva l'ora di uscita
-    suspend fun saveCheckOut(time: String) {
+    // Cancella il registro di oggi (per il giorno dopo)
+    suspend fun clearDailyLog() {
         context.dataStore.edit { prefs ->
-            prefs[KEY_CHECK_OUT] = time
+            prefs.remove(KEY_DAILY_LOG)
         }
     }
 
-    // Cancella i dati della giornata
-    suspend fun clearDailyData() {
-        context.dataStore.edit { prefs ->
-            prefs.remove(KEY_CHECK_IN)
-            prefs.remove(KEY_CHECK_OUT)
-        }
-    }
-
-    // Legge l'ora di entrata
-    val checkInFlow: Flow<String?> = context.dataStore.data.map { prefs ->
-        prefs[KEY_CHECK_IN]
-    }
-
-    // Legge l'ora di uscita
-    val checkOutFlow: Flow<String?> = context.dataStore.data.map { prefs ->
-        prefs[KEY_CHECK_OUT]
+    // Legge il registro di oggi
+    val dailyLogFlow: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[KEY_DAILY_LOG] ?: "Nessun registro per oggi."
     }
 }
