@@ -13,7 +13,7 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import kotlinx.coroutines.Job
+import androidx.lifecycle.Job
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.timepicker.MaterialTimePicker
@@ -119,9 +119,11 @@ class DashboardFragment : Fragment() {
 
         binding.btnCheckIn.setOnClickListener { showTimePickerAndRegister("ENTRATA") }
         binding.btnCheckOut.setOnClickListener { showTimePickerAndRegister("USCITA") }
-        
-        // NUOVO: Usa il calendario custom
         binding.btnChangeDate.setOnClickListener { showCustomCalendar() }
+        
+        // NUOVO: Frecce per scorrere i giorni
+        binding.btnPrevDay.setOnClickListener { changeDay(-1) }
+        binding.btnNextDay.setOnClickListener { changeDay(1) }
         
         binding.btnToday.setOnClickListener {
             selectedDate = WorkEntry.getCurrentDate()
@@ -133,7 +135,16 @@ class DashboardFragment : Fragment() {
         binding.root.postDelayed(updateRunnable, 60000)
     }
 
-    // NUOVO: Mostra il calendario custom con colori
+    // NUOVO: Sposta la data di N giorni (positivo = avanti, negativo = indietro)
+    private fun changeDay(offset: Int) {
+        val cal = Calendar.getInstance()
+        cal.time = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(selectedDate) ?: Date()
+        cal.add(Calendar.DAY_OF_MONTH, offset)
+        selectedDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(cal.time)
+        updateDateDisplay()
+        startObserving()
+    }
+
     private fun showCustomCalendar() {
         viewLifecycleOwner.lifecycleScope.launch {
             val allEntries = workDataStore.entriesFlow.first()
