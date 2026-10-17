@@ -1,5 +1,6 @@
 package com.zodiacguard.app.ui.dashboard
 
+import android.graphics.Color
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -8,9 +9,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.zodiacguard.app.R
 import com.zodiacguard.app.data.StatsHelper
 import com.zodiacguard.app.data.WorkDataStore
@@ -29,11 +34,11 @@ class DashboardFragment : Fragment() {
     private var selectedActivity: String = "Servizio"
     private var selectedLocation: String = "Modena"
     private var todayDate: String = ""
+    private var currentEntries: List<WorkEntry> = emptyList()
+    private lateinit var entryAdapter: EntryAdapter
 
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         _binding = FragmentDashboardBinding.inflate(inflater, container, false)
         workDataStore = WorkDataStore(requireContext())
@@ -44,118 +49,162 @@ class DashboardFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 1. Imposta la data
         binding.tvDate.text = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault()).format(Date())
 
-        // 2. Configura Spinner Attività
-        val activityAdapter = ArrayAdapter.createFromResource(
-            requireContext(), R.array.activity_types, android.R.layout.simple_spinner_item
-        )
-        activityAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        binding.spinnerActivity.adapter = activityAdapter
-        binding.spinnerActivity.setSelection(0) // Default: Servizio
-        binding.spinnerActivity.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                selectedActivity = parent.getItemAtPosition(position).toString()
-                updateStatsUI() // Aggiorna la barra se cambia l'attività
-            }
-            override fun onNothingSelected(parent: AdapterView<*>) {}
-        }
+        // Setup Spinners
+        setupSpinner(binding.spinnerActivity, R.array.activity_types) { selectedActivity = it }
+        setupSpinner(binding.spinnerLocation, R.array.locations) { selectedLocation = it }
 
-        // 3. Configura Spinner Sede
-        val locationAdapter = ArrayAdapter.createFromResource(
-            requireContext(), R.array.locations, android.R.layout.simple_spinner_item
+        // Setup RecyclerView
+        entryAdapter = EntryAdapter(emptyList(), 
+            onEditClick = { entry -> showAddEditDialog(entry) },
+            onDeleteClick = { entry -> deleteEntry(entry) }
         )
-        locationAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        binding.spinnerLocation.adapter = locationAdapter
-        binding.spinnerLocation.setSelection(0) // Default: Modena
-        binding.spinnerLocation.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                selectedLocation = parent.getItemAtPosition(position).toString()
-            }
-            override fun onNothingSelected(parent: AdapterView<*>) {}
-        }
+        binding.recyclerViewEntries.layoutManager = LinearLayoutManager(requireContext())
+        binding.recyclerViewEntries.adapter = entryAdapter
 
-        // 4. Osserva le marcature di oggi e aggiorna l'UI
+        // Osserva dati
         viewLifecycleOwner.lifecycleScope.launch {
             workDataStore.getEntriesForDate(todayDate).collectLatest { entries ->
-                updateEntriesList(entries)
+                currentEntries = entries
+                entryAdapter.updateData(entries)
                 updateStatsUI()
             }
         }
 
-        // 5. Osserva le note di oggi
         viewLifecycleOwner.lifecycleScope.launch {
             workDataStore.getNoteForDate(todayDate).collectLatest { note ->
-                if (binding.etDailyNotes.text.toString() != note) {
-                    binding.etDailyNotes.setText(note)
-                }
+                if (binding.etDailyNotes.text.toString() != note) binding.etDailyNotes.setText(note)
             }
         }
 
-        // 6. Salva le note quando l'utente scrive
         binding.etDailyNotes.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: Editable?) {
-                viewLifecycleOwner.lifecycleScope.launch {
-                    workDataStore.saveNote(todayDate, s.toString())
-                }
+                viewLifecycleOwner.lifecycleScope.launch { workDataStore.saveNote(todayDate, s.toString()) }
             }
         })
 
-        // 7. Logica Pulsante ENTRATA
-        binding.btnCheckIn.setOnClickListener {
-            viewLifecycleOwner.lifecycleScope.launch {
-                val entry = WorkEntry(
-                    timestamp = System.currentTimeMillis(),
-                    type = "ENTRATA",
-                    activity = selectedActivity,
-                    location = selectedLocation,
-                    date = todayDate
-                )
-                workDataStore.addEntry(entry)
-                Toast.makeText(requireContext(), "Entrata registrata!", Toast.LENGTH_SHORT).show()
-            }
-        }
+        // Pulsanti principali
+        binding.btnCheckIn.setOnClickListener { registerEntry("ENTRATA") }
+        binding.btnCheckOut.setOnClickListener { registerEntry("USCITA") }
+        
+        // NUOVO: Pulsante Aggiungi a mano
+        binding.btnAddManual.setOnClickListener { showAddEditDialog(null) }
+    }
 
-        // 8. Logica Pulsante USCITA
-        binding.btnCheckOut.setOnClickListener {
-            viewLifecycleOwner.lifecycleScope.launch {
-                val entry = WorkEntry(
-                    timestamp = System.currentTimeMillis(),
-                    type = "USCITA",
-                    activity = selectedActivity,
-                    location = selectedLocation,
-                    date = todayDate
-                )
-                workDataStore.addEntry(entry)
-                Toast.makeText(requireContext(), "Uscita registrata!", Toast.LENGTH_SHORT).show()
+    private fun setupSpinner(spinner: android.widget.Spinner, arrayResId: Int, onSelect: (String) -> Unit) {
+        val adapter = ArrayAdapter.createFromResource(requireContext(), arrayResId, android.R.layout.simple_spinner_item)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinner.adapter = adapter
+        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+                onSelect(parent.getItemAtPosition(position).toString())
             }
+            override fun onNothingSelected(parent: AdapterView<*>) {}
         }
     }
 
-    private fun updateEntriesList(entries: List<WorkEntry>) {
-        if (entries.isEmpty()) {
-            binding.tvEntriesList.text = "Nessuna marcatura oggi."
-            return
+    private fun registerEntry(type: String) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val entry = WorkEntry(System.currentTimeMillis(), type, selectedActivity, selectedLocation, todayDate)
+            workDataStore.addEntry(entry)
+            Toast.makeText(requireContext(), "$type registrata!", Toast.LENGTH_SHORT).show()
         }
-        val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
-        val sb = StringBuilder()
-        entries.sortedBy { it.timestamp }.forEach { entry ->
-            sb.append("${sdf.format(Date(entry.timestamp))} - ${entry.type} | ${entry.activity} | ${entry.location}\n")
+    }
+
+    private fun deleteEntry(entry: WorkEntry) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            workDataStore.deleteEntry(entry)
+            Toast.makeText(requireContext(), "Marcatura cancellata", Toast.LENGTH_SHORT).show()
         }
-        binding.tvEntriesList.text = sb.toString().trimEnd()
+    }
+
+    // Finestra per aggiungere o modificare a mano
+    private fun showAddEditDialog(existingEntry: WorkEntry?) {
+        val builder = AlertDialog.Builder(requireContext())
+        builder.setTitle(if (existingEntry == null) "Aggiungi Marcatura" else "Modifica Marcatura")
+
+        val input = EditText(requireContext())
+        input.hint = "Orario (es. 09:00)"
+        if (existingEntry != null) {
+            input.setText(SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(existingEntry.timestamp)))
+        }
+        builder.setView(input)
+
+        val types = arrayOf("ENTRATA", "USCITA")
+        var selectedType = existingEntry?.type ?: "ENTRATA"
+        builder.setSingleChoiceItems(types, if (selectedType == "ENTRATA") 0 else 1) { _, which -> selectedType = types[which] }
+
+        builder.setPositiveButton("SALVA") { dialog, _ ->
+            val timeStr = input.text.toString()
+            try {
+                val sdfIn = SimpleDateFormat("HH:mm", Locale.getDefault())
+                val date = sdfIn.parse(timeStr)
+                val calendar = Calendar.getInstance()
+                if (date != null) {
+                    calendar.time = date
+                    val todayCal = Calendar.getInstance()
+                    calendar.set(Calendar.YEAR, todayCal.get(Calendar.YEAR))
+                    calendar.set(Calendar.MONTH, todayCal.get(Calendar.MONTH))
+                    calendar.set(Calendar.DAY_OF_MONTH, todayCal.get(Calendar.DAY_OF_MONTH))
+
+                    val newTimestamp = calendar.timeInMillis
+                    val activity = existingEntry?.activity ?: selectedActivity
+                    val location = existingEntry?.location ?: selectedLocation
+                    val newEntry = WorkEntry(newTimestamp, selectedType, activity, location, todayDate)
+
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        if (existingEntry != null) workDataStore.deleteEntry(existingEntry)
+                        workDataStore.addEntry(newEntry)
+                    }
+                }
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Formato ora errato (usa HH:mm)", Toast.LENGTH_SHORT).show()
+            }
+            dialog.dismiss()
+        }
+        builder.setNegativeButton("ANNULLA") { dialog, _ -> dialog.cancel() }
+        builder.show()
     }
 
     private fun updateStatsUI() {
-        // Qui dovremmo ricalcolare le stats in base alle entry correnti.
-        // Per semplicità, in questa versione iniziale, la barra si aggiorna quando cambiano le entry.
-        // Un'implementazione completa richiederebbe di salvare l'ultima lista di entry in una variabile.
+        val stats = StatsHelper.calculateDailyStats(currentEntries)
+        binding.tvTotalHours.text = StatsHelper.minutesToText(stats.totalMinutes)
+        binding.tvOrdinaryLabel.text = "Ordinarie: ${StatsHelper.minutesToText(stats.ordinaryMinutes)}"
+        
+        val extraColor: Int
+        val extraLabel: String
+        if (stats.isOvertime) {
+            extraColor = Color.parseColor("#C41E3A")
+            extraLabel = "Straordinari: ${StatsHelper.minutesToText(stats.extraMinutes)}"
+        } else {
+            extraColor = Color.parseColor("#4A90E2")
+            extraLabel = "Banca Ore: ${StatsHelper.minutesToText(stats.extraMinutes)}"
+        }
+        
+        binding.tvExtraLabel.text = extraLabel
+        binding.tvExtraLabel.setTextColor(extraColor)
+        updateProgressBar(stats.ordinaryMinutes, stats.extraMinutes, extraColor)
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
+    private fun updateProgressBar(ordinaryMinutes: Int, extraMinutes: Int, extraColor: Int) {
+        val total = ordinaryMinutes + extraMinutes
+        if (total == 0) {
+            binding.barOrdinary.layoutParams.width = 0
+            binding.barExtra.layoutParams.width = 0
+            return
+        }
+        val ordinaryParams = binding.barOrdinary.layoutParams as LinearLayout.LayoutParams
+        ordinaryParams.weight = ordinaryMinutes.toFloat()
+        binding.barOrdinary.layoutParams = ordinaryParams
+        
+        val extraParams = binding.barExtra.layoutParams as LinearLayout.LayoutParams
+        extraParams.weight = extraMinutes.toFloat()
+        binding.barExtra.layoutParams = extraParams
+        binding.barExtra.setBackgroundColor(extraColor)
     }
+
+    override fun onDestroyView() { super.onDestroyView(); _binding = null }
 }
