@@ -11,21 +11,14 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Intestazione -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="ZODIAC GUARD"
-            android:textColor="@color/zodiac_gold"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="4dp" />
+        <!-- Data (tenuta, ma senza la scritta grande sopra) -->
         <TextView
             android:id="@+id/tvDate"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="@color/white"
-            android:textSize="14sp"
+            android:textSize="16sp"
+            android:textStyle="bold"
             android:layout_marginBottom="16dp" />
 
         <!-- Riepilogo Ore -->
@@ -71,22 +64,11 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:layout_marginBottom="16dp">
-            
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:layout_marginEnd="8dp">
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginEnd="8dp">
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Attività" android:textColor="@color/white" android:textSize="12sp" android:layout_marginBottom="4dp" />
                 <Spinner android:id="@+id/spinnerActivity" android:layout_width="match_parent" android:layout_height="40dp" android:entries="@array/activity_types" android:background="@color/zodiac_navy" />
             </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Sede" android:textColor="@color/white" android:textSize="12sp" android:layout_marginBottom="4dp" />
                 <Spinner android:id="@+id/spinnerLocation" android:layout_width="match_parent" android:layout_height="40dp" android:entries="@array/locations" android:background="@color/zodiac_navy" />
             </LinearLayout>
@@ -98,58 +80,17 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:layout_marginBottom="24dp">
-            
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnCheckIn"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:text="ENTRATA"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                app:backgroundTint="#34C759"
-                android:layout_marginEnd="8dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnCheckOut"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:text="USCITA"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                app:backgroundTint="#C41E3A" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnCheckIn" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:text="ENTRATA" android:textSize="14sp" android:textStyle="bold" app:backgroundTint="#34C759" android:layout_marginEnd="8dp" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnCheckOut" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:text="USCITA" android:textSize="14sp" android:textStyle="bold" app:backgroundTint="#C41E3A" />
         </LinearLayout>
 
         <!-- Note -->
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Note di giornata" android:textColor="@color/zodiac_gold" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="4dp" />
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etDailyNotes"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Scrivi qui..."
-            android:textColor="@color/white"
-            android:textColorHint="#80FFFFFF"
-            android:background="#1AFFFFFF"
-            android:padding="8dp"
-            android:minLines="2"
-            android:layout_marginBottom="16dp" />
+        <com.google.android.material.textfield.TextInputEditText android:id="@+id/etDailyNotes" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Scrivi qui..." android:textColor="@color/white" android:textColorHint="#80FFFFFF" android:background="#1AFFFFFF" android:padding="8dp" android:minLines="2" android:layout_marginBottom="16dp" />
 
-        <!-- Elenco Marcature (Senza tasto manuale) -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Marcature di Oggi"
-            android:textColor="@color/zodiac_gold"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerViewEntries"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp" />
+        <!-- Elenco Marcature -->
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Marcature di Oggi" android:textColor="@color/zodiac_gold" android:textSize="16sp" android:textStyle="bold" android:layout_marginBottom="8dp" />
+        <androidx.recyclerview.widget.RecyclerView android:id="@+id/recyclerViewEntries" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp" />
 
     </LinearLayout>
 </ScrollView>
