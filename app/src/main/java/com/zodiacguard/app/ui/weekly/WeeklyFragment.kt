@@ -61,10 +61,8 @@ class WeeklyFragment : Fragment() {
             val weeklyHours = contractDataStore.weeklyHoursFlow.first()
             val workDays = contractDataStore.workDaysFlow.first()
             
-            val productionDates = allEntries
-                .filter { it.activity == "Produzione" }
-                .map { it.date }
-                .toSet()
+            // FIX: Leggiamo i giorni di produzione dal DataStore
+            val productionDates = workDataStore.productionDaysFlow.first()
             
             val stats = WeeklyStatsHelper.calculateWeeklyStats(
                 allEntries, productionDates, year, week, weeklyHours, workDays
@@ -85,9 +83,8 @@ class WeeklyFragment : Fragment() {
         val sign = if (stats.balanceMinutes >= 0) "+" else ""
         binding.tvBalance.text = "Saldo: $sign${formatMin(stats.balanceMinutes)}"
 
-        // Grafico a torta con ore attese come sfondo
         val dailyContractMinutes = (weeklyHours * 60) / workDays
-        val expectedMinutes = dailyContractMinutes * 6 // 6 giorni lavorativi
+        val expectedMinutes = dailyContractMinutes * 6
         
         binding.pieChart.setData(
             listOf(
@@ -99,7 +96,7 @@ class WeeklyFragment : Fragment() {
             expectedMinutes.toFloat()
         )
 
-        binding.tvLegendOrdinary.text = " Ordinarie: ${formatMin(stats.totalOrdinaryMinutes)}"
+        binding.tvLegendOrdinary.text = "🟡 Ordinarie: ${formatMin(stats.totalOrdinaryMinutes)}"
         binding.tvLegendOvertime.text = "🔴 Straordinari: ${formatMin(stats.totalOvertimeMinutes)}"
         binding.tvLegendBank.text = "🔵 Banca Ore: ${formatMin(stats.totalBankMinutes)}"
         binding.tvLegendTravel.text = "🟣 Viaggio: ${formatMin(stats.totalTravelMinutes)}"
@@ -117,13 +114,13 @@ class WeeklyFragment : Fragment() {
     private fun shareReport() {
         val text = """
             📈 RIEPILOGO SETTIMANALE - ${binding.tvWeekLabel.text.toString()}
-            Totale: ${formatMin(extractMinutes(binding.tvTotalWorked.text.toString()))}
-            Straordinari: ${formatMin(extractMinutes(binding.tvTotalOvertime.text.toString()))}
-            Banca ore: ${formatMin(extractMinutes(binding.tvTotalBank.text.toString()))}
-            Viaggio: ${formatMin(extractMinutes(binding.tvTotalTravel.text.toString()))}
+            Totale: ${binding.tvTotalWorked.text.toString().substringAfter(": ")}
+            Straordinari: ${binding.tvTotalOvertime.text.toString().substringAfter(": ")}
+            Banca ore: ${binding.tvTotalBank.text.toString().substringAfter(": ")}
+            Viaggio: ${binding.tvTotalTravel.text.toString().substringAfter(": ")}
             Saldo: ${binding.tvBalance.text.toString().substringAfter(": ")}
             🚗 Fuori sede: ${binding.tvOutOfTown.text.toString().substringAfter(": ")}
-            🍽️ Buoni pasto: ${binding.tvMealTickets.text.toString().substringAfter(": ")}
+            ️ Buoni pasto: ${binding.tvMealTickets.text.toString().substringAfter(": ")}
         """.trimIndent()
 
         val intent = Intent(Intent.ACTION_SEND).apply {
@@ -131,18 +128,6 @@ class WeeklyFragment : Fragment() {
             putExtra(Intent.EXTRA_TEXT, text)
         }
         startActivity(Intent.createChooser(intent, "Condividi"))
-    }
-
-    // Funzione helper per estrarre i minuti da una stringa tipo "8h 30m"
-    private fun extractMinutes(text: String): Int {
-        return try {
-            val parts = text.substringAfter(": ").split("h ")
-            val hours = parts[0].toInt()
-            val minutes = parts[1].replace("m", "").toInt()
-            (hours * 60) + minutes
-        } catch (e: Exception) {
-            0
-        }
     }
 
     private fun formatMin(min: Int): String {
