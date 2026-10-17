@@ -19,7 +19,7 @@
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Ore Lavorate Oggi" android:textColor="@color/zodiac_gold" android:textSize="16sp" android:textStyle="bold" android:layout_marginBottom="8dp" />
         <TextView android:id="@+id/tvTotalHours" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0h 00m" android:textColor="@color/white" android:textSize="32sp" android:textStyle="bold" android:layout_marginBottom="16dp" />
 
-        <!-- Barra Visiva con linea di riferimento -->
+        <!-- Barra Visiva con 3 segmenti: Oro (Lavoro), Viola (Viaggio), Rosso/Blu (Extra) -->
         <FrameLayout
             android:id="@+id/progressBarContainer"
             android:layout_width="match_parent"
@@ -27,6 +27,8 @@
             android:layout_marginBottom="8dp">
             <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="horizontal">
                 <View android:id="@+id/barOrdinary" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="@color/zodiac_gold" />
+                <!-- NUOVO: Segmento Viaggio -->
+                <View android:id="@+id/barTravel" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0" android:background="#9C27B0" />
                 <View android:id="@+id/barExtra" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0" android:background="#C41E3A" />
             </LinearLayout>
             <View android:id="@+id/barCurrentTime" android:layout_width="3dp" android:layout_height="match_parent" android:background="#FFFFFF" android:layout_gravity="start" />
@@ -37,7 +39,6 @@
             <TextView android:id="@+id/tvExtraLabel" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Extra: 0h 00m" android:textColor="#C41E3A" android:textSize="12sp" android:gravity="end" />
         </LinearLayout>
 
-        <!-- NUOVO: Switch Produzione -->
         <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/switchProduction"
             android:layout_width="match_parent"
@@ -50,7 +51,7 @@
             app:trackTint="#55FFFFFF"
             android:layout_marginBottom="16dp" />
 
-        <TextView android:id="@+id/tvTravelTime" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Ore viaggio: 0h 00m" android:textColor="#4A90E2" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="16dp" />
+        <TextView android:id="@+id/tvTravelTime" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Ore viaggio: 0h 00m" android:textColor="#9C27B0" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="16dp" />
 
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="16dp">
             <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginEnd="8dp">
