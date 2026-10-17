@@ -77,11 +77,7 @@ class MonthlyFragment : Fragment() {
             val allEntries = workDataStore.entriesFlow.first()
             val weeklyHours = contractDataStore.weeklyHoursFlow.first()
             val workDays = contractDataStore.workDaysFlow.first()
-            
-            val productionDates = allEntries
-                .filter { it.activity == "Produzione" }
-                .map { it.date }
-                .toSet()
+            val productionDates = workDataStore.productionDaysFlow.first()
             
             val stats = MonthlyStatsHelper.calculateMonthlyStats(
                 allEntries, productionDates, currentYear, currentMonth, weeklyHours, workDays
@@ -106,7 +102,6 @@ class MonthlyFragment : Fragment() {
         }
         binding.tvBalance.text = balanceText
 
-        // NUOVO: Grafico a torta con ore attese come sfondo
         val dailyContractMinutes = (weeklyHours * 60) / workDays
         val expectedMinutes = dailyContractMinutes * stats.workingDaysInMonth
         
@@ -121,9 +116,9 @@ class MonthlyFragment : Fragment() {
         )
 
         binding.tvLegendOrdinary.text = "🟡 Ordinarie: ${MonthlyStatsHelper.minutesToText(stats.totalOrdinaryMinutes)}"
-        binding.tvLegendOvertime.text = " Straordinari: ${MonthlyStatsHelper.minutesToText(stats.totalOvertimeMinutes)}"
+        binding.tvLegendOvertime.text = "🔴 Straordinari: ${MonthlyStatsHelper.minutesToText(stats.totalOvertimeMinutes)}"
         binding.tvLegendBank.text = "🔵 Banca Ore: ${MonthlyStatsHelper.minutesToText(stats.totalBankMinutes)}"
-        binding.tvLegendTravel.text = " Viaggio: ${MonthlyStatsHelper.minutesToText(stats.totalTravelMinutes)}"
+        binding.tvLegendTravel.text = "🟣 Viaggio: ${MonthlyStatsHelper.minutesToText(stats.totalTravelMinutes)}"
 
         if (stats.teatriniDays.isEmpty()) {
             binding.tvTeatriniDays.text = "Nessun teatrino"
@@ -146,7 +141,6 @@ class MonthlyFragment : Fragment() {
         binding.tvOutOfTown.text = "🚗 Giornate fuori sede: ${stats.outOfTownDays}"
         binding.tvMealTickets.text = "🍽️ Buoni pasto: ${stats.mealTickets}"
 
-        // Agenda cliccabile
         val agendaAdapter = DailyAgendaAdapter(stats.dailyStats) { day ->
             val bundle = Bundle()
             bundle.putString("date", day.date)
@@ -156,17 +150,12 @@ class MonthlyFragment : Fragment() {
         binding.recyclerViewAgenda.adapter = agendaAdapter
     }
 
-    // NUOVO: Condividi report dettagliato
     private fun shareReport() {
         viewLifecycleOwner.lifecycleScope.launch {
             val allEntries = workDataStore.entriesFlow.first()
             val weeklyHours = contractDataStore.weeklyHoursFlow.first()
             val workDays = contractDataStore.workDaysFlow.first()
-            
-            val productionDates = allEntries
-                .filter { it.activity == "Produzione" }
-                .map { it.date }
-                .toSet()
+            val productionDates = workDataStore.productionDaysFlow.first()
             
             val stats = MonthlyStatsHelper.calculateMonthlyStats(
                 allEntries, productionDates, currentYear, currentMonth, weeklyHours, workDays
@@ -184,20 +173,13 @@ class MonthlyFragment : Fragment() {
         }
     }
 
-    // NUOVO: Crea backup JSON
     private fun createBackup() {
         viewLifecycleOwner.lifecycleScope.launch {
             val allEntries = workDataStore.entriesFlow.first()
             val weeklyHours = contractDataStore.weeklyHoursFlow.first()
             val workDays = contractDataStore.workDaysFlow.first()
+            val productionDates = workDataStore.productionDaysFlow.first()
             
-            val productionDates = allEntries
-                .filter { it.activity == "Produzione" }
-                .map { it.date }
-                .toSet()
-            
-            // Per le note, dovremmo leggerle dal DataStore
-            // Per ora usiamo un placeholder
             val notes = emptyMap<String, String>()
             
             val backup = MonthlyStatsHelper.exportAllData(
