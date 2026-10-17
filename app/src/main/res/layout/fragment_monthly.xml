@@ -11,63 +11,17 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Selettore Mese -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="16dp">
-            
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnPrevMonth"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:text="◀"
-                android:textSize="18sp"
-                app:backgroundTint="@color/zodiac_gold"
-                android:textColor="@color/zodiac_navy" />
-            
-            <TextView
-                android:id="@+id/tvMonthYear"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Ottobre 2026"
-                android:textColor="@color/white"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:gravity="center" />
-            
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnNextMonth"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:text="▶"
-                android:textSize="18sp"
-                app:backgroundTint="@color/zodiac_gold"
-                android:textColor="@color/zodiac_navy" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="16dp">
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnPrevMonth" android:layout_width="48dp" android:layout_height="48dp" android:text="◀" android:textSize="18sp" app:backgroundTint="@color/zodiac_gold" android:textColor="@color/zodiac_navy" />
+            <TextView android:id="@+id/tvMonthYear" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Ottobre 2026" android:textColor="@color/white" android:textSize="20sp" android:textStyle="bold" android:gravity="center" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnNextMonth" android:layout_width="48dp" android:layout_height="48dp" android:text="▶" android:textSize="18sp" app:backgroundTint="@color/zodiac_gold" android:textColor="@color/zodiac_navy" />
         </LinearLayout>
 
-        <!-- Totali Ore -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Riepilogo Ore"
-            android:textColor="@color/zodiac_gold"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="12dp" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Riepilogo Ore" android:textColor="@color/zodiac_gold" android:textSize="18sp" android:textStyle="bold" android:layout_marginBottom="12dp" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="#1AFFFFFF"
-            android:padding="12dp"
-            android:layout_marginBottom="16dp">
-            
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="#1AFFFFFF" android:padding="12dp" android:layout_marginBottom="16dp">
             <TextView android:id="@+id/tvTotalWorked" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Totale lavorate: 0h 00m" android:textColor="@color/white" android:textSize="14sp" android:layout_marginBottom="4dp" />
+            <TextView android:id="@+id/tvContractExpected" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Contratto attese: 0h 00m" android:textColor="#FFA500" android:textSize="14sp" android:textStyle="italic" android:layout_marginBottom="4dp" />
             <TextView android:id="@+id/tvTotalOrdinary" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Ordinarie: 0h 00m" android:textColor="@color/zodiac_gold" android:textSize="14sp" android:layout_marginBottom="4dp" />
             <TextView android:id="@+id/tvTotalOvertime" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Straordinari: 0h 00m" android:textColor="#C41E3A" android:textSize="14sp" android:layout_marginBottom="4dp" />
             <TextView android:id="@+id/tvTotalBank" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Banca ore: 0h 00m" android:textColor="#4A90E2" android:textSize="14sp" android:layout_marginBottom="4dp" />
@@ -75,75 +29,37 @@
             <TextView android:id="@+id/tvBalance" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Saldo: 0h 00m" android:textColor="@color/white" android:textSize="14sp" android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Grafico a Torta -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Distribuzione Ore"
-            android:textColor="@color/zodiac_gold"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="12dp" />
+        <com.zodiacguard.app.ui.monthly.PieChartView android:id="@+id/pieChart" android:layout_width="200dp" android:layout_height="200dp" android:layout_gravity="center_horizontal" android:layout_marginBottom="16dp" />
 
-        <com.zodiacguard.app.ui.monthly.PieChartView
-            android:id="@+id/pieChart"
-            android:layout_width="200dp"
-            android:layout_height="200dp"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="16dp" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="#1AFFFFFF"
-            android:padding="12dp"
-            android:layout_marginBottom="16dp">
-            <TextView android:id="@+id/tvLegendOrdinary" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="🟡 Ordinarie" android:textColor="@color/zodiac_gold" android:textSize="12sp" android:layout_marginBottom="4dp" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="#1AFFFFFF" android:padding="12dp" android:layout_marginBottom="16dp">
+            <TextView android:id="@+id/tvLegendOrdinary" android:layout_width="match_parent" android:layout_height="wrap_content" android:text=" Ordinarie" android:textColor="@color/zodiac_gold" android:textSize="12sp" android:layout_marginBottom="4dp" />
             <TextView android:id="@+id/tvLegendOvertime" android:layout_width="match_parent" android:layout_height="wrap_content" android:text=" Straordinari" android:textColor="#C41E3A" android:textSize="12sp" android:layout_marginBottom="4dp" />
             <TextView android:id="@+id/tvLegendBank" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="🔵 Banca Ore" android:textColor="#4A90E2" android:textSize="12sp" android:layout_marginBottom="4dp" />
             <TextView android:id="@+id/tvLegendTravel" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="🟣 Viaggio" android:textColor="#9C27B0" android:textSize="12sp" />
         </LinearLayout>
 
-        <!-- Teatrini e Sedi -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Teatrini e Sedi"
-            android:textColor="@color/zodiac_gold"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="12dp" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Teatrini e Sedi" android:textColor="@color/zodiac_gold" android:textSize="18sp" android:textStyle="bold" android:layout_marginBottom="12dp" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="#1AFFFFFF"
-            android:padding="12dp"
-            android:layout_marginBottom="16dp">
-            
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Teatrini:" android:textColor="@color/white" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="4dp" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="#1AFFFFFF" android:padding="12dp" android:layout_marginBottom="16dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Giorni con Teatrini:" android:textColor="@color/white" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="4dp" />
+            <TextView android:id="@+id/tvTeatriniDays" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Nessun teatrino" android:textColor="#FFD700" android:textSize="14sp" android:layout_marginBottom="12dp" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Teatrini per tipo:" android:textColor="@color/white" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="4dp" />
             <TextView android:id="@+id/tvTeatriniCount" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Nessun teatrino" android:textColor="@color/white" android:textSize="14sp" android:layout_marginBottom="12dp" />
-            
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Presenze per sede:" android:textColor="@color/white" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="4dp" />
             <TextView android:id="@+id/tvLocationsCount" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Nessuna presenza" android:textColor="@color/white" android:textSize="14sp" android:layout_marginBottom="4dp" />
-            
             <TextView android:id="@+id/tvOutOfTown" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="🚗 Giornate fuori sede: 0" android:textColor="#9C27B0" android:textSize="14sp" android:layout_marginBottom="4dp" />
             <TextView android:id="@+id/tvMealTickets" android:layout_width="match_parent" android:layout_height="wrap_content" android:text=" Buoni pasto: 0" android:textColor="@color/zodiac_gold" android:textSize="14sp" />
         </LinearLayout>
 
-        <!-- Pulsante Condividi -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnShareReport"
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Agenda Giornaliera" android:textColor="@color/zodiac_gold" android:textSize="18sp" android:textStyle="bold" android:layout_marginBottom="12dp" />
+        
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewAgenda"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:text="📤 CONDIVIDI RIEPILOGO"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:backgroundTint="@color/zodiac_gold"
-            android:textColor="@color/zodiac_navy"
+            android:layout_height="wrap_content"
             android:layout_marginBottom="16dp" />
+
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnShareReport" android:layout_width="match_parent" android:layout_height="56dp" android:text="📤 CONDIVIDI RIEPILOGO" android:textSize="16sp" android:textStyle="bold" app:backgroundTint="@color/zodiac_gold" android:textColor="@color/zodiac_navy" android:layout_marginBottom="16dp" />
 
     </LinearLayout>
 </ScrollView>
