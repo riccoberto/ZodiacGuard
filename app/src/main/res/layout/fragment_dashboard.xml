@@ -11,101 +11,48 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- NUOVO: Selettore Data -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="16dp">
-            
-            <TextView
-                android:id="@+id/tvDate"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textColor="@color/white"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-                
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnChangeDate"
-                android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:text="📅 CAMBIA DATA"
-                android:textSize="12sp"
-                app:backgroundTint="@color/zodiac_gold"
-                android:textColor="@color/zodiac_navy" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="16dp">
+            <TextView android:id="@+id/tvDate" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="@color/white" android:textSize="16sp" android:textStyle="bold" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnChangeDate" android:layout_width="wrap_content" android:layout_height="40dp" android:text="📅 CAMBIA DATA" android:textSize="12sp" app:backgroundTint="@color/zodiac_gold" android:textColor="@color/zodiac_navy" />
         </LinearLayout>
 
-        <!-- Riepilogo Ore -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Ore Lavorate Oggi"
-            android:textColor="@color/zodiac_gold"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp" />
-        <TextView
-            android:id="@+id/tvTotalHours"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="0h 00m"
-            android:textColor="@color/white"
-            android:textSize="32sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Ore Lavorate Oggi" android:textColor="@color/zodiac_gold" android:textSize="16sp" android:textStyle="bold" android:layout_marginBottom="8dp" />
+        <TextView android:id="@+id/tvTotalHours" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0h 00m" android:textColor="@color/white" android:textSize="32sp" android:textStyle="bold" android:layout_marginBottom="16dp" />
 
         <!-- Barra Visiva con linea di riferimento -->
         <FrameLayout
+            android:id="@+id/progressBarContainer"
             android:layout_width="match_parent"
             android:layout_height="24dp"
             android:layout_marginBottom="8dp">
-            
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="horizontal">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="horizontal">
                 <View android:id="@+id/barOrdinary" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="@color/zodiac_gold" />
                 <View android:id="@+id/barExtra" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0" android:background="#C41E3A" />
             </LinearLayout>
-            
-            <!-- Linea di riferimento per ore attuali -->
-            <View
-                android:id="@+id/barCurrentTime"
-                android:layout_width="2dp"
-                android:layout_height="match_parent"
-                android:background="#FFFFFF"
-                android:layout_gravity="start" />
+            <View android:id="@+id/barCurrentTime" android:layout_width="3dp" android:layout_height="match_parent" android:background="#FFFFFF" android:layout_gravity="start" />
         </FrameLayout>
         
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="24dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="16dp">
             <TextView android:id="@+id/tvOrdinaryLabel" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Ordinarie: 0h 00m" android:textColor="@color/zodiac_gold" android:textSize="12sp" />
             <TextView android:id="@+id/tvExtraLabel" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Extra: 0h 00m" android:textColor="#C41E3A" android:textSize="12sp" android:gravity="end" />
         </LinearLayout>
 
-        <!-- NUOVO: Info ore viaggio -->
-        <TextView
-            android:id="@+id/tvTravelTime"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Ore viaggio: 0h 00m"
-            android:textColor="#4A90E2"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp" />
-
-        <!-- Tendine Affiancate -->
-        <LinearLayout
+        <!-- NUOVO: Switch Produzione -->
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchProduction"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="16dp">
+            android:text="MODALITÀ PRODUZIONE (Straordinari)"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:thumbTint="@color/zodiac_gold"
+            app:trackTint="#55FFFFFF"
+            android:layout_marginBottom="16dp" />
+
+        <TextView android:id="@+id/tvTravelTime" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Ore viaggio: 0h 00m" android:textColor="#4A90E2" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="16dp" />
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="16dp">
             <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginEnd="8dp">
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Attività" android:textColor="@color/white" android:textSize="12sp" android:layout_marginBottom="4dp" />
                 <Spinner android:id="@+id/spinnerActivity" android:layout_width="match_parent" android:layout_height="40dp" android:entries="@array/activity_types" android:background="@color/zodiac_navy" />
@@ -116,21 +63,14 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Pulsanti Affiancati -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="24dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="24dp">
             <com.google.android.material.button.MaterialButton android:id="@+id/btnCheckIn" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:text="ENTRATA" android:textSize="14sp" android:textStyle="bold" app:backgroundTint="#34C759" android:layout_marginEnd="8dp" />
             <com.google.android.material.button.MaterialButton android:id="@+id/btnCheckOut" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:text="USCITA" android:textSize="14sp" android:textStyle="bold" app:backgroundTint="#C41E3A" />
         </LinearLayout>
 
-        <!-- Note -->
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Note di giornata" android:textColor="@color/zodiac_gold" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="4dp" />
         <com.google.android.material.textfield.TextInputEditText android:id="@+id/etDailyNotes" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Scrivi qui..." android:textColor="@color/white" android:textColorHint="#80FFFFFF" android:background="#1AFFFFFF" android:padding="8dp" android:minLines="2" android:layout_marginBottom="16dp" />
 
-        <!-- Elenco Marcature -->
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Marcature" android:textColor="@color/zodiac_gold" android:textSize="16sp" android:textStyle="bold" android:layout_marginBottom="8dp" />
         <androidx.recyclerview.widget.RecyclerView android:id="@+id/recyclerViewEntries" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp" />
 
