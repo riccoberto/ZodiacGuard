@@ -13,7 +13,7 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-   import kotlinx.coroutines.Job
+import androidx.lifecycle.Job
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.datepicker.MaterialDatePicker
@@ -43,15 +43,10 @@ class DashboardFragment : Fragment() {
 
     private var dataJob: Job? = null
 
+    // MODIFICATO: Il timer ora aggiorna solo le stats, NON resetta la data
     private val updateRunnable = object : Runnable {
         override fun run() {
             if (isAdded) {
-                val today = WorkEntry.getCurrentDate()
-                if (today != selectedDate) {
-                    selectedDate = today
-                    updateDateDisplay()
-                    startObserving()
-                }
                 updateStatsUI()
                 binding.root.postDelayed(this, 60000)
             }
@@ -72,32 +67,12 @@ class DashboardFragment : Fragment() {
 
         updateDateDisplay()
 
-        // MODIFICATO: Quando cambia l'attività, aggiorna tutte le marcature della giornata
-        setupSpinner(binding.spinnerActivity, R.array.activity_types) { newActivity ->
-            if (newActivity != selectedActivity) {
-                selectedActivity = newActivity
-                viewLifecycleOwner.lifecycleScope.launch {
-                    workDataStore.updateAllEntriesActivity(selectedDate, newActivity)
-                    Toast.makeText(requireContext(), "Attività aggiornata per tutte le marcature", Toast.LENGTH_SHORT).show()
-                }
-            }
+        setupSpinner(binding.spinnerActivity, R.array.activity_types) { 
+            selectedActivity = it
             updateStatsUI()
         }
-
-        // MODIFICATO: Quando cambia la sede, aggiorna tutte le marcature della giornata
-        setupSpinner(binding.spinnerLocation, R.array.locations) { newLocation ->
-            if (newLocation != selectedLocation) {
-                selectedLocation = newLocation
-                viewLifecycleOwner.lifecycleScope.launch {
-                    workDataStore.updateAllEntriesLocation(selectedDate, newLocation)
-                    val travelText = when(newLocation) {
-                        "Vignola", "Castelfranco" -> "1h 30m di viaggio aggiunte"
-                        "Bologna" -> "2h 00m di viaggio aggiunte"
-                        else -> "Viaggio rimosso"
-                    }
-                    Toast.makeText(requireContext(), "Sede aggiornata. $travelText", Toast.LENGTH_LONG).show()
-                }
-            }
+        setupSpinner(binding.spinnerLocation, R.array.locations) { 
+            selectedLocation = it
             updateStatsUI()
         }
 
@@ -129,6 +104,14 @@ class DashboardFragment : Fragment() {
         binding.btnCheckIn.setOnClickListener { showTimePickerAndRegister("ENTRATA") }
         binding.btnCheckOut.setOnClickListener { showTimePickerAndRegister("USCITA") }
         binding.btnChangeDate.setOnClickListener { showDatePicker() }
+        
+        // NUOVO: Pulsante per tornare alla data odierna
+        binding.btnToday.setOnClickListener {
+            selectedDate = WorkEntry.getCurrentDate()
+            updateDateDisplay()
+            startObserving()
+            Toast.makeText(requireContext(), "Tornato alla data odierna", Toast.LENGTH_SHORT).show()
+        }
 
         binding.root.postDelayed(updateRunnable, 60000)
     }
