@@ -6,7 +6,10 @@
     android:padding="12dp"
     android:background="#1AFFFFFF"
     android:layout_marginBottom="6dp"
-    android:gravity="center_vertical">
+    android:gravity="center_vertical"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?android:attr/selectableItemBackground">
 
     <LinearLayout
         android:layout_width="0dp"
@@ -14,14 +17,31 @@
         android:layout_weight="1"
         android:orientation="vertical">
         
-        <TextView
-            android:id="@+id/tvDate"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="01 Ott"
-            android:textColor="@color/zodiac_gold"
-            android:textSize="14sp"
-            android:textStyle="bold" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            
+            <TextView
+                android:id="@+id/tvDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="01 Ott"
+                android:textColor="@color/zodiac_gold"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+            
+            <!-- NUOVO: Simbolo rimborsi km -->
+            <TextView
+                android:id="@+id/tvTravelBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🚗"
+                android:textSize="14sp"
+                android:layout_marginStart="6dp"
+                android:visibility="gone" />
+        </LinearLayout>
             
         <TextView
             android:id="@+id/tvActivityLocation"
@@ -32,21 +52,29 @@
             android:textSize="12sp" />
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/tvHours"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="8h 30m"
-        android:textColor="@color/white"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        android:layout_marginEnd="12dp" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+        
+        <TextView
+            android:id="@+id/tvHours"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="8h 30m"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginEnd="8dp" />
 
-    <TextView
-        android:id="@+id/tvBadge"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="🎭"
-        android:textSize="16sp"
-        android:visibility="gone" />
+        <!-- NUOVO: Simbolo teatrino -->
+        <TextView
+            android:id="@+id/tvTeatrinoBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🎭"
+            android:textSize="16sp"
+            android:visibility="gone" />
+    </LinearLayout>
 </LinearLayout>
