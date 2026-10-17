@@ -32,12 +32,20 @@
                 android:textSize="14sp"
                 android:textStyle="bold" />
             
-            <!-- NUOVO: Simbolo rimborsi km -->
             <TextView
                 android:id="@+id/tvTravelBadge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="🚗"
+                android:textSize="14sp"
+                android:layout_marginStart="6dp"
+                android:visibility="gone" />
+            
+            <TextView
+                android:id="@+id/tvProductionBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="⚙️"
                 android:textSize="14sp"
                 android:layout_marginStart="6dp"
                 android:visibility="gone" />
@@ -68,7 +76,6 @@
             android:textStyle="bold"
             android:layout_marginEnd="8dp" />
 
-        <!-- NUOVO: Simbolo teatrino -->
         <TextView
             android:id="@+id/tvTeatrinoBadge"
             android:layout_width="wrap_content"
