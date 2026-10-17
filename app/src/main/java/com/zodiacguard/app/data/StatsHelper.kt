@@ -13,8 +13,8 @@ object StatsHelper {
         val isOutOfTown: Boolean
     )
 
-    // Aggiunto parametro currentActivity
-    fun calculateDailyStats(entries: List<WorkEntry>, currentActivity: String): DailyStats {
+    // Aggiungiamo currentTime per il calcolo in tempo reale
+    fun calculateDailyStats(entries: List<WorkEntry>, currentActivity: String, currentTime: Long = System.currentTimeMillis()): DailyStats {
         if (entries.isEmpty()) {
             return DailyStats(0, 0, 0, false, emptySet(), false)
         }
@@ -23,19 +23,26 @@ object StatsHelper {
         
         var totalMinutes = 0
         var lastEntryTime: Long? = null
+        var isCurrentlyWorking = false
         
         for (entry in sorted) {
             if (entry.type == "ENTRATA") {
                 lastEntryTime = entry.timestamp
+                isCurrentlyWorking = true
             } else if (entry.type == "USCITA" && lastEntryTime != null) {
                 totalMinutes += ((entry.timestamp - lastEntryTime) / 60000).toInt()
                 lastEntryTime = null
+                isCurrentlyWorking = false
             }
         }
 
-        // ORA USIAMO L'ATTIVITÀ CORRENTE (QUELLA DELLO SPINNER)
-        val isProduzione = currentActivity == "Produzione"
+        // CALCOLO LIVE: Se stiamo lavorando, aggiungi i minuti da ultimo ingresso a ORA
+        if (isCurrentlyWorking && lastEntryTime != null) {
+            val liveMinutes = ((currentTime - lastEntryTime) / 60000).toInt()
+            totalMinutes += liveMinutes
+        }
 
+        val isProduzione = currentActivity == "Produzione"
         val ordinaryMinutes = minOf(totalMinutes, DAILY_TARGET_MINUTES)
         val extraMinutes = maxOf(0, totalMinutes - DAILY_TARGET_MINUTES)
 
