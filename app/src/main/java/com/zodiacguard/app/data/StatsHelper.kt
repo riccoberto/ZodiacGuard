@@ -4,7 +4,7 @@ package com.zodiacguard.app.data
 object StatsHelper {
     
     // 38 ore settimanali / 6 giorni = 6 ore e 20 minuti al giorno (380 minuti)
-    const val DAILY_TARGET_MINUTES = 380 
+    const val DAILY_TARGET_MINUTES = 385 
 
     // Classe che contiene i risultati del calcolo per un giorno
     data class DailyStats(
