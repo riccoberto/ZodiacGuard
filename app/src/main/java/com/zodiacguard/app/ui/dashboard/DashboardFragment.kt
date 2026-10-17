@@ -13,10 +13,9 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import kotlinx.coroutines.Job
+import androidx.lifecycle.Job
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import com.zodiacguard.app.R
@@ -25,6 +24,7 @@ import com.zodiacguard.app.data.WorkDataStore
 import com.zodiacguard.app.data.WorkEntry
 import com.zodiacguard.app.databinding.FragmentDashboardBinding
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -43,7 +43,6 @@ class DashboardFragment : Fragment() {
 
     private var dataJob: Job? = null
 
-    // MODIFICATO: Il timer ora aggiorna solo le stats, NON resetta la data
     private val updateRunnable = object : Runnable {
         override fun run() {
             if (isAdded) {
@@ -66,6 +65,7 @@ class DashboardFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         updateDateDisplay()
+
         setupSpinner(binding.spinnerActivity, R.array.activity_types) { newActivity ->
             if (newActivity != selectedActivity) {
                 selectedActivity = newActivity
@@ -91,7 +91,6 @@ class DashboardFragment : Fragment() {
             }
             updateStatsUI()
         }
-        
 
         binding.switchProduction.setOnCheckedChangeListener { _, isChecked ->
             isProductionMode = isChecked
@@ -120,9 +119,10 @@ class DashboardFragment : Fragment() {
 
         binding.btnCheckIn.setOnClickListener { showTimePickerAndRegister("ENTRATA") }
         binding.btnCheckOut.setOnClickListener { showTimePickerAndRegister("USCITA") }
-        binding.btnChangeDate.setOnClickListener { showDatePicker() }
         
-        // NUOVO: Pulsante per tornare alla data odierna
+        // NUOVO: Usa il calendario custom
+        binding.btnChangeDate.setOnClickListener { showCustomCalendar() }
+        
         binding.btnToday.setOnClickListener {
             selectedDate = WorkEntry.getCurrentDate()
             updateDateDisplay()
@@ -131,6 +131,24 @@ class DashboardFragment : Fragment() {
         }
 
         binding.root.postDelayed(updateRunnable, 60000)
+    }
+
+    // NUOVO: Mostra il calendario custom con colori
+    private fun showCustomCalendar() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val allEntries = workDataStore.entriesFlow.first()
+            val datesWithData = allEntries.map { it.date }.toSet()
+            
+            val dialog = CustomCalendarDialog(
+                selectedDate,
+                datesWithData
+            ) { newDate ->
+                selectedDate = newDate
+                updateDateDisplay()
+                startObserving()
+            }
+            dialog.show(parentFragmentManager, "custom_calendar")
+        }
     }
 
     private fun startObserving() {
@@ -163,21 +181,6 @@ class DashboardFragment : Fragment() {
         val sdf = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault())
         val date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(selectedDate)
         binding.tvDate.text = if (date != null) sdf.format(date) else selectedDate
-    }
-
-    private fun showDatePicker() {
-        val datePicker = MaterialDatePicker.Builder.datePicker()
-            .setTitleText("Seleziona data")
-            .setSelection(SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(selectedDate)?.time ?: System.currentTimeMillis())
-            .build()
-
-        datePicker.addOnPositiveButtonClickListener { selection ->
-            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            selectedDate = sdf.format(Date(selection))
-            updateDateDisplay()
-            startObserving()
-        }
-        datePicker.show(parentFragmentManager, "date_picker")
     }
 
     private fun setupSpinner(spinner: android.widget.Spinner, arrayResId: Int, onSelect: (String) -> Unit) {
