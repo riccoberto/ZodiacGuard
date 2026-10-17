@@ -13,6 +13,7 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Job
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.datepicker.MaterialDatePicker
@@ -40,9 +41,19 @@ class DashboardFragment : Fragment() {
     private var currentEntries: List<WorkEntry> = emptyList()
     private lateinit var entryAdapter: EntryAdapter
 
+    private var dataJob: Job? = null
+
     private val updateRunnable = object : Runnable {
         override fun run() {
             if (isAdded) {
+                // RESET NOTTURNO AUTOMATICO
+                val today = WorkEntry.getCurrentDate()
+                if (today != selectedDate) {
+                    selectedDate = today
+                    updateDateDisplay()
+                    startObserving()
+                }
+                
                 updateStatsUI()
                 binding.root.postDelayed(this, 60000)
             }
@@ -72,7 +83,6 @@ class DashboardFragment : Fragment() {
             updateStatsUI()
         }
 
-        // NUOVO: Listener per lo Switch Produzione
         binding.switchProduction.setOnCheckedChangeListener { _, isChecked ->
             isProductionMode = isChecked
             viewLifecycleOwner.lifecycleScope.launch {
@@ -88,29 +98,7 @@ class DashboardFragment : Fragment() {
         binding.recyclerViewEntries.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewEntries.adapter = entryAdapter
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            workDataStore.getEntriesForDate(selectedDate).collectLatest { entries ->
-                currentEntries = entries
-                entryAdapter.updateData(entries)
-                updateStatsUI()
-            }
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            workDataStore.getNoteForDate(selectedDate).collectLatest { note ->
-                if (binding.etDailyNotes.text.toString() != note) binding.etDailyNotes.setText(note)
-            }
-        }
-
-        // NUOVO: Carica lo stato di Produzione per la data selezionata
-        viewLifecycleOwner.lifecycleScope.launch {
-            workDataStore.getProductionModeForDate(selectedDate).collectLatest { isProd ->
-                if (binding.switchProduction.isChecked != isProd) {
-                    binding.switchProduction.isChecked = isProd
-                    isProductionMode = isProd
-                }
-            }
-        }
+        startObserving()
 
         binding.etDailyNotes.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -125,6 +113,32 @@ class DashboardFragment : Fragment() {
         binding.btnChangeDate.setOnClickListener { showDatePicker() }
 
         binding.root.postDelayed(updateRunnable, 60000)
+    }
+
+    private fun startObserving() {
+        dataJob?.cancel()
+        dataJob = viewLifecycleOwner.lifecycleScope.launch {
+            launch {
+                workDataStore.getEntriesForDate(selectedDate).collectLatest { entries ->
+                    currentEntries = entries
+                    entryAdapter.updateData(entries)
+                    updateStatsUI()
+                }
+            }
+            launch {
+                workDataStore.getNoteForDate(selectedDate).collectLatest { note ->
+                    if (binding.etDailyNotes.text.toString() != note) binding.etDailyNotes.setText(note)
+                }
+            }
+            launch {
+                workDataStore.getProductionModeForDate(selectedDate).collectLatest { isProd ->
+                    if (binding.switchProduction.isChecked != isProd) {
+                        binding.switchProduction.isChecked = isProd
+                        isProductionMode = isProd
+                    }
+                }
+            }
+        }
     }
 
     private fun updateDateDisplay() {
@@ -143,7 +157,7 @@ class DashboardFragment : Fragment() {
             val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
             selectedDate = sdf.format(Date(selection))
             updateDateDisplay()
-            // Il collectLatest si occuperà di ricaricare i dati per la nuova data
+            startObserving()
         }
         datePicker.show(parentFragmentManager, "date_picker")
     }
@@ -207,15 +221,15 @@ class DashboardFragment : Fragment() {
         
         binding.tvTotalHours.text = StatsHelper.minutesToText(stats.totalMinutes)
         binding.tvOrdinaryLabel.text = "Ordinarie: ${StatsHelper.minutesToText(stats.ordinaryMinutes)}"
-        binding.tvTravelTime.text = "Ore viaggio: ${StatsHelper.minutesToText(stats.travelMinutes)}"
+        binding.tvTravelTime.text = "Viaggio: ${StatsHelper.minutesToText(stats.travelMinutes)}"
         
         val extraColor: Int
         val extraLabel: String
         
-        if (stats.isOvertime) { // Se Produzione è attiva, è Rosso
+        if (stats.isOvertime) {
             extraColor = Color.parseColor("#C41E3A")
             extraLabel = "Straordinari: ${StatsHelper.minutesToText(stats.extraMinutes)}"
-        } else { // Altrimenti è Blu
+        } else {
             extraColor = Color.parseColor("#4A90E2")
             extraLabel = "Banca Ore: ${StatsHelper.minutesToText(stats.extraMinutes)}"
         }
@@ -225,13 +239,13 @@ class DashboardFragment : Fragment() {
         updateProgressBar(stats)
     }
 
-    // FIX: Linea in tempo reale corretta
+    // LOGICA BARRA AGGIORNATA CON SEGMENTO VIOLA
     private fun updateProgressBar(stats: StatsHelper.DailyStats) {
         binding.progressBarContainer.post {
             val containerWidth = binding.progressBarContainer.width
             if (containerWidth > 0) {
                 val targetMinutes = StatsHelper.DAILY_TARGET_MINUTES
-                val progress = (stats.currentMinutes.toFloat() / targetMinutes).coerceIn(0f, 1f)
+                val progress = (stats.totalMinutes.toFloat() / targetMinutes).coerceIn(0f, 1f)
                 val marginStart = (progress * containerWidth).toInt()
                 
                 val params = binding.barCurrentTime.layoutParams as FrameLayout.LayoutParams
@@ -242,13 +256,23 @@ class DashboardFragment : Fragment() {
             val total = stats.totalMinutes
             if (total == 0) {
                 binding.barOrdinary.layoutParams.width = 0
+                binding.barTravel.layoutParams.width = 0
                 binding.barExtra.layoutParams.width = 0
                 return@post
             }
             
+            // Calcolo per dividere la barra in 3 colori
+            // Il blocco "Ordinario" (Oro) contiene il lavoro puro. 
+            // Se il viaggio è incluso nelle ordinarie, lo sottraiamo per mostrare solo il lavoro puro in oro.
+            val pureWorkOrdinary = maxOf(0, stats.ordinaryMinutes - stats.travelMinutes)
+            
             val ordinaryParams = binding.barOrdinary.layoutParams as LinearLayout.LayoutParams
-            ordinaryParams.weight = stats.ordinaryMinutes.toFloat()
+            ordinaryParams.weight = pureWorkOrdinary.toFloat()
             binding.barOrdinary.layoutParams = ordinaryParams
+            
+            val travelParams = binding.barTravel.layoutParams as LinearLayout.LayoutParams
+            travelParams.weight = stats.travelMinutes.toFloat()
+            binding.barTravel.layoutParams = travelParams
             
             val extraParams = binding.barExtra.layoutParams as LinearLayout.LayoutParams
             extraParams.weight = stats.extraMinutes.toFloat()
@@ -262,6 +286,7 @@ class DashboardFragment : Fragment() {
     override fun onDestroyView() { 
         super.onDestroyView()
         binding.root.removeCallbacks(updateRunnable)
+        dataJob?.cancel()
         _binding = null 
     }
 }
