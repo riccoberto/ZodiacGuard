@@ -21,15 +21,13 @@ data class WorkEntry(
             val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
             return sdf.format(Date())
         }
-    }
-    
-    // Converte in stringa JSON semplice per il salvataggio
-    fun toJson(): String {
-        return "$timestamp|$type|$activity|$location|$date"
-    }
-    
-    // Crea un WorkEntry da una stringa
-    companion object {
+        
+        // Converte in stringa per il salvataggio
+        fun toJson(entry: WorkEntry): String {
+            return "${entry.timestamp}|${entry.type}|${entry.activity}|${entry.location}|${entry.date}"
+        }
+        
+        // Crea un WorkEntry da una stringa
         fun fromJson(json: String): WorkEntry? {
             return try {
                 val parts = json.split("|")
