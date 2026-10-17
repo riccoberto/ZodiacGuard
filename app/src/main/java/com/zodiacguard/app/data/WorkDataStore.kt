@@ -80,7 +80,12 @@ class WorkDataStore(private val context: Context) {
         current.split(",").contains(date)
     }
 
-    // NUOVO: Aggiorna la sede di tutte le marcature di una data
+    // NUOVO: Restituisce tutti i giorni di produzione
+    val productionDaysFlow: Flow<Set<String>> = context.dataStore.data.map { prefs ->
+        val current = prefs[KEY_PRODUCTION_DAYS] ?: ""
+        current.split(",").filter { it.isNotEmpty() }.toSet()
+    }
+
     suspend fun updateAllEntriesLocation(date: String, newLocation: String) {
         val currentList = entriesFlow.first()
         val updatedList = currentList.map { entry ->
@@ -91,7 +96,6 @@ class WorkDataStore(private val context: Context) {
         saveAllEntries(updatedList)
     }
 
-    // NUOVO: Aggiorna l'attività di tutte le marcature di una data
     suspend fun updateAllEntriesActivity(date: String, newActivity: String) {
         val currentList = entriesFlow.first()
         val updatedList = currentList.map { entry ->
