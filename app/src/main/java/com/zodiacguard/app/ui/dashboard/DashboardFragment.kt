@@ -9,13 +9,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
-import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.timepicker.MaterialTimePicker
+import com.google.android.material.timepicker.TimeFormat
 import com.zodiacguard.app.R
 import com.zodiacguard.app.data.StatsHelper
 import com.zodiacguard.app.data.WorkDataStore
@@ -51,11 +51,12 @@ class DashboardFragment : Fragment() {
 
         binding.tvDate.text = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault()).format(Date())
 
-        // Setup Spinners
-        setupSpinner(binding.spinnerActivity, R.array.activity_types) { selectedActivity = it }
+        setupSpinner(binding.spinnerActivity, R.array.activity_types) { 
+            selectedActivity = it
+            updateStatsUI() // Aggiorna i colori subito se cambi attività
+        }
         setupSpinner(binding.spinnerLocation, R.array.locations) { selectedLocation = it }
 
-        // Setup RecyclerView
         entryAdapter = EntryAdapter(emptyList(), 
             onEditClick = { entry -> showAddEditDialog(entry) },
             onDeleteClick = { entry -> deleteEntry(entry) }
@@ -63,7 +64,6 @@ class DashboardFragment : Fragment() {
         binding.recyclerViewEntries.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewEntries.adapter = entryAdapter
 
-        // Osserva dati
         viewLifecycleOwner.lifecycleScope.launch {
             workDataStore.getEntriesForDate(todayDate).collectLatest { entries ->
                 currentEntries = entries
@@ -86,11 +86,8 @@ class DashboardFragment : Fragment() {
             }
         })
 
-        // Pulsanti principali
         binding.btnCheckIn.setOnClickListener { registerEntry("ENTRATA") }
         binding.btnCheckOut.setOnClickListener { registerEntry("USCITA") }
-        
-        // NUOVO: Pulsante Aggiungi a mano
         binding.btnAddManual.setOnClickListener { showAddEditDialog(null) }
     }
 
@@ -121,66 +118,63 @@ class DashboardFragment : Fragment() {
         }
     }
 
-    // Finestra per aggiungere o modificare a mano
+    // NUOVA FUNZIONE CON L'OROLOGIO A RUOTA
     private fun showAddEditDialog(existingEntry: WorkEntry?) {
-        val builder = AlertDialog.Builder(requireContext())
-        builder.setTitle(if (existingEntry == null) "Aggiungi Marcatura" else "Modifica Marcatura")
+        val isEdit = existingEntry != null
+        
+        // Prepara l'orologio
+        val calendar = Calendar.getInstance()
+        if (isEdit) calendar.timeInMillis = existingEntry!!.timestamp
+        
+        val picker = MaterialTimePicker.Builder()
+            .setTimeFormat(TimeFormat.CLOCK_24H)
+            .setHour(calendar.get(Calendar.HOUR_OF_DAY))
+            .setMinute(calendar.get(Calendar.MINUTE))
+            .setTitleText(if (isEdit) "Modifica Orario" else "Nuovo Orario")
+            .build()
 
-        val input = EditText(requireContext())
-        input.hint = "Orario (es. 09:00)"
-        if (existingEntry != null) {
-            input.setText(SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(existingEntry.timestamp)))
-        }
-        builder.setView(input)
+        picker.addOnPositiveButtonClickListener {
+            val hour = picker.hour
+            val minute = picker.minute
+            
+            val newCal = Calendar.getInstance()
+            newCal.set(Calendar.HOUR_OF_DAY, hour)
+            newCal.set(Calendar.MINUTE, minute)
+            newCal.set(Calendar.SECOND, 0)
+            newCal.set(Calendar.MILLISECOND, 0)
 
-        val types = arrayOf("ENTRATA", "USCITA")
-        var selectedType = existingEntry?.type ?: "ENTRATA"
-        builder.setSingleChoiceItems(types, if (selectedType == "ENTRATA") 0 else 1) { _, which -> selectedType = types[which] }
+            val newTimestamp = newCal.timeInMillis
+            val type = existingEntry?.type ?: "ENTRATA" // Semplificato per ora
+            val activity = existingEntry?.activity ?: selectedActivity
+            val location = existingEntry?.location ?: selectedLocation
+            
+            val newEntry = WorkEntry(newTimestamp, type, activity, location, todayDate)
 
-        builder.setPositiveButton("SALVA") { dialog, _ ->
-            val timeStr = input.text.toString()
-            try {
-                val sdfIn = SimpleDateFormat("HH:mm", Locale.getDefault())
-                val date = sdfIn.parse(timeStr)
-                val calendar = Calendar.getInstance()
-                if (date != null) {
-                    calendar.time = date
-                    val todayCal = Calendar.getInstance()
-                    calendar.set(Calendar.YEAR, todayCal.get(Calendar.YEAR))
-                    calendar.set(Calendar.MONTH, todayCal.get(Calendar.MONTH))
-                    calendar.set(Calendar.DAY_OF_MONTH, todayCal.get(Calendar.DAY_OF_MONTH))
-
-                    val newTimestamp = calendar.timeInMillis
-                    val activity = existingEntry?.activity ?: selectedActivity
-                    val location = existingEntry?.location ?: selectedLocation
-                    val newEntry = WorkEntry(newTimestamp, selectedType, activity, location, todayDate)
-
-                    viewLifecycleOwner.lifecycleScope.launch {
-                        if (existingEntry != null) workDataStore.deleteEntry(existingEntry)
-                        workDataStore.addEntry(newEntry)
-                    }
-                }
-            } catch (e: Exception) {
-                Toast.makeText(requireContext(), "Formato ora errato (usa HH:mm)", Toast.LENGTH_SHORT).show()
+            viewLifecycleOwner.lifecycleScope.launch {
+                if (isEdit) workDataStore.deleteEntry(existingEntry!!)
+                workDataStore.addEntry(newEntry)
             }
-            dialog.dismiss()
         }
-        builder.setNegativeButton("ANNULLA") { dialog, _ -> dialog.cancel() }
-        builder.show()
+        
+        // Se è una modifica, mostriamo anche un tasto per cambiare tipo (Entrata/Uscita) in un secondo momento, per ora teniamo semplice
+        picker.show(parentFragmentManager, "time_picker")
     }
 
     private fun updateStatsUI() {
-        val stats = StatsHelper.calculateDailyStats(currentEntries)
+        // PASSIAMO selectedActivity AL CALCOLATORE
+        val stats = StatsHelper.calculateDailyStats(currentEntries, selectedActivity)
+        
         binding.tvTotalHours.text = StatsHelper.minutesToText(stats.totalMinutes)
         binding.tvOrdinaryLabel.text = "Ordinarie: ${StatsHelper.minutesToText(stats.ordinaryMinutes)}"
         
         val extraColor: Int
         val extraLabel: String
+        
         if (stats.isOvertime) {
-            extraColor = Color.parseColor("#C41E3A")
+            extraColor = Color.parseColor("#C41E3A") // Rosso
             extraLabel = "Straordinari: ${StatsHelper.minutesToText(stats.extraMinutes)}"
         } else {
-            extraColor = Color.parseColor("#4A90E2")
+            extraColor = Color.parseColor("#4A90E2") // Blu
             extraLabel = "Banca Ore: ${StatsHelper.minutesToText(stats.extraMinutes)}"
         }
         
