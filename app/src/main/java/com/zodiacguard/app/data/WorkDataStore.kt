@@ -22,7 +22,7 @@ class WorkDataStore(private val context: Context) {
     suspend fun addEntry(entry: WorkEntry) {
         context.dataStore.edit { prefs ->
             val currentEntries = prefs[KEY_ENTRIES] ?: ""
-            val newEntry = entry.toJson()
+            val newEntry = WorkEntry.toJson(entry)
             prefs[KEY_ENTRIES] = if (currentEntries.isEmpty()) newEntry else "$currentEntries\n$newEntry"
         }
     }
@@ -31,11 +31,8 @@ class WorkDataStore(private val context: Context) {
     suspend fun saveNote(date: String, note: String) {
         context.dataStore.edit { prefs ->
             val currentNotes = prefs[KEY_NOTES] ?: ""
-            // Formato: "date:note|date:note"
             val entries = currentNotes.split("|").filter { it.isNotEmpty() }.toMutableList()
-            // Rimuovi vecchia nota per questa data se esiste
             entries.removeAll { it.startsWith("$date:") }
-            // Aggiungi nuova nota
             if (note.isNotEmpty()) entries.add("$date:$note")
             prefs[KEY_NOTES] = entries.joinToString("|")
         }
