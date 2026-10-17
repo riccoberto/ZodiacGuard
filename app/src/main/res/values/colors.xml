@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Colori principali Zodiac Guard -->
-    <color name="zodiac_navy">#0A1628</color>
+    <color name="zodiac_navy">#2C3E50</color>
     <color name="zodiac_gold">#FFD700</color>
     
     <!-- Colori standard necessari -->
