@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
@@ -59,6 +60,7 @@ class MonthlyFragment : Fragment() {
         }
 
         binding.btnShareReport.setOnClickListener { shareReport() }
+        binding.btnBackup.setOnClickListener { createBackup() }
 
         loadStats()
     }
@@ -85,13 +87,13 @@ class MonthlyFragment : Fragment() {
                 allEntries, productionDates, currentYear, currentMonth, weeklyHours, workDays
             )
 
-            displayStats(stats)
+            displayStats(stats, weeklyHours, workDays)
         }
     }
 
-    private fun displayStats(stats: MonthlyStatsHelper.MonthlyStats) {
+    private fun displayStats(stats: MonthlyStatsHelper.MonthlyStats, weeklyHours: Int, workDays: Int) {
         binding.tvTotalWorked.text = "Totale lavorate: ${MonthlyStatsHelper.minutesToText(stats.totalWorkedMinutes)}"
-        binding.tvContractExpected.text = "Contratto attese (${stats.workingDaysInMonth} gg lavorativi): ${MonthlyStatsHelper.minutesToText(stats.totalContractMinutes)}"
+        binding.tvContractExpected.text = "Contratto attese (${stats.workingDaysInMonth} gg): ${MonthlyStatsHelper.minutesToText(stats.totalContractMinutes)}"
         binding.tvTotalOrdinary.text = "Ordinarie: ${MonthlyStatsHelper.minutesToText(stats.totalOrdinaryMinutes)}"
         binding.tvTotalOvertime.text = "Straordinari: ${MonthlyStatsHelper.minutesToText(stats.totalOvertimeMinutes)}"
         binding.tvTotalBank.text = "Banca ore: ${MonthlyStatsHelper.minutesToText(stats.totalBankMinutes)}"
@@ -104,17 +106,24 @@ class MonthlyFragment : Fragment() {
         }
         binding.tvBalance.text = balanceText
 
-        binding.pieChart.setData(listOf(
-            Pair(stats.totalOrdinaryMinutes.toFloat(), Color.parseColor("#FFD700")),
-            Pair(stats.totalOvertimeMinutes.toFloat(), Color.parseColor("#C41E3A")),
-            Pair(stats.totalBankMinutes.toFloat(), Color.parseColor("#4A90E2")),
-            Pair(stats.totalTravelMinutes.toFloat(), Color.parseColor("#9C27B0"))
-        ))
+        // NUOVO: Grafico a torta con ore attese come sfondo
+        val dailyContractMinutes = (weeklyHours * 60) / workDays
+        val expectedMinutes = dailyContractMinutes * stats.workingDaysInMonth
+        
+        binding.pieChart.setData(
+            listOf(
+                Pair(stats.totalOrdinaryMinutes.toFloat(), Color.parseColor("#FFD700")),
+                Pair(stats.totalOvertimeMinutes.toFloat(), Color.parseColor("#C41E3A")),
+                Pair(stats.totalBankMinutes.toFloat(), Color.parseColor("#4A90E2")),
+                Pair(stats.totalTravelMinutes.toFloat(), Color.parseColor("#9C27B0"))
+            ),
+            expectedMinutes.toFloat()
+        )
 
         binding.tvLegendOrdinary.text = "🟡 Ordinarie: ${MonthlyStatsHelper.minutesToText(stats.totalOrdinaryMinutes)}"
         binding.tvLegendOvertime.text = " Straordinari: ${MonthlyStatsHelper.minutesToText(stats.totalOvertimeMinutes)}"
         binding.tvLegendBank.text = "🔵 Banca Ore: ${MonthlyStatsHelper.minutesToText(stats.totalBankMinutes)}"
-        binding.tvLegendTravel.text = "🟣 Viaggio: ${MonthlyStatsHelper.minutesToText(stats.totalTravelMinutes)}"
+        binding.tvLegendTravel.text = " Viaggio: ${MonthlyStatsHelper.minutesToText(stats.totalTravelMinutes)}"
 
         if (stats.teatriniDays.isEmpty()) {
             binding.tvTeatriniDays.text = "Nessun teatrino"
@@ -139,7 +148,6 @@ class MonthlyFragment : Fragment() {
 
         // Agenda cliccabile
         val agendaAdapter = DailyAgendaAdapter(stats.dailyStats) { day ->
-            // Naviga al dettaglio del giorno
             val bundle = Bundle()
             bundle.putString("date", day.date)
             findNavController().navigate(R.id.dayDetailFragment, bundle)
@@ -148,6 +156,7 @@ class MonthlyFragment : Fragment() {
         binding.recyclerViewAgenda.adapter = agendaAdapter
     }
 
+    // NUOVO: Condividi report dettagliato
     private fun shareReport() {
         viewLifecycleOwner.lifecycleScope.launch {
             val allEntries = workDataStore.entriesFlow.first()
@@ -163,7 +172,7 @@ class MonthlyFragment : Fragment() {
                 allEntries, productionDates, currentYear, currentMonth, weeklyHours, workDays
             )
 
-            val report = buildReport(stats)
+            val report = MonthlyStatsHelper.generateDetailedReport(stats, binding.tvMonthYear.text.toString())
             
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
@@ -175,42 +184,35 @@ class MonthlyFragment : Fragment() {
         }
     }
 
-    private fun buildReport(stats: MonthlyStatsHelper.MonthlyStats): String {
-        val sb = StringBuilder()
-        sb.appendLine("📊 RIEPILOGO MENSILE - ${binding.tvMonthYear.text}")
-        sb.appendLine("=" .repeat(40))
-        sb.appendLine()
-        sb.appendLine("⏰ ORE LAVORATE")
-        sb.appendLine("Totale: ${MonthlyStatsHelper.minutesToText(stats.totalWorkedMinutes)}")
-        sb.appendLine("Contratto attese (${stats.workingDaysInMonth} gg): ${MonthlyStatsHelper.minutesToText(stats.totalContractMinutes)}")
-        sb.appendLine("Ordinarie: ${MonthlyStatsHelper.minutesToText(stats.totalOrdinaryMinutes)}")
-        sb.appendLine("Straordinari: ${MonthlyStatsHelper.minutesToText(stats.totalOvertimeMinutes)}")
-        sb.appendLine("Banca ore: ${MonthlyStatsHelper.minutesToText(stats.totalBankMinutes)}")
-        sb.appendLine("Viaggio: ${MonthlyStatsHelper.minutesToText(stats.totalTravelMinutes)}")
-        sb.appendLine()
-        sb.appendLine(" SALDO: ${if (stats.balanceMinutes >= 0) "+" else ""}${MonthlyStatsHelper.minutesToText(stats.balanceMinutes)}")
-        sb.appendLine()
-        sb.appendLine("🎭 GIORNI CON TEATRINI")
-        if (stats.teatriniDays.isEmpty()) {
-            sb.appendLine("Nessun teatrino")
-        } else {
-            stats.teatriniDays.forEach { sb.appendLine("- ${MonthlyStatsHelper.formatDate(it)}") }
+    // NUOVO: Crea backup JSON
+    private fun createBackup() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val allEntries = workDataStore.entriesFlow.first()
+            val weeklyHours = contractDataStore.weeklyHoursFlow.first()
+            val workDays = contractDataStore.workDaysFlow.first()
+            
+            val productionDates = allEntries
+                .filter { it.activity == "Produzione" }
+                .map { it.date }
+                .toSet()
+            
+            // Per le note, dovremmo leggerle dal DataStore
+            // Per ora usiamo un placeholder
+            val notes = emptyMap<String, String>()
+            
+            val backup = MonthlyStatsHelper.exportAllData(
+                allEntries, productionDates, notes, weeklyHours, workDays
+            )
+            
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_SUBJECT, "Backup ZodiacGuard ${SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())}")
+                putExtra(Intent.EXTRA_TEXT, backup)
+            }
+            
+            startActivity(Intent.createChooser(intent, "Salva Backup"))
+            Toast.makeText(requireContext(), "Backup generato!", Toast.LENGTH_SHORT).show()
         }
-        sb.appendLine()
-        sb.appendLine("🎭 TEATRINI PER TIPO")
-        if (stats.teatriniCount.isEmpty()) {
-            sb.appendLine("Nessun teatrino")
-        } else {
-            stats.teatriniCount.forEach { (type, count) -> sb.appendLine("$type: $count") }
-        }
-        sb.appendLine()
-        sb.appendLine("📍 PRESENZE PER SEDE")
-        stats.locationsCount.forEach { (location, days) -> sb.appendLine("$location: $days giorni") }
-        sb.appendLine()
-        sb.appendLine("🚗 Giornate fuori sede: ${stats.outOfTownDays}")
-        sb.appendLine("️ Buoni pasto: ${stats.mealTickets}")
-        
-        return sb.toString()
     }
 
     override fun onDestroyView() {
