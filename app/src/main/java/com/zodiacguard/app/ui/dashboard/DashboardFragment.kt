@@ -35,7 +35,8 @@ class DashboardFragment : Fragment() {
     private lateinit var workDataStore: WorkDataStore
     private var selectedActivity: String = "Servizio"
     private var selectedLocation: String = "Modena"
-    private var selectedDate: String = "" // Data selezionata
+    private var selectedDate: String = ""
+    private var isProductionMode: Boolean = false
     private var currentEntries: List<WorkEntry> = emptyList()
     private lateinit var entryAdapter: EntryAdapter
 
@@ -71,6 +72,15 @@ class DashboardFragment : Fragment() {
             updateStatsUI()
         }
 
+        // NUOVO: Listener per lo Switch Produzione
+        binding.switchProduction.setOnCheckedChangeListener { _, isChecked ->
+            isProductionMode = isChecked
+            viewLifecycleOwner.lifecycleScope.launch {
+                workDataStore.saveProductionMode(selectedDate, isChecked)
+            }
+            updateStatsUI()
+        }
+
         entryAdapter = EntryAdapter(emptyList(), 
             onEditClick = { entry -> showAddEditDialog(entry) },
             onDeleteClick = { entry -> deleteEntry(entry) }
@@ -78,7 +88,6 @@ class DashboardFragment : Fragment() {
         binding.recyclerViewEntries.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewEntries.adapter = entryAdapter
 
-        // Osserva le marcature della data selezionata
         viewLifecycleOwner.lifecycleScope.launch {
             workDataStore.getEntriesForDate(selectedDate).collectLatest { entries ->
                 currentEntries = entries
@@ -93,6 +102,16 @@ class DashboardFragment : Fragment() {
             }
         }
 
+        // NUOVO: Carica lo stato di Produzione per la data selezionata
+        viewLifecycleOwner.lifecycleScope.launch {
+            workDataStore.getProductionModeForDate(selectedDate).collectLatest { isProd ->
+                if (binding.switchProduction.isChecked != isProd) {
+                    binding.switchProduction.isChecked = isProd
+                    isProductionMode = isProd
+                }
+            }
+        }
+
         binding.etDailyNotes.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
@@ -103,8 +122,6 @@ class DashboardFragment : Fragment() {
 
         binding.btnCheckIn.setOnClickListener { showTimePickerAndRegister("ENTRATA") }
         binding.btnCheckOut.setOnClickListener { showTimePickerAndRegister("USCITA") }
-        
-        // NUOVO: Selettore data
         binding.btnChangeDate.setOnClickListener { showDatePicker() }
 
         binding.root.postDelayed(updateRunnable, 60000)
@@ -116,31 +133,18 @@ class DashboardFragment : Fragment() {
         binding.tvDate.text = if (date != null) sdf.format(date) else selectedDate
     }
 
-    // NUOVO: Mostra il selettore di data
     private fun showDatePicker() {
         val datePicker = MaterialDatePicker.Builder.datePicker()
             .setTitleText("Seleziona data")
-            .setSelection(
-                SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                    .parse(selectedDate)?.time ?: System.currentTimeMillis()
-            )
+            .setSelection(SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(selectedDate)?.time ?: System.currentTimeMillis())
             .build()
 
         datePicker.addOnPositiveButtonClickListener { selection ->
             val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
             selectedDate = sdf.format(Date(selection))
             updateDateDisplay()
-            
-            // Ricarica le marcature per la nuova data
-            viewLifecycleOwner.lifecycleScope.launch {
-                workDataStore.getEntriesForDate(selectedDate).collectLatest { entries ->
-                    currentEntries = entries
-                    entryAdapter.updateData(entries)
-                    updateStatsUI()
-                }
-            }
+            // Il collectLatest si occuperà di ricaricare i dati per la nuova data
         }
-
         datePicker.show(parentFragmentManager, "date_picker")
     }
 
@@ -149,29 +153,20 @@ class DashboardFragment : Fragment() {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinner.adapter = adapter
         spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                onSelect(parent.getItemAtPosition(position).toString())
-            }
+            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) { onSelect(parent.getItemAtPosition(position).toString()) }
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
     }
 
     private fun showTimePickerAndRegister(type: String) {
         val calendar = Calendar.getInstance()
-        val picker = MaterialTimePicker.Builder()
-            .setTimeFormat(TimeFormat.CLOCK_24H)
-            .setHour(calendar.get(Calendar.HOUR_OF_DAY))
-            .setMinute(calendar.get(Calendar.MINUTE))
-            .setTitleText("Orario $type")
-            .build()
-
+        val picker = MaterialTimePicker.Builder().setTimeFormat(TimeFormat.CLOCK_24H).setHour(calendar.get(Calendar.HOUR_OF_DAY)).setMinute(calendar.get(Calendar.MINUTE)).setTitleText("Orario $type").build()
         picker.addOnPositiveButtonClickListener {
             val newCal = Calendar.getInstance()
             newCal.set(Calendar.HOUR_OF_DAY, picker.hour)
             newCal.set(Calendar.MINUTE, picker.minute)
             newCal.set(Calendar.SECOND, 0)
             newCal.set(Calendar.MILLISECOND, 0)
-
             val entry = WorkEntry(newCal.timeInMillis, type, selectedActivity, selectedLocation, selectedDate)
             viewLifecycleOwner.lifecycleScope.launch {
                 workDataStore.addEntry(entry)
@@ -191,23 +186,14 @@ class DashboardFragment : Fragment() {
     private fun showAddEditDialog(existingEntry: WorkEntry?) {
         val calendar = Calendar.getInstance()
         calendar.timeInMillis = existingEntry!!.timestamp
-        
-        val picker = MaterialTimePicker.Builder()
-            .setTimeFormat(TimeFormat.CLOCK_24H)
-            .setHour(calendar.get(Calendar.HOUR_OF_DAY))
-            .setMinute(calendar.get(Calendar.MINUTE))
-            .setTitleText("Modifica Orario")
-            .build()
-
+        val picker = MaterialTimePicker.Builder().setTimeFormat(TimeFormat.CLOCK_24H).setHour(calendar.get(Calendar.HOUR_OF_DAY)).setMinute(calendar.get(Calendar.MINUTE)).setTitleText("Modifica Orario").build()
         picker.addOnPositiveButtonClickListener {
             val newCal = Calendar.getInstance()
             newCal.set(Calendar.HOUR_OF_DAY, picker.hour)
             newCal.set(Calendar.MINUTE, picker.minute)
             newCal.set(Calendar.SECOND, 0)
             newCal.set(Calendar.MILLISECOND, 0)
-
             val newEntry = WorkEntry(newCal.timeInMillis, existingEntry.type, existingEntry.activity, existingEntry.location, selectedDate)
-
             viewLifecycleOwner.lifecycleScope.launch {
                 workDataStore.deleteEntry(existingEntry)
                 workDataStore.addEntry(newEntry)
@@ -217,7 +203,7 @@ class DashboardFragment : Fragment() {
     }
 
     private fun updateStatsUI() {
-        val stats = StatsHelper.calculateDailyStats(currentEntries, selectedActivity, System.currentTimeMillis())
+        val stats = StatsHelper.calculateDailyStats(currentEntries, isProductionMode, System.currentTimeMillis())
         
         binding.tvTotalHours.text = StatsHelper.minutesToText(stats.totalMinutes)
         binding.tvOrdinaryLabel.text = "Ordinarie: ${StatsHelper.minutesToText(stats.ordinaryMinutes)}"
@@ -226,10 +212,10 @@ class DashboardFragment : Fragment() {
         val extraColor: Int
         val extraLabel: String
         
-        if (stats.isOvertime) {
+        if (stats.isOvertime) { // Se Produzione è attiva, è Rosso
             extraColor = Color.parseColor("#C41E3A")
             extraLabel = "Straordinari: ${StatsHelper.minutesToText(stats.extraMinutes)}"
-        } else {
+        } else { // Altrimenti è Blu
             extraColor = Color.parseColor("#4A90E2")
             extraLabel = "Banca Ore: ${StatsHelper.minutesToText(stats.extraMinutes)}"
         }
@@ -239,35 +225,38 @@ class DashboardFragment : Fragment() {
         updateProgressBar(stats)
     }
 
-    // NUOVO: Barra con linea di riferimento
+    // FIX: Linea in tempo reale corretta
     private fun updateProgressBar(stats: StatsHelper.DailyStats) {
-        val total = stats.totalMinutes
-        if (total == 0) {
-            binding.barOrdinary.layoutParams.width = 0
-            binding.barExtra.layoutParams.width = 0
-            binding.barCurrentTime.layoutParams.width = 0
-            return
+        binding.progressBarContainer.post {
+            val containerWidth = binding.progressBarContainer.width
+            if (containerWidth > 0) {
+                val targetMinutes = StatsHelper.DAILY_TARGET_MINUTES
+                val progress = (stats.currentMinutes.toFloat() / targetMinutes).coerceIn(0f, 1f)
+                val marginStart = (progress * containerWidth).toInt()
+                
+                val params = binding.barCurrentTime.layoutParams as FrameLayout.LayoutParams
+                params.marginStart = marginStart
+                binding.barCurrentTime.layoutParams = params
+            }
+            
+            val total = stats.totalMinutes
+            if (total == 0) {
+                binding.barOrdinary.layoutParams.width = 0
+                binding.barExtra.layoutParams.width = 0
+                return@post
+            }
+            
+            val ordinaryParams = binding.barOrdinary.layoutParams as LinearLayout.LayoutParams
+            ordinaryParams.weight = stats.ordinaryMinutes.toFloat()
+            binding.barOrdinary.layoutParams = ordinaryParams
+            
+            val extraParams = binding.barExtra.layoutParams as LinearLayout.LayoutParams
+            extraParams.weight = stats.extraMinutes.toFloat()
+            binding.barExtra.layoutParams = extraParams
+            
+            val extraColor = if (stats.isOvertime) Color.parseColor("#C41E3A") else Color.parseColor("#4A90E2")
+            binding.barExtra.setBackgroundColor(extraColor)
         }
-        
-        // Calcola posizione della linea (minuti attuali / target)
-        val targetMinutes = StatsHelper.DAILY_TARGET_MINUTES
-        val currentProgress = (stats.currentMinutes.toFloat() / targetMinutes).coerceIn(0f, 1f)
-        
-        val ordinaryParams = binding.barOrdinary.layoutParams as LinearLayout.LayoutParams
-        ordinaryParams.weight = stats.ordinaryMinutes.toFloat()
-        binding.barOrdinary.layoutParams = ordinaryParams
-        
-        val extraParams = binding.barExtra.layoutParams as LinearLayout.LayoutParams
-        extraParams.weight = stats.extraMinutes.toFloat()
-        binding.barExtra.layoutParams = extraParams
-        
-        val extraColor = if (stats.isOvertime) Color.parseColor("#C41E3A") else Color.parseColor("#4A90E2")
-        binding.barExtra.setBackgroundColor(extraColor)
-        
-        // Posiziona la linea bianca
-        val currentTimeParams = binding.barCurrentTime.layoutParams as FrameLayout.LayoutParams
-        currentTimeParams.marginStart = (currentProgress * resources.displayMetrics.widthPixels * 0.9).toInt()
-        binding.barCurrentTime.layoutParams = currentTimeParams
     }
 
     override fun onDestroyView() { 
