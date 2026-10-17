@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -21,6 +23,7 @@ class DashboardFragment : Fragment() {
     private var _binding: FragmentDashboardBinding? = null
     private val binding get() = _binding!!
     private lateinit var workDataStore: WorkDataStore
+    private var selectedCategory: String = "Ordinario"
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -35,30 +38,26 @@ class DashboardFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 1. Ascolta i cambiamenti dell'Entrata
-        viewLifecycleOwner.lifecycleScope.launch {
-            workDataStore.checkInFlow.collectLatest { checkIn ->
-                if (checkIn != null) {
-                    binding.btnCheckIn.isEnabled = false
-                    binding.btnCheckIn.text = "ENTRATO ALLE $checkIn"
-                    binding.btnCheckOut.isEnabled = true
-                } else {
-                    binding.btnCheckIn.isEnabled = true
-                    binding.btnCheckIn.text = "ENTRATA"
-                    binding.btnCheckOut.isEnabled = false
-                }
+        // 1. Configura lo Spinner delle categorie
+        val adapter = ArrayAdapter.createFromResource(
+            requireContext(),
+            R.array.work_categories,
+            android.R.layout.simple_spinner_item
+        )
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding.spinnerCategory.adapter = adapter
+
+        binding.spinnerCategory.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+                selectedCategory = parent.getItemAtPosition(position).toString()
             }
+            override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
-        // 2. Ascolta i cambiamenti dell'Uscita
+        // 2. Ascolta e mostra il registro giornaliero
         viewLifecycleOwner.lifecycleScope.launch {
-            workDataStore.checkOutFlow.collectLatest { checkOut ->
-                if (checkOut != null) {
-                    binding.btnCheckOut.isEnabled = false
-                    binding.btnCheckOut.text = "USCITO ALLE $checkOut"
-                } else {
-                    binding.btnCheckOut.isEnabled = binding.btnCheckIn.isEnabled.not()
-                }
+            workDataStore.dailyLogFlow.collectLatest { log ->
+                binding.tvDailyLog.text = if (log.isEmpty()) "Nessun registro per oggi." else log
             }
         }
 
@@ -66,8 +65,8 @@ class DashboardFragment : Fragment() {
         binding.btnCheckIn.setOnClickListener {
             viewLifecycleOwner.lifecycleScope.launch {
                 val currentTime = getCurrentTime()
-                workDataStore.saveCheckIn(currentTime)
-                Toast.makeText(requireContext(), "Entrata registrata alle $currentTime", Toast.LENGTH_SHORT).show()
+                workDataStore.addLogEntry(currentTime, "ENTRATA", selectedCategory)
+                Toast.makeText(requireContext(), "Entrata registrata: $selectedCategory", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -75,12 +74,12 @@ class DashboardFragment : Fragment() {
         binding.btnCheckOut.setOnClickListener {
             viewLifecycleOwner.lifecycleScope.launch {
                 val currentTime = getCurrentTime()
-                workDataStore.saveCheckOut(currentTime)
-                Toast.makeText(requireContext(), "Uscita registrata alle $currentTime", Toast.LENGTH_SHORT).show()
+                workDataStore.addLogEntry(currentTime, "USCITA", selectedCategory)
+                Toast.makeText(requireContext(), "Uscita registrata: $selectedCategory", Toast.LENGTH_SHORT).show()
             }
         }
 
-        // 5. NUOVO: Logica Pulsante IMPOSTAZIONI
+        // 5. Logica Pulsante IMPOSTAZIONI
         binding.btnSettings.setOnClickListener {
             findNavController().navigate(R.id.settingsFragment)
         }
