@@ -13,7 +13,7 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-   import kotlinx.coroutines.Job
+import androidx.lifecycle.Job
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.datepicker.MaterialDatePicker
@@ -46,14 +46,12 @@ class DashboardFragment : Fragment() {
     private val updateRunnable = object : Runnable {
         override fun run() {
             if (isAdded) {
-                // RESET NOTTURNO AUTOMATICO
                 val today = WorkEntry.getCurrentDate()
                 if (today != selectedDate) {
                     selectedDate = today
                     updateDateDisplay()
                     startObserving()
                 }
-                
                 updateStatsUI()
                 binding.root.postDelayed(this, 60000)
             }
@@ -74,12 +72,32 @@ class DashboardFragment : Fragment() {
 
         updateDateDisplay()
 
-        setupSpinner(binding.spinnerActivity, R.array.activity_types) { 
-            selectedActivity = it
+        // MODIFICATO: Quando cambia l'attività, aggiorna tutte le marcature della giornata
+        setupSpinner(binding.spinnerActivity, R.array.activity_types) { newActivity ->
+            if (newActivity != selectedActivity) {
+                selectedActivity = newActivity
+                viewLifecycleOwner.lifecycleScope.launch {
+                    workDataStore.updateAllEntriesActivity(selectedDate, newActivity)
+                    Toast.makeText(requireContext(), "Attività aggiornata per tutte le marcature", Toast.LENGTH_SHORT).show()
+                }
+            }
             updateStatsUI()
         }
-        setupSpinner(binding.spinnerLocation, R.array.locations) { 
-            selectedLocation = it
+
+        // MODIFICATO: Quando cambia la sede, aggiorna tutte le marcature della giornata
+        setupSpinner(binding.spinnerLocation, R.array.locations) { newLocation ->
+            if (newLocation != selectedLocation) {
+                selectedLocation = newLocation
+                viewLifecycleOwner.lifecycleScope.launch {
+                    workDataStore.updateAllEntriesLocation(selectedDate, newLocation)
+                    val travelText = when(newLocation) {
+                        "Vignola", "Castelfranco" -> "1h 30m di viaggio aggiunte"
+                        "Bologna" -> "2h 00m di viaggio aggiunte"
+                        else -> "Viaggio rimosso"
+                    }
+                    Toast.makeText(requireContext(), "Sede aggiornata. $travelText", Toast.LENGTH_LONG).show()
+                }
+            }
             updateStatsUI()
         }
 
@@ -239,7 +257,6 @@ class DashboardFragment : Fragment() {
         updateProgressBar(stats)
     }
 
-    // LOGICA BARRA AGGIORNATA CON SEGMENTO VIOLA
     private fun updateProgressBar(stats: StatsHelper.DailyStats) {
         binding.progressBarContainer.post {
             val containerWidth = binding.progressBarContainer.width
@@ -261,13 +278,11 @@ class DashboardFragment : Fragment() {
                 return@post
             }
             
-            // Calcolo per dividere la barra in 3 colori
-            // Il blocco "Ordinario" (Oro) contiene il lavoro puro. 
-            // Se il viaggio è incluso nelle ordinarie, lo sottraiamo per mostrare solo il lavoro puro in oro.
-            val pureWorkOrdinary = maxOf(0, stats.ordinaryMinutes - stats.travelMinutes)
+            val workMinutes = stats.totalMinutes - stats.travelMinutes - stats.extraMinutes
+            val safeWork = if (workMinutes < 0) 0 else workMinutes
             
             val ordinaryParams = binding.barOrdinary.layoutParams as LinearLayout.LayoutParams
-            ordinaryParams.weight = pureWorkOrdinary.toFloat()
+            ordinaryParams.weight = safeWork.toFloat()
             binding.barOrdinary.layoutParams = ordinaryParams
             
             val travelParams = binding.barTravel.layoutParams as LinearLayout.LayoutParams
