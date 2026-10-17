@@ -116,14 +116,14 @@ class WeeklyFragment : Fragment() {
 
     private fun shareReport() {
         val text = """
-            📈 RIEPILOGO SETTIMANALE - ${binding.tvWeekLabel.text}
-            Totale: ${binding.tvTotalWorked.text.substringAfter(": ")}
-            Straordinari: ${binding.tvTotalOvertime.text.substringAfter(": ")}
-            Banca ore: ${binding.tvTotalBank.text.substringAfter(": ")}
-            Viaggio: ${binding.tvTotalTravel.text.substringAfter(": ")}
-            Saldo: ${binding.tvBalance.text.substringAfter(": ")}
-            🚗 Fuori sede: ${binding.tvOutOfTown.text.substringAfter(": ")}
-            ️ Buoni pasto: ${binding.tvMealTickets.text.substringAfter(": ")}
+            📈 RIEPILOGO SETTIMANALE - ${binding.tvWeekLabel.text.toString()}
+            Totale: ${formatMin(extractMinutes(binding.tvTotalWorked.text.toString()))}
+            Straordinari: ${formatMin(extractMinutes(binding.tvTotalOvertime.text.toString()))}
+            Banca ore: ${formatMin(extractMinutes(binding.tvTotalBank.text.toString()))}
+            Viaggio: ${formatMin(extractMinutes(binding.tvTotalTravel.text.toString()))}
+            Saldo: ${binding.tvBalance.text.toString().substringAfter(": ")}
+            🚗 Fuori sede: ${binding.tvOutOfTown.text.toString().substringAfter(": ")}
+            🍽️ Buoni pasto: ${binding.tvMealTickets.text.toString().substringAfter(": ")}
         """.trimIndent()
 
         val intent = Intent(Intent.ACTION_SEND).apply {
@@ -131,6 +131,18 @@ class WeeklyFragment : Fragment() {
             putExtra(Intent.EXTRA_TEXT, text)
         }
         startActivity(Intent.createChooser(intent, "Condividi"))
+    }
+
+    // Funzione helper per estrarre i minuti da una stringa tipo "8h 30m"
+    private fun extractMinutes(text: String): Int {
+        return try {
+            val parts = text.substringAfter(": ").split("h ")
+            val hours = parts[0].toInt()
+            val minutes = parts[1].replace("m", "").toInt()
+            (hours * 60) + minutes
+        } catch (e: Exception) {
+            0
+        }
     }
 
     private fun formatMin(min: Int): String {
