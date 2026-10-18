@@ -8,11 +8,12 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.NavHostFragment
+import com.zodiacguard.app.data.BackupManager
 import com.zodiacguard.app.data.NfcBadgeManager
 import com.zodiacguard.app.ui.settings.NfcUnlockDialog
 import com.zodiacguard.app.ui.settings.SettingsFragment
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -24,12 +25,14 @@ class MainActivity : AppCompatActivity() {
     private var intentFiltersArray: Array<IntentFilter>? = null
     private var techListsArray: Array<Array<String>>? = null
     private lateinit var nfcBadgeManager: NfcBadgeManager
+    private lateinit var backupManager: BackupManager // NUOVO
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         nfcBadgeManager = NfcBadgeManager(this)
+        backupManager = BackupManager(this) // NUOVO
         nfcAdapter = NfcAdapter.getDefaultAdapter(this)
         
         val intent = Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
@@ -56,7 +59,7 @@ class MainActivity : AppCompatActivity() {
             arrayOf(android.nfc.tech.NdefFormatable::class.java.name)
         )
         
-        Log.d("MainActivity", "NFC inizializzato")
+        Log.d("MainActivity", "NFC e Backup inizializzati")
     }
 
     override fun onResume() {
@@ -67,6 +70,19 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         nfcAdapter?.disableForegroundDispatch(this)
+    }
+
+    // NUOVO: Backup automatico quando l'app va in background o viene chiusa
+    override fun onStop() {
+        super.onStop()
+        lifecycleScope.launch(Dispatchers.IO) {
+            val success = backupManager.performAutoBackup()
+            if (success) {
+                Log.d("MainActivity", "Backup automatico salvato in Download/ZGuard")
+            } else {
+                Log.e("MainActivity", "Errore nel backup automatico")
+            }
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -100,7 +116,7 @@ class MainActivity : AppCompatActivity() {
                     if (currentFragment is SettingsFragment) {
                         currentFragment.onNfcTagDetected(tag)
                     } else {
-                        CoroutineScope(Dispatchers.Main).launch {
+                        lifecycleScope.launch {
                             try {
                                 val savedUid = nfcBadgeManager.savedBadgeUid.first()
                                 if (savedUid != null && savedUid == uid) {
