@@ -8,11 +8,12 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.slider.Slider
 import com.zodiacguard.app.data.WorkDataStore
 import com.zodiacguard.app.data.WorkEntry
 import com.zodiacguard.app.databinding.DialogNfcUnlockBinding
 import kotlinx.coroutines.launch
-import java.util.*
+import java.util.Calendar
 
 class NfcUnlockDialog(
     private val badgeUid: String,
@@ -22,7 +23,7 @@ class NfcUnlockDialog(
     private var _binding: DialogNfcUnlockBinding? = null
     private val binding get() = _binding!!
     private lateinit var workDataStore: WorkDataStore
-    private var isUnlocked = false
+    private var isUnlocked: Boolean = false
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialog = super.onCreateDialog(savedInstanceState)
@@ -46,12 +47,12 @@ class NfcUnlockDialog(
         binding.tvBadgeInfo.text = "Badge: ${badgeUid.take(4)}...${badgeUid.takeLast(4)}"
 
         // Slider per sbloccare
-        binding.sliderUnlock.addOnChangeListener { _, value, fromUser ->
-            if (fromUser && value >= 100 && !isUnlocked) {
+        binding.sliderUnlock.addOnChangeListener(Slider.OnChangeListener { slider, value, fromUser ->
+            if (fromUser && value >= 100f && !isUnlocked) {
                 isUnlocked = true
                 unlockButtons()
             }
-        }
+        })
 
         binding.btnCheckIn.setOnClickListener {
             registerMarking("ENTRATA")
@@ -75,7 +76,11 @@ class NfcUnlockDialog(
     }
 
     private fun registerMarking(type: String) {
-        val now = Calendar.getInstance()
+        val now: Calendar = Calendar.getInstance()
+        val hour: Int = now.get(Calendar.HOUR_OF_DAY)
+        val minute: Int = now.get(Calendar.MINUTE)
+        val minuteStr: String = String.format("%02d", minute)
+        
         val entry = WorkEntry(
             timestamp = now.timeInMillis,
             type = type,
@@ -89,7 +94,7 @@ class NfcUnlockDialog(
                 workDataStore.addEntry(entry)
                 Toast.makeText(
                     requireContext(),
-                    "$type registrata alle ${now.get(Calendar.HOUR_OF_DAY)}:${String.format("%02d", now.get(Calendar.MINUTE))}",
+                    "$type registrata alle $hour:$minuteStr",
                     Toast.LENGTH_LONG
                 ).show()
                 onMarkingComplete()
