@@ -4,14 +4,17 @@ import android.app.Dialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
+import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.slider.Slider
+import com.zodiacguard.app.R
 import com.zodiacguard.app.data.WorkDataStore
 import com.zodiacguard.app.data.WorkEntry
-import com.zodiacguard.app.databinding.DialogNfcUnlockBinding
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
@@ -20,8 +23,6 @@ class NfcUnlockDialog(
     private val onMarkingComplete: () -> Unit
 ) : DialogFragment() {
 
-    private var _binding: DialogNfcUnlockBinding? = null
-    private val binding get() = _binding!!
     private lateinit var workDataStore: WorkDataStore
     private var isUnlocked = false
 
@@ -33,39 +34,50 @@ class NfcUnlockDialog(
 
     override fun onCreateView(
         inflater: LayoutInflater,
-        container: ViewGroup?,
+        container: android.view.ViewGroup?,
         savedInstanceState: Bundle?
-    ): View {
-        _binding = DialogNfcUnlockBinding.inflate(inflater, container, false)
+    ): View? {
         workDataStore = WorkDataStore(requireContext())
-        return binding.root
+        return inflater.inflate(R.layout.dialog_nfc_unlock, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.tvBadgeInfo.text = "Badge: ${badgeUid.take(4)}...${badgeUid.takeLast(4)}"
+        val tvBadgeInfo = view.findViewById<TextView>(R.id.tvBadgeInfo)
+        val sliderUnlock = view.findViewById<Slider>(R.id.sliderUnlock)
+        val layoutButtons = view.findViewById<LinearLayout>(R.id.layoutButtons)
+        val btnCheckIn = view.findViewById<MaterialButton>(R.id.btnCheckIn)
+        val btnCheckOut = view.findViewById<MaterialButton>(R.id.btnCheckOut)
+        val btnCancel = view.findViewById<MaterialButton>(R.id.btnCancel)
 
-        binding.sliderUnlock.addOnChangeListener(Slider.OnChangeListener { slider, value, fromUser ->
+        tvBadgeInfo.text = "Badge: ${badgeUid.take(4)}...${badgeUid.takeLast(4)}"
+
+        // Inizialmente disabilita i pulsanti
+        btnCheckIn.isEnabled = false
+        btnCheckOut.isEnabled = false
+
+        // Slider per sbloccare
+        sliderUnlock.addOnChangeListener(Slider.OnChangeListener { slider, value, fromUser ->
             if (fromUser && value >= 100f && !isUnlocked) {
                 isUnlocked = true
-                binding.layoutButtons.alpha = 1.0f
-                binding.btnCheckIn.isEnabled = true
-                binding.btnCheckOut.isEnabled = true
-                binding.sliderUnlock.isEnabled = false
+                layoutButtons.alpha = 1.0f
+                btnCheckIn.isEnabled = true
+                btnCheckOut.isEnabled = true
+                sliderUnlock.isEnabled = false
                 Toast.makeText(requireContext(), "Sbloccato! Scegli ENTRATA o USCITA", Toast.LENGTH_SHORT).show()
             }
         })
 
-        binding.btnCheckIn.setOnClickListener {
+        btnCheckIn.setOnClickListener {
             registerMarking("ENTRATA")
         }
 
-        binding.btnCheckOut.setOnClickListener {
+        btnCheckOut.setOnClickListener {
             registerMarking("USCITA")
         }
 
-        binding.btnCancel.setOnClickListener {
+        btnCancel.setOnClickListener {
             dismiss()
         }
     }
@@ -98,10 +110,5 @@ class NfcUnlockDialog(
                 Toast.makeText(requireContext(), "Errore: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
     }
 }
