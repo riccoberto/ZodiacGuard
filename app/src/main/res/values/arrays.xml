@@ -4,14 +4,9 @@
     <!-- Attività disponibili -->
     <string-array name="activity_types">
         <item>Servizio</item>
-        <item>Produzione</item>
-        <item>Teatrino</item>
-        <item>Teatrino Scuola</item>
-        <item>Teatrino Azienda</item>
-        <item>Formazione</item>
-        <item>Ferie</item>
-        <item>Malattia</item>
-        <item>Permesso</item>
+        <item>Teatrino Montaggio</item>
+        <item>Teatrino Smontaggio</item>
+        <item>Teatrino Intero</item>
     </string-array>
 
     <!-- Sedi disponibili -->
