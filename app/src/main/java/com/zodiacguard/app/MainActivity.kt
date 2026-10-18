@@ -8,11 +8,12 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.NavHostFragment
 import com.zodiacguard.app.data.NfcBadgeManager
 import com.zodiacguard.app.ui.settings.NfcUnlockDialog
 import com.zodiacguard.app.ui.settings.SettingsFragment
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -55,27 +56,36 @@ class MainActivity : AppCompatActivity() {
             arrayOf(android.nfc.tech.NdefFormatable::class.java.name)
         )
         
+        Log.d("MainActivity", "onCreate chiamato")
         handleNfcIntent(intent)
     }
 
     override fun onResume() {
         super.onResume()
+        Log.d("MainActivity", "onResume chiamato")
         nfcAdapter?.enableForegroundDispatch(this, pendingIntent, intentFiltersArray, techListsArray)
     }
 
     override fun onPause() {
         super.onPause()
+        Log.d("MainActivity", "onPause chiamato")
         nfcAdapter?.disableForegroundDispatch(this)
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        Log.d("MainActivity", "onNewIntent chiamato: ${intent.action}")
         handleNfcIntent(intent)
     }
 
     private fun handleNfcIntent(intent: Intent?) {
-        if (intent == null) return
+        if (intent == null) {
+            Log.d("MainActivity", "handleNfcIntent: intent è null")
+            return
+        }
+        
+        Log.d("MainActivity", "handleNfcIntent: action = ${intent.action}")
         
         if (NfcAdapter.ACTION_TECH_DISCOVERED == intent.action || 
             NfcAdapter.ACTION_TAG_DISCOVERED == intent.action ||
@@ -97,28 +107,37 @@ class MainActivity : AppCompatActivity() {
                     val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as? NavHostFragment
                     val currentFragment = navHostFragment?.childFragmentManager?.primaryNavigationFragment
                     
+                    Log.d("MainActivity", "Fragment corrente: ${currentFragment?.javaClass?.simpleName}")
+                    
                     if (currentFragment is SettingsFragment) {
                         // Siamo nelle Impostazioni: passa il tag al fragment per la registrazione
                         Log.d("MainActivity", "Passo il tag a SettingsFragment")
                         currentFragment.onNfcTagDetected(tag)
                     } else {
                         // Non siamo nelle Impostazioni: controlla se è il badge registrato
-                        lifecycleScope.launch {
-                            val savedUid = nfcBadgeManager.savedBadgeUid.first()
-                            Log.d("MainActivity", "Badge salvato nel DB: $savedUid")
-                            
-                            if (savedUid != null && savedUid == uid) {
-                                Log.d("MainActivity", "Badge corrispondente! Apro popup...")
-                                val dialog = NfcUnlockDialog(uid) {
-                                    Log.d("MainActivity", "Marcatura completata dal popup")
+                        // Usiamo CoroutineScope(Dispatchers.Main) invece di lifecycleScope
+                        CoroutineScope(Dispatchers.Main).launch {
+                            try {
+                                val savedUid = nfcBadgeManager.savedBadgeUid.first()
+                                Log.d("MainActivity", "Badge salvato nel DB: $savedUid")
+                                
+                                if (savedUid != null && savedUid == uid) {
+                                    Log.d("MainActivity", "Badge corrispondente! Apro popup...")
+                                    val dialog = NfcUnlockDialog(uid) {
+                                        Log.d("MainActivity", "Marcatura completata dal popup")
+                                    }
+                                    dialog.show(supportFragmentManager, "nfc_unlock_dialog")
+                                } else {
+                                    Log.w("MainActivity", "Badge non corrispondente o non registrato")
                                 }
-                                dialog.show(supportFragmentManager, "nfc_unlock_dialog")
-                            } else {
-                                Log.w("MainActivity", "Badge non corrispondente o non registrato")
+                            } catch (e: Exception) {
+                                Log.e("MainActivity", "Errore lettura badge: ${e.message}", e)
                             }
                         }
                     }
                 }
+            } else {
+                Log.w("MainActivity", "Tag è null")
             }
         }
     }
