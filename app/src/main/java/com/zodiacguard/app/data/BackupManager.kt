@@ -19,14 +19,15 @@ class BackupManager(private val context: Context) {
     companion object {
         private const val TAG = "BackupManager"
         private const val BACKUP_FOLDER_NAME = "ZGuard"
+        private const val BACKUP_FILE_NAME = "ZGuard_Backup.json" // UNICO FILE MASTER
     }
 
     /**
-     * Esegue il backup totale dei dati nella cartella Download/ZGuard
+     * Esegue il backup incrementale (aggiorna il file master con lo stato attuale)
      */
     suspend fun performAutoBackup(): Boolean {
         return try {
-            val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+            val now = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
             
             // 1. Prepara la cartella Download/ZGuard
             val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
@@ -40,7 +41,7 @@ class BackupManager(private val context: Context) {
                 }
             }
 
-            // 2. Raccogli tutti i dati
+            // 2. Raccogli tutti i dati attuali
             val entries = workDataStore.entriesFlow.first()
             val productionDays = workDataStore.productionDaysFlow.first()
             val weeklyHours = contractDataStore.weeklyHoursFlow.first()
@@ -50,7 +51,7 @@ class BackupManager(private val context: Context) {
             // 3. Costruisci il JSON
             val backupJson = JSONObject()
             backupJson.put("version", "1.0")
-            backupJson.put("backupDate", today)
+            backupJson.put("lastUpdate", now)
             
             // Impostazioni
             val settings = JSONObject()
@@ -77,33 +78,29 @@ class BackupManager(private val context: Context) {
             }
             backupJson.put("entries", entriesArray)
 
-            // 4. Scrivi su file (sovrascrive se esiste già per oggi)
-            val backupFile = File(backupDir, "ZGuard_Total_Backup_$today.json")
-            backupFile.writeText(backupJson.toString(2)) // 2 = indentazione per leggibilità
+            // 4. Scrivi sul file master (sovrascrive il vecchio con i nuovi dati)
+            val backupFile = File(backupDir, BACKUP_FILE_NAME)
+            backupFile.writeText(backupJson.toString(2))
 
-            Log.d(TAG, "Backup totale salvato con successo in: ${backupFile.absolutePath}")
+            Log.d(TAG, "Backup master aggiornato con successo: ${backupFile.absolutePath}")
             true
 
         } catch (e: Exception) {
-            Log.e(TAG, "Errore durante il backup automatico: ${e.message}", e)
+            Log.e(TAG, "Errore durante il backup: ${e.message}", e)
             false
         }
     }
 
     /**
-     * Controlla se esiste un backup nella cartella e ne restituisce il percorso
+     * Controlla se esiste il file di backup master
      */
-    fun getLatestBackupFile(): File? {
+    fun getBackupFile(): File? {
         val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
         val backupDir = File(downloadDir, BACKUP_FOLDER_NAME)
+        val backupFile = File(backupDir, BACKUP_FILE_NAME)
         
-        if (backupDir.exists() && backupDir.isDirectory) {
-            val files = backupDir.listFiles { _, name -> name.startsWith("ZGuard_Total_Backup_") && name.endsWith(".json") }
-            if (!files.isNullOrEmpty()) {
-                // Ordina per nome (che contiene la data) e prendi l'ultimo
-                files.sortByDescending { it.name }
-                return files.first()
-            }
+        if (backupFile.exists()) {
+            return backupFile
         }
         return null
     }
