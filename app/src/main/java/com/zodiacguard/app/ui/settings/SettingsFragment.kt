@@ -48,12 +48,16 @@ class SettingsFragment : Fragment() {
         // 1. Carica i valori contrattuali salvati
         viewLifecycleOwner.lifecycleScope.launch {
             contractDataStore.weeklyHoursFlow.collectLatest { hours ->
-                binding.etWeeklyHours.setText(hours.toString())
+                if (isAdded && _binding != null) {
+                    binding.etWeeklyHours.setText(hours.toString())
+                }
             }
         }
         viewLifecycleOwner.lifecycleScope.launch {
             contractDataStore.workDaysFlow.collectLatest { days ->
-                binding.etWorkDays.setText(days.toString())
+                if (isAdded && _binding != null) {
+                    binding.etWorkDays.setText(days.toString())
+                }
             }
         }
 
@@ -71,12 +75,14 @@ class SettingsFragment : Fragment() {
         // 3. Osserva lo stato del badge NFC
         viewLifecycleOwner.lifecycleScope.launch {
             nfcBadgeManager.savedBadgeUid.collectLatest { uid ->
-                if (uid != null) {
-                    binding.tvNfcStatus.text = "✅ Badge registrato (UID: ${uid.take(4)}...${uid.takeLast(4)})"
-                    binding.tvNfcStatus.setTextColor(requireContext().getColor(android.R.color.holo_green_light))
-                } else {
-                    binding.tvNfcStatus.text = "Stato: Nessun badge registrato"
-                    binding.tvNfcStatus.setTextColor(requireContext().getColor(android.R.color.white))
+                if (isAdded && _binding != null) {
+                    if (uid != null) {
+                        binding.tvNfcStatus.text = "✅ Badge registrato (UID: ${uid.take(4)}...${uid.takeLast(4)})"
+                        binding.tvNfcStatus.setTextColor(requireContext().getColor(android.R.color.holo_green_light))
+                    } else {
+                        binding.tvNfcStatus.text = "Stato: Nessun badge registrato"
+                        binding.tvNfcStatus.setTextColor(requireContext().getColor(android.R.color.white))
+                    }
                 }
             }
         }
@@ -98,23 +104,40 @@ class SettingsFragment : Fragment() {
 
     // Metodo pubblico chiamato da MainActivity quando rileva un tag NFC
     fun onNfcTagDetected(tag: android.nfc.Tag) {
+        // Controllo di sicurezza: il fragment è ancora valido?
+        if (!isAdded || _binding == null) {
+            return
+        }
+        
         if (isRegisteringNfc) {
             val uid = nfcBadgeManager.getTagUid(tag)
             if (uid != null) {
-                // Vibrazione di conferma
-                val vibrator = requireContext().getSystemService(android.content.Context.VIBRATOR_SERVICE) as Vibrator
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    vibrator.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE))
-                } else {
-                    @Suppress("DEPRECATION")
-                    vibrator.vibrate(200)
-                }
+                try {
+                    // Vibrazione di conferma
+                    val vibrator = requireContext().getSystemService(android.content.Context.VIBRATOR_SERVICE) as Vibrator
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        vibrator.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE))
+                    } else {
+                        @Suppress("DEPRECATION")
+                        vibrator.vibrate(200)
+                    }
 
-                // Salvataggio
-                viewLifecycleOwner.lifecycleScope.launch {
-                    nfcBadgeManager.saveBadge(uid, "Badge Principale")
-                    Toast.makeText(requireContext(), "Badge registrato con successo!", Toast.LENGTH_SHORT).show()
-                    isRegisteringNfc = false
+                    // Salvataggio in modo sicuro
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        try {
+                            nfcBadgeManager.saveBadge(uid, "Badge Principale")
+                            if (isAdded && _binding != null) {
+                                Toast.makeText(requireContext(), "Badge registrato con successo!", Toast.LENGTH_SHORT).show()
+                            }
+                            isRegisteringNfc = false
+                        } catch (e: Exception) {
+                            if (isAdded && _binding != null) {
+                                Toast.makeText(requireContext(), "Errore salvataggio: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
             }
         }
