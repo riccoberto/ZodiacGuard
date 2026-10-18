@@ -36,7 +36,7 @@
                 android:id="@+id/tvTravelBadge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="🚗"
+                android:text=""
                 android:textSize="14sp"
                 android:layout_marginStart="6dp"
                 android:visibility="gone" />
@@ -46,6 +46,16 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="⚙️"
+                android:textSize="14sp"
+                android:layout_marginStart="6dp"
+                android:visibility="gone" />
+            
+            <!-- NUOVO: Icona buono pasto -->
+            <TextView
+                android:id="@+id/tvMealBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🍽️"
                 android:textSize="14sp"
                 android:layout_marginStart="6dp"
                 android:visibility="gone" />
