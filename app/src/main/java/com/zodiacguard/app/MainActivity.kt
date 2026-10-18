@@ -24,6 +24,7 @@ class MainActivity : AppCompatActivity() {
     private var intentFiltersArray: Array<IntentFilter>? = null
     private var techListsArray: Array<Array<String>>? = null
     private lateinit var nfcBadgeManager: NfcBadgeManager
+    private var pendingNfcIntent: Intent? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,13 +58,25 @@ class MainActivity : AppCompatActivity() {
         )
         
         Log.d("MainActivity", "onCreate chiamato")
-        handleNfcIntent(intent)
+        
+        // Salva l'intent NFC per elaborarlo dopo (in onResume)
+        if (isNfcIntent(intent)) {
+            pendingNfcIntent = intent
+            Log.d("MainActivity", "Intent NFC salvato per elaborazione successiva")
+        }
     }
 
     override fun onResume() {
         super.onResume()
         Log.d("MainActivity", "onResume chiamato")
         nfcAdapter?.enableForegroundDispatch(this, pendingIntent, intentFiltersArray, techListsArray)
+        
+        // Elabora l'intent NFC salvato (se presente) dopo che il fragment è stato creato
+        if (pendingNfcIntent != null) {
+            Log.d("MainActivity", "Elaboro intent NFC salvato...")
+            handleNfcIntent(pendingNfcIntent)
+            pendingNfcIntent = null
+        }
     }
 
     override fun onPause() {
@@ -79,6 +92,13 @@ class MainActivity : AppCompatActivity() {
         handleNfcIntent(intent)
     }
 
+    private fun isNfcIntent(intent: Intent?): Boolean {
+        if (intent == null) return false
+        return NfcAdapter.ACTION_TECH_DISCOVERED == intent.action || 
+               NfcAdapter.ACTION_TAG_DISCOVERED == intent.action ||
+               NfcAdapter.ACTION_NDEF_DISCOVERED == intent.action
+    }
+
     private fun handleNfcIntent(intent: Intent?) {
         if (intent == null) {
             Log.d("MainActivity", "handleNfcIntent: intent è null")
@@ -87,10 +107,7 @@ class MainActivity : AppCompatActivity() {
         
         Log.d("MainActivity", "handleNfcIntent: action = ${intent.action}")
         
-        if (NfcAdapter.ACTION_TECH_DISCOVERED == intent.action || 
-            NfcAdapter.ACTION_TAG_DISCOVERED == intent.action ||
-            NfcAdapter.ACTION_NDEF_DISCOVERED == intent.action) {
-            
+        if (isNfcIntent(intent)) {
             val tag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 intent.getParcelableExtra(NfcAdapter.EXTRA_TAG, android.nfc.Tag::class.java)
             } else {
@@ -115,7 +132,6 @@ class MainActivity : AppCompatActivity() {
                         currentFragment.onNfcTagDetected(tag)
                     } else {
                         // Non siamo nelle Impostazioni: controlla se è il badge registrato
-                        // Usiamo CoroutineScope(Dispatchers.Main) invece di lifecycleScope
                         CoroutineScope(Dispatchers.Main).launch {
                             try {
                                 val savedUid = nfcBadgeManager.savedBadgeUid.first()
