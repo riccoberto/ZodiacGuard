@@ -149,14 +149,17 @@ object MonthlyStatsHelper {
                 DailySummary(date, totalDayMinutes, travelMinutes, isProduction, location, activity, hasMealTicket, isTeatrino, sorted)
             )
         }
+                val balance = totalWorked - totalContractMinutes
 
-        val balance = totalWorked - totalContractMinutes
+        // Ordina dailyStats per data
+        val sortedDailyStats = dailySummaries.sortedBy { it.date }
 
         return MonthlyStats(
+
             totalOrdinary, totalOvertime, totalBank, totalTravel,
             totalWorked, totalContractMinutes, balance,
             teatriniCount, teatriniDaysList.sorted(), locationsCount, outOfTownDays, mealTickets,
-            dailySummaries, workingDaysInMonth
+                       sortedDailyStats, workingDaysInMonth
         )
     }
 
