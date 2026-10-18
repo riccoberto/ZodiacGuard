@@ -11,7 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.NavHostFragment
 import com.zodiacguard.app.data.NfcBadgeManager
-import com.zodiacguard.app.ui.nfc.NfcUnlockDialog
+import com.zodiacguard.app.ui.settings.NfcUnlockDialog
 import com.zodiacguard.app.ui.settings.SettingsFragment
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
