@@ -33,14 +33,25 @@ class MainActivity : AppCompatActivity() {
         }
         pendingIntent = PendingIntent.getActivity(this, 0, intent, flags)
         
-        val ndef = IntentFilter(NfcAdapter.ACTION_NDEF_DISCOVERED)
-        try {
-            ndef.addDataType("*/*")
-        } catch (e: IntentFilter.MalformedMimeTypeException) {
-            Log.e("MainActivity", "NFC IntentFilter error", e)
-        }
-        intentFiltersArray = arrayOf(ndef)
-        techListsArray = arrayOf(arrayOf(android.nfc.tech.NfcA::class.java.name))
+        // IntentFilter generico per tutti i tag NFC
+        val techFilter = IntentFilter(NfcAdapter.ACTION_TECH_DISCOVERED)
+        val tagFilter = IntentFilter(NfcAdapter.ACTION_TAG_DISCOVERED)
+        intentFiltersArray = arrayOf(techFilter, tagFilter)
+        
+        // Accetta tutti i tipi di tecnologia NFC
+        techListsArray = arrayOf(
+            arrayOf(android.nfc.tech.NfcA::class.java.name),
+            arrayOf(android.nfc.tech.NfcB::class.java.name),
+            arrayOf(android.nfc.tech.NfcF::class.java.name),
+            arrayOf(android.nfc.tech.NfcV::class.java.name),
+            arrayOf(android.nfc.tech.IsoDep::class.java.name),
+            arrayOf(android.nfc.tech.MifareClassic::class.java.name),
+            arrayOf(android.nfc.tech.MifareUltralight::class.java.name),
+            arrayOf(android.nfc.tech.Ndef::class.java.name),
+            arrayOf(android.nfc.tech.NdefFormatable::class.java.name)
+        )
+        
+        Log.d("MainActivity", "NFC inizializzato: ${nfcAdapter != null}")
     }
 
     override fun onResume() {
@@ -56,9 +67,11 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         
-        if (NfcAdapter.ACTION_NDEF_DISCOVERED == intent.action || 
-            NfcAdapter.ACTION_TECH_DISCOVERED == intent.action || 
-            NfcAdapter.ACTION_TAG_DISCOVERED == intent.action) {
+        Log.d("MainActivity", "Intent ricevuto: ${intent.action}")
+        
+        if (NfcAdapter.ACTION_TECH_DISCOVERED == intent.action || 
+            NfcAdapter.ACTION_TAG_DISCOVERED == intent.action ||
+            NfcAdapter.ACTION_NDEF_DISCOVERED == intent.action) {
             
             val tag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 intent.getParcelableExtra(NfcAdapter.EXTRA_TAG, android.nfc.Tag::class.java)
@@ -68,13 +81,21 @@ class MainActivity : AppCompatActivity() {
             }
 
             if (tag != null) {
+                Log.d("MainActivity", "Tag trovato! Tech: ${tag.techList.joinToString(", ")}")
+                
                 // Trova il fragment Settings se è attivo e passa il tag
                 val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as? NavHostFragment
                 val currentFragment = navHostFragment?.childFragmentManager?.primaryNavigationFragment
                 
+                Log.d("MainActivity", "Fragment corrente: ${currentFragment?.javaClass?.simpleName}")
+                
                 if (currentFragment is SettingsFragment) {
                     currentFragment.onNfcTagDetected(tag)
+                } else {
+                    Log.w("MainActivity", "Il fragment corrente non è SettingsFragment")
                 }
+            } else {
+                Log.w("MainActivity", "Tag è null")
             }
         }
     }
