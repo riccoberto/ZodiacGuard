@@ -4,10 +4,10 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.Uri
 import android.nfc.NfcAdapter
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -26,7 +26,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
-import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
@@ -73,15 +72,14 @@ class MainActivity : AppCompatActivity() {
             arrayOf(android.nfc.tech.NdefFormatable::class.java.name)
         )
         
-        // Controllo backup diretto (senza richiesta permessi)
         checkForExistingBackup()
     }
 
     private fun checkForExistingBackup() {
-        val backupFile = backupManager.getBackupFile()
-        if (backupFile != null && backupFile.exists()) {
-            Log.d(TAG, "Backup trovato: ${backupFile.absolutePath}")
-            Log.d(TAG, "File leggibile: ${backupFile.canRead()}")
+        // NUOVO: Usiamo getBackupUri() invece di getBackupFile()
+        val backupUri = backupManager.getBackupUri()
+        if (backupUri != null) {
+            Log.d(TAG, "Backup trovato: $backupUri")
             
             val prefs = getSharedPreferences("zguard_prefs", Context.MODE_PRIVATE)
             val hasImported = prefs.getBoolean("has_imported_backup", false)
@@ -91,7 +89,7 @@ class MainActivity : AppCompatActivity() {
                     .setTitle("Backup Trovato")
                     .setMessage("Ho trovato un backup precedente nella cartella Download. Vuoi ripristinare i tuoi dati (marcature, note, contratto, badge)?")
                     .setPositiveButton("SÌ, RIPRISTINA") { dialog, _ ->
-                        restoreFromBackup(backupFile)
+                        restoreFromBackup(backupUri)
                         prefs.edit().putBoolean("has_imported_backup", true).apply()
                         dialog.dismiss()
                     }
@@ -106,17 +104,23 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun restoreFromBackup(file: File) {
+    // NUOVO: Accetta Uri invece di File
+    private fun restoreFromBackup(uri: Uri) {
         lifecycleScope.launch {
             try {
-                Log.d(TAG, "Inizio ripristino da: ${file.absolutePath}")
-                Log.d(TAG, "File esiste: ${file.exists()}, leggibile: ${file.canRead()}")
+                Log.d(TAG, "Inizio ripristino da URI: $uri")
                 
+                // Leggiamo il contenuto usando il nuovo metodo del BackupManager
                 val jsonContent = withContext(Dispatchers.IO) { 
-                    file.readText() 
+                    backupManager.readBackupContent(uri)
                 }
+
+                if (jsonContent == null) {
+                    Toast.makeText(this@MainActivity, "Impossibile leggere il file di backup", Toast.LENGTH_LONG).show()
+                    return@launch
+                }
+
                 Log.d(TAG, "File letto, lunghezza: ${jsonContent.length} caratteri")
-                
                 val backupJson = JSONObject(jsonContent)
                 
                 val workDataStore = WorkDataStore(this@MainActivity)
@@ -215,7 +219,7 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch(Dispatchers.IO) {
             val success = backupManager.performAutoBackup()
             if (success) {
-                Log.d(TAG, "Backup automatico salvato")
+                Log.d(TAG, "Backup automatico salvato via MediaStore")
             }
         }
     }
