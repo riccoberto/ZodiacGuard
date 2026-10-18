@@ -108,17 +108,15 @@ class MonthlyFragment : Fragment() {
         binding.pieChart.setData(
             listOf(
                 Pair(stats.totalOrdinaryMinutes.toFloat(), Color.parseColor("#FFD700")),
-                Pair(stats.totalOvertimeMinutes.toFloat(), Color.parseColor("#C41E3A")),
-                Pair(stats.totalBankMinutes.toFloat(), Color.parseColor("#4A90E2")),
-                Pair(stats.totalTravelMinutes.toFloat(), Color.parseColor("#9C27B0"))
+                Pair(stats.totalOvertimeMinutes.toFloat(), Color.parseColor("#FF5252")),
+                Pair(stats.totalBankMinutes.toFloat(), Color.parseColor("#64B5F6")),
+                Pair(stats.totalTravelMinutes.toFloat(), Color.parseColor("#B388FF"))
             ),
             expectedMinutes.toFloat()
         )
 
-        binding.tvLegendOrdinary.text = "🟡 Ordinarie: ${MonthlyStatsHelper.minutesToText(stats.totalOrdinaryMinutes)}"
-        binding.tvLegendOvertime.text = "🔴 Straordinari: ${MonthlyStatsHelper.minutesToText(stats.totalOvertimeMinutes)}"
-        binding.tvLegendBank.text = "🔵 Banca Ore: ${MonthlyStatsHelper.minutesToText(stats.totalBankMinutes)}"
-        binding.tvLegendTravel.text = "🟣 Viaggio: ${MonthlyStatsHelper.minutesToText(stats.totalTravelMinutes)}"
+        binding.tvOutOfTown.text = "🚗 Giornate fuori sede: ${stats.outOfTownDays}"
+        binding.tvMealTickets.text = "🍽️ Buoni pasto: ${stats.mealTickets}"
 
         if (stats.teatriniDays.isEmpty()) {
             binding.tvTeatriniDays.text = "Nessun teatrino"
@@ -137,9 +135,6 @@ class MonthlyFragment : Fragment() {
         } else {
             binding.tvLocationsCount.text = stats.locationsCount.entries.joinToString("\n") { "${it.key}: ${it.value} giorni" }
         }
-
-        binding.tvOutOfTown.text = "🚗 Giornate fuori sede: ${stats.outOfTownDays}"
-        binding.tvMealTickets.text = "🍽️ Buoni pasto: ${stats.mealTickets}"
 
         val agendaAdapter = DailyAgendaAdapter(stats.dailyStats) { day ->
             val bundle = Bundle()
@@ -188,7 +183,7 @@ class MonthlyFragment : Fragment() {
             
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
-                putExtra(Intent.EXTRA_SUBJECT, "Backup ZodiacGuard ${SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())}")
+                putExtra(Intent.EXTRA_SUBJECT, "Backup Z Guard ${SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())}")
                 putExtra(Intent.EXTRA_TEXT, backup)
             }
             
