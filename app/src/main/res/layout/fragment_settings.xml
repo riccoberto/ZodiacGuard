@@ -108,7 +108,7 @@
             android:id="@+id/btnRegisterNfc"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text=" REGISTRA IL MIO BADGE"
+            android:text="📡 REGISTRA IL MIO BADGE"
             android:textSize="16sp"
             android:textStyle="bold"
             app:backgroundTint="#64B5F6"
@@ -125,7 +125,45 @@
             android:gravity="center"
             android:layout_marginBottom="24dp" />
 
-        <!-- NUOVA CONSOLE DI DEBUG -->
+        <!-- Divisore -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#33FFFFFF"
+            android:layout_marginTop="32dp"
+            android:layout_marginBottom="32dp" />
+
+        <!-- Sezione Backup -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Backup e Ripristino"
+            android:textColor="@color/zodiac_gold"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-condensed-medium"
+            android:layout_marginBottom="8dp" />
+            
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Il backup automatico viene salvato in Download/ZGuard. Per ripristinare, seleziona il file manualmente."
+            android:textColor="#AAAAAA"
+            android:textSize="14sp"
+            android:layout_marginBottom="16dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnRestoreBackup"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="📥 RIPRISTINA DA BACKUP"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:backgroundTint="#66BB6A"
+            android:textColor="@color/white"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Console di Debug -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
