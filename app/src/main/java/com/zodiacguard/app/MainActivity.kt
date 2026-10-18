@@ -8,8 +8,13 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.NavHostFragment
+import com.zodiacguard.app.data.NfcBadgeManager
+import com.zodiacguard.app.ui.nfc.NfcUnlockDialog
 import com.zodiacguard.app.ui.settings.SettingsFragment
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
@@ -17,12 +22,13 @@ class MainActivity : AppCompatActivity() {
     private var pendingIntent: PendingIntent? = null
     private var intentFiltersArray: Array<IntentFilter>? = null
     private var techListsArray: Array<Array<String>>? = null
+    private lateinit var nfcBadgeManager: NfcBadgeManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Inizializza NFC
+        nfcBadgeManager = NfcBadgeManager(this)
         nfcAdapter = NfcAdapter.getDefaultAdapter(this)
         
         val intent = Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
@@ -33,12 +39,10 @@ class MainActivity : AppCompatActivity() {
         }
         pendingIntent = PendingIntent.getActivity(this, 0, intent, flags)
         
-        // IntentFilter generico per tutti i tag NFC
         val techFilter = IntentFilter(NfcAdapter.ACTION_TECH_DISCOVERED)
         val tagFilter = IntentFilter(NfcAdapter.ACTION_TAG_DISCOVERED)
         intentFiltersArray = arrayOf(techFilter, tagFilter)
         
-        // Accetta tutti i tipi di tecnologia NFC
         techListsArray = arrayOf(
             arrayOf(android.nfc.tech.NfcA::class.java.name),
             arrayOf(android.nfc.tech.NfcB::class.java.name),
@@ -51,7 +55,8 @@ class MainActivity : AppCompatActivity() {
             arrayOf(android.nfc.tech.NdefFormatable::class.java.name)
         )
         
-        Log.d("MainActivity", "NFC inizializzato: ${nfcAdapter != null}")
+        // Controlla se l'app è stata aperta da un tag NFC
+        handleNfcIntent(intent)
     }
 
     override fun onResume() {
@@ -66,8 +71,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        
-        Log.d("MainActivity", "Intent ricevuto: ${intent.action}")
+        setIntent(intent) // Aggiorna l'intent
+        handleNfcIntent(intent)
+    }
+
+    private fun handleNfcIntent(intent: Intent?) {
+        if (intent == null) return
         
         if (NfcAdapter.ACTION_TECH_DISCOVERED == intent.action || 
             NfcAdapter.ACTION_TAG_DISCOVERED == intent.action ||
@@ -81,21 +90,36 @@ class MainActivity : AppCompatActivity() {
             }
 
             if (tag != null) {
-                Log.d("MainActivity", "Tag trovato! Tech: ${tag.techList.joinToString(", ")}")
+                val uid = nfcBadgeManager.getTagUid(tag)
+                Log.d("MainActivity", "Tag NFC rilevato con UID: $uid")
                 
-                // Trova il fragment Settings se è attivo e passa il tag
-                val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as? NavHostFragment
-                val currentFragment = navHostFragment?.childFragmentManager?.primaryNavigationFragment
-                
-                Log.d("MainActivity", "Fragment corrente: ${currentFragment?.javaClass?.simpleName}")
-                
-                if (currentFragment is SettingsFragment) {
-                    currentFragment.onNfcTagDetected(tag)
-                } else {
-                    Log.w("MainActivity", "Il fragment corrente non è SettingsFragment")
+                if (uid != null) {
+                    // Leggi il badge salvato in modo sicuro
+                    lifecycleScope.launch {
+                        val savedUid = nfcBadgeManager.savedBadgeUid.first()
+                        Log.d("MainActivity", "Badge salvato nel DB: $savedUid")
+                        
+                        if (savedUid != null && savedUid == uid) {
+                            Log.d("MainActivity", "Badge corrispondente! Apro popup...")
+                            
+                            // Evita di aprire il popup se siamo nelle Impostazioni (per non disturbare la registrazione)
+                            val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as? NavHostFragment
+                            val currentFragment = navHostFragment?.childFragmentManager?.primaryNavigationFragment
+                            
+                            if (currentFragment !is SettingsFragment) {
+                                // Mostra il dialog
+                                val dialog = NfcUnlockDialog(uid) {
+                                    Log.d("MainActivity", "Marcatura completata dal popup")
+                                }
+                                dialog.show(supportFragmentManager, "nfc_unlock_dialog")
+                            } else {
+                                Log.d("MainActivity", "Siamo in Settings, ignoro il popup")
+                            }
+                        } else {
+                            Log.w("MainActivity", "Badge non corrispondente o non registrato")
+                        }
+                    }
                 }
-            } else {
-                Log.w("MainActivity", "Tag è null")
             }
         }
     }
