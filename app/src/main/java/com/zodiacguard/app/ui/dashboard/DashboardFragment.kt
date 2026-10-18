@@ -35,6 +35,7 @@ class DashboardFragment : Fragment() {
     private val binding get() = _binding!!
     private lateinit var workDataStore: WorkDataStore
     private var selectedActivity: String = "Servizio"
+    private var previousActivity: String = "Servizio" // Per ripristinare quando si disattiva produzione
     private var selectedLocation: String = "Modena"
     private var selectedDate: String = ""
     private var isProductionMode: Boolean = false
@@ -67,7 +68,7 @@ class DashboardFragment : Fragment() {
         updateDateDisplay()
 
         setupSpinner(binding.spinnerActivity, R.array.activity_types) { newActivity ->
-            if (newActivity != selectedActivity) {
+            if (newActivity != selectedActivity && !isProductionMode) {
                 selectedActivity = newActivity
                 viewLifecycleOwner.lifecycleScope.launch {
                     workDataStore.updateAllEntriesActivity(selectedDate, newActivity)
@@ -92,8 +93,21 @@ class DashboardFragment : Fragment() {
             updateStatsUI()
         }
 
+        // MODIFICA 3: Switch Produzione con attività automatica
         binding.switchProduction.setOnCheckedChangeListener { _, isChecked ->
             isProductionMode = isChecked
+            if (isChecked) {
+                // Salva attività precedente e imposta Produzione
+                previousActivity = selectedActivity
+                selectedActivity = "Produzione"
+                binding.spinnerActivity.isEnabled = false
+                binding.spinnerActivity.alpha = 0.5f
+            } else {
+                // Ripristina attività precedente
+                selectedActivity = previousActivity
+                binding.spinnerActivity.isEnabled = true
+                binding.spinnerActivity.alpha = 1.0f
+            }
             viewLifecycleOwner.lifecycleScope.launch {
                 workDataStore.saveProductionMode(selectedDate, isChecked)
             }
@@ -121,7 +135,6 @@ class DashboardFragment : Fragment() {
         binding.btnCheckOut.setOnClickListener { showTimePickerAndRegister("USCITA") }
         binding.btnChangeDate.setOnClickListener { showCustomCalendar() }
         
-        // NUOVO: Frecce per scorrere i giorni
         binding.btnPrevDay.setOnClickListener { changeDay(-1) }
         binding.btnNextDay.setOnClickListener { changeDay(1) }
         
@@ -135,7 +148,6 @@ class DashboardFragment : Fragment() {
         binding.root.postDelayed(updateRunnable, 60000)
     }
 
-    // NUOVO: Sposta la data di N giorni (positivo = avanti, negativo = indietro)
     private fun changeDay(offset: Int) {
         val cal = Calendar.getInstance()
         cal.time = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(selectedDate) ?: Date()
@@ -182,6 +194,16 @@ class DashboardFragment : Fragment() {
                     if (binding.switchProduction.isChecked != isProd) {
                         binding.switchProduction.isChecked = isProd
                         isProductionMode = isProd
+                        if (isProd) {
+                            previousActivity = selectedActivity
+                            selectedActivity = "Produzione"
+                            binding.spinnerActivity.isEnabled = false
+                            binding.spinnerActivity.alpha = 0.5f
+                        } else {
+                            selectedActivity = previousActivity
+                            binding.spinnerActivity.isEnabled = true
+                            binding.spinnerActivity.alpha = 1.0f
+                        }
                     }
                 }
             }
@@ -259,7 +281,7 @@ class DashboardFragment : Fragment() {
         val extraLabel: String
         
         if (stats.isOvertime) {
-            extraColor = Color.parseColor("#C41E3A")
+            extraColor = Color.parseColor("#FF5252") // NUOVO ROSSO
             extraLabel = "Straordinari: ${StatsHelper.minutesToText(stats.extraMinutes)}"
         } else {
             extraColor = Color.parseColor("#4A90E2")
@@ -275,15 +297,24 @@ class DashboardFragment : Fragment() {
         binding.progressBarContainer.post {
             val containerWidth = binding.progressBarContainer.width
             if (containerWidth > 0) {
-                val targetMinutes = StatsHelper.DAILY_TARGET_MINUTES
-                val progress = (stats.totalMinutes.toFloat() / targetMinutes).coerceIn(0f, 1f)
-                val marginStart = (progress * containerWidth).toInt()
-                
-                val params = binding.barCurrentTime.layoutParams as FrameLayout.LayoutParams
-                params.marginStart = marginStart
-                binding.barCurrentTime.layoutParams = params
+                // MODIFICA 1: Mostra linea bianca solo se è il giorno odierno
+                val today = WorkEntry.getCurrentDate()
+                if (selectedDate == today) {
+                    val targetMinutes = StatsHelper.DAILY_TARGET_MINUTES
+                    val progress = (stats.totalMinutes.toFloat() / targetMinutes).coerceIn(0f, 1f)
+                    val marginStart = (progress * containerWidth).toInt()
+                    
+                    val params = binding.barCurrentTime.layoutParams as FrameLayout.LayoutParams
+                    params.marginStart = marginStart
+                    binding.barCurrentTime.layoutParams = params
+                    binding.barCurrentTime.visibility = View.VISIBLE
+                } else {
+                    // Nascondi la linea bianca per giorni non odierni
+                    binding.barCurrentTime.visibility = View.GONE
+                }
             }
             
+            // MODIFICA 2: Reset barra per giorni vuoti
             val total = stats.totalMinutes
             if (total == 0) {
                 binding.barOrdinary.layoutParams.width = 0
@@ -307,8 +338,9 @@ class DashboardFragment : Fragment() {
             extraParams.weight = stats.extraMinutes.toFloat()
             binding.barExtra.layoutParams = extraParams
             
-            val extraColor = if (stats.isOvertime) Color.parseColor("#C41E3A") else Color.parseColor("#4A90E2")
+            val extraColor = if (stats.isOvertime) Color.parseColor("#FF5252") else Color.parseColor("#4A90E2")
             binding.barExtra.setBackgroundColor(extraColor)
+            binding.barTravel.setBackgroundColor(Color.parseColor("#B388FF")) // NUOVO VIOLA
         }
     }
 
