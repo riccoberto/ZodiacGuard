@@ -18,6 +18,7 @@
             android:textColor="@color/zodiac_gold"
             android:textSize="24sp"
             android:textStyle="bold"
+            android:fontFamily="sans-serif-condensed-medium"
             android:layout_marginBottom="24dp" />
 
         <!-- Ore Settimanali -->
@@ -75,6 +76,54 @@
             android:textStyle="bold"
             app:backgroundTint="@color/zodiac_gold"
             android:textColor="@color/zodiac_navy" />
+
+        <!-- Divisore -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#33FFFFFF"
+            android:layout_marginTop="32dp"
+            android:layout_marginBottom="32dp" />
+
+        <!-- Sezione NFC -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Registrazione Badge NFC"
+            android:textColor="@color/zodiac_gold"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-condensed-medium"
+            android:layout_marginBottom="8dp" />
+            
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Avvicina il badge al retro del telefono per registrarlo. Il telefono vibrerà per confermare."
+            android:textColor="#AAAAAA"
+            android:textSize="14sp"
+            android:layout_marginBottom="16dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnRegisterNfc"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="📡 REGISTRA IL MIO BADGE"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:backgroundTint="#64B5F6"
+            android:textColor="@color/white"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:id="@+id/tvNfcStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Stato: Nessun badge registrato"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            android:gravity="center"
+            android:layout_marginBottom="24dp" />
 
     </LinearLayout>
 </ScrollView>
