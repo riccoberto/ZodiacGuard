@@ -2,6 +2,7 @@ package com.zodiacguard.app.ui.monthly
 
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.util.AttributeSet
@@ -14,12 +15,18 @@ class PieChartView @JvmOverloads constructor(
 ) : View(context, attrs, defStyleAttr) {
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.WHITE
+        textSize = 28f
+        textAlign = Paint.Align.CENTER
+        isFakeBoldText = true
+    }
     private val rectF = RectF()
     
     private var data: List<Pair<Float, Int>> = emptyList()
     private var total: Float = 0f
     private var expectedTotal: Float = 0f
-    private val expectedColor = 0xFFFFA500.toInt() // Arancione
+    private val expectedColor = 0xFFFFA500.toInt()
 
     fun setData(newData: List<Pair<Float, Int>>, expected: Float = 0f) {
         data = newData
@@ -34,14 +41,11 @@ class PieChartView @JvmOverloads constructor(
         val size = width.coerceAtMost(height)
         rectF.set(0f, 0f, size.toFloat(), size.toFloat())
 
-        // Se ci sono ore attese e le ore lavorate sono minori o uguali
         if (expectedTotal > 0 && total <= expectedTotal) {
-            // Disegna cerchio arancione di sfondo (ore attese = 100%)
             paint.color = expectedColor
-            paint.alpha = 100 // Semi-trasparente
+            paint.alpha = 100
             canvas.drawArc(rectF, -90f, 360f, true, paint)
             
-            // Disegna le fette colorate che coprono in proporzione
             if (total > 0) {
                 var startAngle = -90f
                 val coverageAngle = (total / expectedTotal) * 360f
@@ -52,14 +56,22 @@ class PieChartView @JvmOverloads constructor(
                     paint.color = color
                     paint.alpha = 255
                     canvas.drawArc(rectF, startAngle, sweepAngle, true, paint)
-                    startAngle += sweepAngle
                     
-                    // Se abbiamo coperto tutto l'angolo disponibile, fermiamoci
+                    // NUOVO: Disegna etichetta percentuale al centro della fetta
+                    if (sweepAngle > 15) { // Solo se la fetta è abbastanza grande
+                        val midAngle = startAngle + sweepAngle / 2
+                        val midRadius = size / 4
+                        val x = (size / 2 + midRadius * Math.cos(Math.toRadians(midAngle.toDouble()))).toFloat()
+                        val y = (size / 2 + midRadius * Math.sin(Math.toRadians(midAngle.toDouble()))).toFloat()
+                        val percentage = ((value / expectedTotal) * 100).toInt()
+                        canvas.drawText("$percentage%", x, y, textPaint)
+                    }
+                    
+                    startAngle += sweepAngle
                     if (startAngle >= -90f + coverageAngle) break
                 }
             }
         } else {
-            // Se le ore lavorate superano le attese, mostra solo le fette in proporzione
             if (data.isEmpty() || total == 0f) return
             
             var startAngle = -90f
@@ -69,6 +81,17 @@ class PieChartView @JvmOverloads constructor(
                 paint.color = color
                 paint.alpha = 255
                 canvas.drawArc(rectF, startAngle, sweepAngle, true, paint)
+                
+                // NUOVO: Disegna etichetta percentuale
+                if (sweepAngle > 15) {
+                    val midAngle = startAngle + sweepAngle / 2
+                    val midRadius = size / 4
+                    val x = (size / 2 + midRadius * Math.cos(Math.toRadians(midAngle.toDouble()))).toFloat()
+                    val y = (size / 2 + midRadius * Math.sin(Math.toRadians(midAngle.toDouble()))).toFloat()
+                    val percentage = ((value / total) * 100).toInt()
+                    canvas.drawText("$percentage%", x, y, textPaint)
+                }
+                
                 startAngle += sweepAngle
             }
         }
