@@ -36,6 +36,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var nfcBadgeManager: NfcBadgeManager
     private lateinit var backupManager: BackupManager
 
+    companion object {
+        private const val TAG = "MainActivity"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -74,6 +78,8 @@ class MainActivity : AppCompatActivity() {
     private fun checkForExistingBackup() {
         val backupFile = backupManager.getBackupFile()
         if (backupFile != null && backupFile.exists()) {
+            Log.d(TAG, "Backup trovato: ${backupFile.absolutePath}")
+            
             val prefs = getSharedPreferences("zguard_prefs", Context.MODE_PRIVATE)
             val hasImported = prefs.getBoolean("has_imported_backup", false)
             
@@ -92,64 +98,100 @@ class MainActivity : AppCompatActivity() {
                     }
                     .show()
             }
+        } else {
+            Log.d(TAG, "Nessun backup trovato")
         }
     }
 
     private fun restoreFromBackup(file: File) {
         lifecycleScope.launch {
             try {
-                val jsonContent = withContext(Dispatchers.IO) { file.readText() }
+                Log.d(TAG, "Inizio ripristino da: ${file.absolutePath}")
+                
+                val jsonContent = withContext(Dispatchers.IO) { 
+                    file.readText() 
+                }
+                Log.d(TAG, "File letto, lunghezza: ${jsonContent.length} caratteri")
+                
                 val backupJson = JSONObject(jsonContent)
                 
                 val workDataStore = WorkDataStore(this@MainActivity)
                 val contractDataStore = ContractDataStore(this@MainActivity)
                 
-                // 1. Impostazioni
-                val settings = backupJson.getJSONObject("settings")
-                contractDataStore.saveContract(settings.getInt("weeklyHours"), settings.getInt("workDays"))
+                // 1. Impostazioni contratto
+                if (backupJson.has("settings")) {
+                    val settings = backupJson.getJSONObject("settings")
+                    val weeklyHours = settings.optInt("weeklyHours", 38)
+                    val workDays = settings.optInt("workDays", 6)
+                    contractDataStore.saveContract(weeklyHours, workDays)
+                    Log.d(TAG, "Contratto ripristinato: $weeklyHours ore, $workDays giorni")
+                }
                 
                 // 2. Badge NFC
-                val nfcUid = settings.getString("nfcBadgeUid")
-                if (nfcUid.isNotEmpty()) {
-                    nfcBadgeManager.saveBadge(nfcUid, "Badge Principale")
+                if (backupJson.has("settings")) {
+                    val settings = backupJson.getJSONObject("settings")
+                    val nfcUid = settings.optString("nfcBadgeUid", "")
+                    if (nfcUid.isNotEmpty()) {
+                        nfcBadgeManager.saveBadge(nfcUid, "Badge Principale")
+                        Log.d(TAG, "Badge NFC ripristinato: $nfcUid")
+                    }
                 }
                 
                 // 3. Giorni produzione
-                val prodArray = backupJson.getJSONArray("productionDays")
-                for (i in 0 until prodArray.length()) {
-                    workDataStore.saveProductionMode(prodArray.getString(i), true)
+                if (backupJson.has("productionDays")) {
+                    val prodArray = backupJson.getJSONArray("productionDays")
+                    for (i in 0 until prodArray.length()) {
+                        val day = prodArray.getString(i)
+                        workDataStore.saveProductionMode(day, true)
+                    }
+                    Log.d(TAG, "Giorni produzione ripristinati: ${prodArray.length()}")
                 }
 
-                // 4. Note di giornata (NUOVO)
+                // 4. Note di giornata
                 if (backupJson.has("dailyNotes")) {
                     val notesJson = backupJson.getJSONObject("dailyNotes")
                     val keys = notesJson.keys()
+                    var noteCount = 0
                     while (keys.hasNext()) {
                         val date = keys.next()
                         val note = notesJson.getString(date)
                         workDataStore.saveNote(date, note)
+                        noteCount++
                     }
+                    Log.d(TAG, "Note ripristinate: $noteCount")
                 }
                 
                 // 5. Marcature
-                val entriesArray = backupJson.getJSONArray("entries")
-                for (i in 0 until entriesArray.length()) {
-                    val entryJson = entriesArray.getJSONObject(i)
-                    val entry = WorkEntry(
-                        timestamp = entryJson.getLong("timestamp"),
-                        type = entryJson.getString("type"),
-                        activity = entryJson.getString("activity"),
-                        location = entryJson.getString("location"),
-                        date = entryJson.getString("date")
-                    )
-                    workDataStore.addEntry(entry)
+                if (backupJson.has("entries")) {
+                    val entriesArray = backupJson.getJSONArray("entries")
+                    var entryCount = 0
+                    for (i in 0 until entriesArray.length()) {
+                        val entryJson = entriesArray.getJSONObject(i)
+                        val entry = WorkEntry(
+                            timestamp = entryJson.getLong("timestamp"),
+                            type = entryJson.getString("type"),
+                            activity = entryJson.optString("activity", "Servizio"),
+                            location = entryJson.optString("location", "Modena"),
+                            date = entryJson.getString("date")
+                        )
+                        workDataStore.addEntry(entry)
+                        entryCount++
+                    }
+                    Log.d(TAG, "Marcature ripristinate: $entryCount")
                 }
                 
-                Toast.makeText(this@MainActivity, "Tutto ripristinato! (Marcature, Note, Viaggi e Buoni Pasto verranno ricalcolati)", Toast.LENGTH_LONG).show()
+                Toast.makeText(
+                    this@MainActivity, 
+                    "Backup ripristinato con successo!", 
+                    Toast.LENGTH_LONG
+                ).show()
+                Log.d(TAG, "Ripristino completato")
                 
             } catch (e: Exception) {
-                Toast.makeText(this@MainActivity, "Errore nel ripristino: ${e.message}", Toast.LENGTH_LONG).show()
-                Log.e("MainActivity", "Errore ripristino", e)
+                val errorMsg = "Errore nel ripristino: ${e.message}"
+                Toast.makeText(this@MainActivity, errorMsg, Toast.LENGTH_LONG).show()
+                Log.e(TAG, "Errore ripristino", e)
+                e.printStackTrace()
             }
         }
     }
@@ -167,7 +209,10 @@ class MainActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
         lifecycleScope.launch(Dispatchers.IO) {
-            backupManager.performAutoBackup()
+            val success = backupManager.performAutoBackup()
+            if (success) {
+                Log.d(TAG, "Backup automatico salvato")
+            }
         }
     }
 
@@ -205,12 +250,12 @@ class MainActivity : AppCompatActivity() {
                                 val savedUid = nfcBadgeManager.savedBadgeUid.first()
                                 if (savedUid != null && savedUid == uid) {
                                     val dialog = NfcUnlockDialog(uid) {
-                                        Log.d("MainActivity", "Marcatura completata")
+                                        Log.d(TAG, "Marcatura completata")
                                     }
                                     dialog.show(supportFragmentManager, "nfc_unlock_dialog")
                                 }
                             } catch (e: Exception) {
-                                Log.e("MainActivity", "Errore: ${e.message}", e)
+                                Log.e(TAG, "Errore NFC: ${e.message}", e)
                             }
                         }
                     }
