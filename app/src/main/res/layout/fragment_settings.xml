@@ -99,7 +99,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Avvicina il badge al retro del telefono per registrarlo. Il telefono vibrerà per confermare."
+            android:text="1. Premi il tasto sotto. 2. Avvicina il badge. 3. Guarda la console qui sotto."
             android:textColor="#AAAAAA"
             android:textSize="14sp"
             android:layout_marginBottom="16dp" />
@@ -108,7 +108,7 @@
             android:id="@+id/btnRegisterNfc"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="📡 REGISTRA IL MIO BADGE"
+            android:text=" REGISTRA IL MIO BADGE"
             android:textSize="16sp"
             android:textStyle="bold"
             app:backgroundTint="#64B5F6"
@@ -124,6 +124,28 @@
             android:textSize="14sp"
             android:gravity="center"
             android:layout_marginBottom="24dp" />
+
+        <!-- NUOVA CONSOLE DI DEBUG -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🖥️ Console di Debug:"
+            android:textColor="@color/zodiac_gold"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+            
+        <TextView
+            android:id="@+id/tvDebugLog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="150dp"
+            android:background="#000000"
+            android:textColor="#00FF00"
+            android:textSize="12sp"
+            android:fontFamily="monospace"
+            android:padding="12dp"
+            android:text="In attesa...\n" />
 
     </LinearLayout>
 </ScrollView>
