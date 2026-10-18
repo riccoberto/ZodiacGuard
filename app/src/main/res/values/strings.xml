@@ -1,18 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Zodiac Guard</string>
-    
-    <string-array name="activity_types">
-        <item>Servizio</item>
-        <item>Teatrino Montaggio</item>
-        <item>Teatrino Smontaggio</item>
-        <item>Teatrino Intero</item>
-    </string-array>
-
-    <string-array name="locations">
-        <item>Modena</item>
-        <item>Vignola</item>
-        <item>Castelfranco</item>
-        <item>Bologna</item>
-    </string-array>
+    <string name="app_name">Z Guard</string>
 </resources>
