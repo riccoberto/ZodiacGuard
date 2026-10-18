@@ -32,8 +32,11 @@ class DailyAgendaAdapter(
         // Simbolo rimborsi km (fuori Modena)
         holder.binding.tvTravelBadge.visibility = if (day.location != "Modena") View.VISIBLE else View.GONE
         
-        // NUOVO: Simbolo produzione
+        // Simbolo produzione
         holder.binding.tvProductionBadge.visibility = if (day.isProduction) View.VISIBLE else View.GONE
+        
+        // NUOVO: Simbolo buono pasto
+        holder.binding.tvMealBadge.visibility = if (day.hasMealTicket) View.VISIBLE else View.GONE
         
         // Click sulla riga
         holder.binding.root.setOnClickListener {
