@@ -13,7 +13,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ZodiacGuard">
         
-        <!-- SplashActivity con intent-filter NFC -->
         <activity
             android:name=".SplashActivity"
             android:exported="true"
@@ -22,8 +21,14 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop">
             
-            <!-- Intent-filter NFC -->
+            <!-- Intent-filter NFC solo per quando l'app è in background -->
             <intent-filter>
                 <action android:name="android.nfc.action.TECH_DISCOVERED" />
                 <action android:name="android.nfc.action.TAG_DISCOVERED" />
@@ -33,12 +38,6 @@
                 android:name="android.nfc.action.TECH_DISCOVERED"
                 android:resource="@xml/nfc_tech_filter" />
         </activity>
-
-        <!-- MainActivity senza intent-filter NFC -->
-        <activity
-            android:name=".MainActivity"
-            android:exported="false"
-            android:launchMode="singleTop" />
             
     </application>
 
