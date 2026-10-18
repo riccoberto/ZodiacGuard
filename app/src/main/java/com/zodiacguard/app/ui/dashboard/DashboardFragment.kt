@@ -35,7 +35,7 @@ class DashboardFragment : Fragment() {
     private val binding get() = _binding!!
     private lateinit var workDataStore: WorkDataStore
     private var selectedActivity: String = "Servizio"
-    private var previousActivity: String = "Servizio"
+    private var previousActivity: String = "Servizio" // Attività non-produzione precedente
     private var selectedLocation: String = "Modena"
     private var selectedDate: String = ""
     private var isProductionMode: Boolean = false
@@ -70,6 +70,7 @@ class DashboardFragment : Fragment() {
         setupSpinner(binding.spinnerActivity, R.array.activity_types) { newActivity ->
             if (newActivity != selectedActivity && !isProductionMode) {
                 selectedActivity = newActivity
+                previousActivity = newActivity // Salva come fallback
                 viewLifecycleOwner.lifecycleScope.launch {
                     workDataStore.updateAllEntriesActivity(selectedDate, newActivity)
                     Toast.makeText(requireContext(), "Attività aggiornata per tutte le marcature", Toast.LENGTH_SHORT).show()
@@ -93,25 +94,27 @@ class DashboardFragment : Fragment() {
             updateStatsUI()
         }
 
-        // Switch Produzione con aggiornamento marcature
+        // Switch Produzione
         binding.switchProduction.setOnCheckedChangeListener { _, isChecked ->
             isProductionMode = isChecked
             if (isChecked) {
-                previousActivity = selectedActivity
+                // Salva attività corrente solo se non è già Produzione
+                if (selectedActivity != "Produzione") {
+                    previousActivity = selectedActivity
+                }
                 selectedActivity = "Produzione"
                 binding.spinnerActivity.isEnabled = false
                 binding.spinnerActivity.alpha = 0.5f
-                // Aggiorna tutte le marcature esistenti
                 viewLifecycleOwner.lifecycleScope.launch {
                     workDataStore.updateAllEntriesActivity(selectedDate, "Produzione")
                 }
             } else {
-                selectedActivity = previousActivity
+                // Torna a Servizio di default (o all'ultima attività non-produzione)
+                selectedActivity = if (previousActivity == "Produzione") "Servizio" else previousActivity
                 binding.spinnerActivity.isEnabled = true
                 binding.spinnerActivity.alpha = 1.0f
-                // Ripristina attività precedente nelle marcature
                 viewLifecycleOwner.lifecycleScope.launch {
-                    workDataStore.updateAllEntriesActivity(selectedDate, previousActivity)
+                    workDataStore.updateAllEntriesActivity(selectedDate, selectedActivity)
                 }
             }
             viewLifecycleOwner.lifecycleScope.launch {
@@ -201,12 +204,14 @@ class DashboardFragment : Fragment() {
                         binding.switchProduction.isChecked = isProd
                         isProductionMode = isProd
                         if (isProd) {
-                            previousActivity = selectedActivity
+                            if (selectedActivity != "Produzione") {
+                                previousActivity = selectedActivity
+                            }
                             selectedActivity = "Produzione"
                             binding.spinnerActivity.isEnabled = false
                             binding.spinnerActivity.alpha = 0.5f
                         } else {
-                            selectedActivity = previousActivity
+                            selectedActivity = if (previousActivity == "Produzione") "Servizio" else previousActivity
                             binding.spinnerActivity.isEnabled = true
                             binding.spinnerActivity.alpha = 1.0f
                         }
@@ -320,11 +325,23 @@ class DashboardFragment : Fragment() {
             
             val total = stats.totalMinutes
             if (total == 0) {
-                // FIX: Reset completo con weight=0 e width=0
-                val zeroParams = LinearLayout.LayoutParams(0, 0, 0f)
-                binding.barOrdinary.layoutParams = zeroParams
-                binding.barTravel.layoutParams = zeroParams
-                binding.barExtra.layoutParams = zeroParams
+                // FIX: Reset barra mantenendo l'altezza originale
+                val ordinaryParams = binding.barOrdinary.layoutParams as LinearLayout.LayoutParams
+                ordinaryParams.weight = 0f
+                binding.barOrdinary.layoutParams = ordinaryParams
+                
+                val travelParams = binding.barTravel.layoutParams as LinearLayout.LayoutParams
+                travelParams.weight = 0f
+                binding.barTravel.layoutParams = travelParams
+                
+                val extraParams = binding.barExtra.layoutParams as LinearLayout.LayoutParams
+                extraParams.weight = 0f
+                binding.barExtra.layoutParams = extraParams
+                
+                // Mostra solo la barra ordinaria (gialla) come placeholder
+                binding.barOrdinary.setBackgroundColor(Color.parseColor("#FFD700"))
+                binding.barTravel.setBackgroundColor(Color.parseColor("#B388FF"))
+                binding.barExtra.setBackgroundColor(Color.parseColor("#4A90E2"))
                 return@post
             }
             
@@ -346,6 +363,7 @@ class DashboardFragment : Fragment() {
             val extraColor = if (stats.isOvertime) Color.parseColor("#FF5252") else Color.parseColor("#4A90E2")
             binding.barExtra.setBackgroundColor(extraColor)
             binding.barTravel.setBackgroundColor(Color.parseColor("#B388FF"))
+            binding.barOrdinary.setBackgroundColor(Color.parseColor("#FFD700"))
         }
     }
 
