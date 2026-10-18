@@ -11,7 +11,6 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Data con frecce + Oggi + Cambia -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -55,7 +54,7 @@
                 android:layout_height="40dp"
                 android:text="OGGI"
                 android:textSize="12sp"
-                app:backgroundTint="#34C759"
+                app:backgroundTint="#66BB6A"
                 android:textColor="@color/white"
                 android:layout_marginStart="8dp" />
             
@@ -70,7 +69,6 @@
                 android:layout_marginStart="4dp" />
         </LinearLayout>
 
-        <!-- Riepilogo Ore -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -78,6 +76,7 @@
             android:textColor="@color/zodiac_gold"
             android:textSize="16sp"
             android:textStyle="bold"
+            android:fontFamily="sans-serif-condensed-medium"
             android:layout_marginBottom="8dp" />
         <TextView
             android:id="@+id/tvTotalHours"
@@ -89,16 +88,15 @@
             android:textStyle="bold"
             android:layout_marginBottom="16dp" />
 
-        <!-- Barra Visiva con 3 segmenti -->
         <FrameLayout
             android:id="@+id/progressBarContainer"
             android:layout_width="match_parent"
             android:layout_height="24dp"
             android:layout_marginBottom="8dp">
             <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="horizontal">
-                <View android:id="@+id/barOrdinary" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="@color/zodiac_gold" />
-                <View android:id="@+id/barTravel" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0" android:background="#9C27B0" />
-                <View android:id="@+id/barExtra" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0" android:background="#C41E3A" />
+                <View android:id="@+id/barOrdinary" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="#FFD700" />
+                <View android:id="@+id/barTravel" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0" android:background="#B388FF" />
+                <View android:id="@+id/barExtra" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0" android:background="#FF5252" />
             </LinearLayout>
             <View android:id="@+id/barCurrentTime" android:layout_width="3dp" android:layout_height="match_parent" android:background="#FFFFFF" android:layout_gravity="start" />
         </FrameLayout>
@@ -108,11 +106,10 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:layout_marginBottom="16dp">
-            <TextView android:id="@+id/tvOrdinaryLabel" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Ordinarie: 0h 00m" android:textColor="@color/zodiac_gold" android:textSize="12sp" />
-            <TextView android:id="@+id/tvExtraLabel" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Extra: 0h 00m" android:textColor="#C41E3A" android:textSize="12sp" android:gravity="end" />
+            <TextView android:id="@+id/tvOrdinaryLabel" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Ordinarie: 0h 00m" android:textColor="#FFD700" android:textSize="12sp" />
+            <TextView android:id="@+id/tvExtraLabel" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Extra: 0h 00m" android:textColor="#FF5252" android:textSize="12sp" android:gravity="end" />
         </LinearLayout>
 
-        <!-- Switch Produzione -->
         <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/switchProduction"
             android:layout_width="match_parent"
@@ -121,13 +118,13 @@
             android:textColor="@color/white"
             android:textSize="14sp"
             android:textStyle="bold"
+            android:fontFamily="sans-serif-condensed-medium"
             app:thumbTint="@color/zodiac_gold"
             app:trackTint="#55FFFFFF"
             android:layout_marginBottom="16dp" />
 
-        <TextView android:id="@+id/tvTravelTime" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Viaggio: 0h 00m" android:textColor="#9C27B0" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="16dp" />
+        <TextView android:id="@+id/tvTravelTime" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Viaggio: 0h 00m" android:textColor="#B388FF" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="16dp" />
 
-        <!-- Tendine Affiancate -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -143,22 +140,19 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Pulsanti Affiancati -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:layout_marginBottom="24dp">
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnCheckIn" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:text="ENTRATA" android:textSize="14sp" android:textStyle="bold" app:backgroundTint="#34C759" android:layout_marginEnd="8dp" />
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnCheckOut" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:text="USCITA" android:textSize="14sp" android:textStyle="bold" app:backgroundTint="#C41E3A" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnCheckIn" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:text="ENTRATA" android:textSize="14sp" android:textStyle="bold" app:backgroundTint="#66BB6A" android:layout_marginEnd="8dp" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnCheckOut" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:text="USCITA" android:textSize="14sp" android:textStyle="bold" app:backgroundTint="#FF5252" />
         </LinearLayout>
 
-        <!-- Note -->
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Note di giornata" android:textColor="@color/zodiac_gold" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="4dp" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Note di giornata" android:textColor="@color/zodiac_gold" android:textSize="14sp" android:textStyle="bold" android:fontFamily="sans-serif-condensed-medium" android:layout_marginBottom="4dp" />
         <com.google.android.material.textfield.TextInputEditText android:id="@+id/etDailyNotes" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Scrivi qui..." android:textColor="@color/white" android:textColorHint="#80FFFFFF" android:background="#1AFFFFFF" android:padding="8dp" android:minLines="2" android:layout_marginBottom="16dp" />
 
-        <!-- Elenco Marcature -->
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Marcature" android:textColor="@color/zodiac_gold" android:textSize="16sp" android:textStyle="bold" android:layout_marginBottom="8dp" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Marcature" android:textColor="@color/zodiac_gold" android:textSize="16sp" android:textStyle="bold" android:fontFamily="sans-serif-condensed-medium" android:layout_marginBottom="8dp" />
         <androidx.recyclerview.widget.RecyclerView android:id="@+id/recyclerViewEntries" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp" />
 
     </LinearLayout>
