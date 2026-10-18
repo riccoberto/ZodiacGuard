@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    
+    <!-- Attività disponibili -->
+    <string-array name="activity_types">
+        <item>Servizio</item>
+        <item>Produzione</item>
+        <item>Teatrino</item>
+        <item>Teatrino Scuola</item>
+        <item>Teatrino Azienda</item>
+        <item>Formazione</item>
+        <item>Ferie</item>
+        <item>Malattia</item>
+        <item>Permesso</item>
+    </string-array>
+
+    <!-- Sedi disponibili -->
+    <string-array name="locations">
+        <item>Modena</item>
+        <item>Vignola</item>
+        <item>Castelfranco</item>
+        <item>Bologna</item>
+    </string-array>
+
+</resources>
