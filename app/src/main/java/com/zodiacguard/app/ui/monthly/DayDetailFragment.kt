@@ -1,125 +1,195 @@
 package com.zodiacguard.app.ui.monthly
 
+import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.zodiacguard.app.R
+import com.zodiacguard.app.data.ContractDataStore
 import com.zodiacguard.app.data.MonthlyStatsHelper
 import com.zodiacguard.app.data.WorkDataStore
-import com.zodiacguard.app.data.WorkEntry
-import com.zodiacguard.app.databinding.FragmentDayDetailBinding
-import com.zodiacguard.app.ui.dashboard.EntryAdapter
+import com.zodiacguard.app.databinding.FragmentMonthlyBinding
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
-class DayDetailFragment : Fragment() {
+class MonthlyFragment : Fragment() {
 
-    private var _binding: FragmentDayDetailBinding? = null
+    private var _binding: FragmentMonthlyBinding? = null
     private val binding get() = _binding!!
     private lateinit var workDataStore: WorkDataStore
-    private var selectedDate: String = ""
+    private lateinit var contractDataStore: ContractDataStore
+    
+    private var currentYear: Int = Calendar.getInstance().get(Calendar.YEAR)
+    private var currentMonth: Int = Calendar.getInstance().get(Calendar.MONTH) + 1
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
-        _binding = FragmentDayDetailBinding.inflate(inflater, container, false)
+        _binding = FragmentMonthlyBinding.inflate(inflater, container, false)
         workDataStore = WorkDataStore(requireContext())
-        
-        selectedDate = arguments?.getString("date") ?: WorkEntry.getCurrentDate()
-        
+        contractDataStore = ContractDataStore(requireContext())
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val sdfFull = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault())
-        val date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(selectedDate)
-        binding.tvDayDate.text = if (date != null) sdfFull.format(date) else selectedDate
+        updateMonthDisplay()
 
-        binding.btnBackToMonth.setOnClickListener {
-            findNavController().popBackStack()
+        binding.btnPrevMonth.setOnClickListener {
+            currentMonth--
+            if (currentMonth < 1) { currentMonth = 12; currentYear-- }
+            updateMonthDisplay()
+            loadStats()
         }
 
-        loadDayDetails()
+        binding.btnNextMonth.setOnClickListener {
+            currentMonth++
+            if (currentMonth > 12) { currentMonth = 1; currentYear++ }
+            updateMonthDisplay()
+            loadStats()
+        }
+
+        binding.btnShareReport.setOnClickListener { shareReport() }
+        binding.btnBackup.setOnClickListener { createBackup() }
+
+        loadStats()
     }
 
-    private fun loadDayDetails() {
+    private fun updateMonthDisplay() {
+        val sdf = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
+        val cal = Calendar.getInstance()
+        cal.set(currentYear, currentMonth - 1, 1)
+        binding.tvMonthYear.text = sdf.format(cal.time).replaceFirstChar { it.uppercase() }
+    }
+
+    private fun loadStats() {
         viewLifecycleOwner.lifecycleScope.launch {
             val allEntries = workDataStore.entriesFlow.first()
-            val dayEntries = allEntries.filter { it.date == selectedDate }.sortedBy { it.timestamp }
-            
-            if (dayEntries.isEmpty()) {
-                binding.tvDayActivity.text = "Nessuna marcatura"
-                binding.tvDayLocation.text = ""
-                binding.tvDayTotal.text = "Totale: 0h 00m"
-                return@launch
-            }
-
-            val activity = dayEntries.first().activity
-            val location = dayEntries.first().location
+            val weeklyHours = contractDataStore.weeklyHoursFlow.first()
+            val workDays = contractDataStore.workDaysFlow.first()
             val productionDates = workDataStore.productionDaysFlow.first()
-            val isProduction = productionDates.contains(selectedDate)
-
-            var workMinutes = 0
-            var lastEntryTime: Long? = null
-            for (entry in dayEntries) {
-                if (entry.type == "ENTRATA") {
-                    lastEntryTime = entry.timestamp
-                } else if (entry.type == "USCITA" && lastEntryTime != null) {
-                    workMinutes += ((entry.timestamp - lastEntryTime) / 60000).toInt()
-                    lastEntryTime = null
-                }
-            }
-
-            val travelMinutes = when (location) {
-                "Vignola", "Castelfranco" -> 90
-                "Bologna" -> 120
-                else -> 0
-            }
-
-            val totalMinutes = workMinutes + travelMinutes
             
-            var mealTickets = 0
-            var lastExitTime: Long? = null
-            for (entry in dayEntries) {
-                if (entry.type == "USCITA") {
-                    lastExitTime = entry.timestamp
-                } else if (entry.type == "ENTRATA" && lastExitTime != null) {
-                    val pauseMinutes = ((entry.timestamp - lastExitTime) / 60000).toInt()
-                    if (pauseMinutes < 120 && pauseMinutes > 0) {
-                        mealTickets += 2
-                    }
-                    lastExitTime = null
-                }
-            }
-
-            binding.tvDayActivity.text = "Attività: $activity"
-            binding.tvDayLocation.text = "Sede: $location ${if (location != "Modena") "🚗" else ""}"
-            binding.tvDayTotal.text = "Totale ore: ${MonthlyStatsHelper.minutesToText(totalMinutes)}"
-            binding.tvDayTravel.text = "Viaggio: ${MonthlyStatsHelper.minutesToText(travelMinutes)}"
-            binding.tvDayProduction.text = "Modalità Produzione: ${if (isProduction) "SÌ" else "NO"}"
-            binding.tvDayMealTicket.text = "Buoni pasto: $mealTickets"
-
-            val adapter = EntryAdapter(
-                dayEntries,
-                onEditClick = { /* modifica da qui */ },
-                onDeleteClick = { entry ->
-                    viewLifecycleOwner.lifecycleScope.launch {
-                        workDataStore.deleteEntry(entry)
-                        loadDayDetails()
-                    }
-                }
+            val stats = MonthlyStatsHelper.calculateMonthlyStats(
+                allEntries, productionDates, currentYear, currentMonth, weeklyHours, workDays
             )
-            binding.recyclerViewDayEntries.layoutManager = LinearLayoutManager(requireContext())
-            binding.recyclerViewDayEntries.adapter = adapter
+
+            displayStats(stats, weeklyHours, workDays)
+        }
+    }
+
+    private fun displayStats(stats: MonthlyStatsHelper.MonthlyStats, weeklyHours: Int, workDays: Int) {
+        binding.tvTotalWorked.text = "Totale lavorate: ${MonthlyStatsHelper.minutesToText(stats.totalWorkedMinutes)}"
+        binding.tvContractExpected.text = "Contratto attese (${stats.workingDaysInMonth} gg): ${MonthlyStatsHelper.minutesToText(stats.totalContractMinutes)}"
+        binding.tvTotalOrdinary.text = "Ordinarie: ${MonthlyStatsHelper.minutesToText(stats.totalOrdinaryMinutes)}"
+        binding.tvTotalOvertime.text = "Straordinari: ${MonthlyStatsHelper.minutesToText(stats.totalOvertimeMinutes)}"
+        binding.tvTotalBank.text = "Banca ore: ${MonthlyStatsHelper.minutesToText(stats.totalBankMinutes)}"
+        binding.tvTotalTravel.text = "Viaggio: ${MonthlyStatsHelper.minutesToText(stats.totalTravelMinutes)}"
+        
+        val balanceText = if (stats.balanceMinutes >= 0) {
+            "Saldo: +${MonthlyStatsHelper.minutesToText(stats.balanceMinutes)}"
+        } else {
+            "Saldo: -${MonthlyStatsHelper.minutesToText(-stats.balanceMinutes)}"
+        }
+        binding.tvBalance.text = balanceText
+
+        val dailyContractMinutes = (weeklyHours * 60) / workDays
+        val expectedMinutes = dailyContractMinutes * stats.workingDaysInMonth
+        
+        // NUOVI COLORI per il grafico a torta
+        binding.pieChart.setData(
+            listOf(
+                Pair(stats.totalOrdinaryMinutes.toFloat(), Color.parseColor("#FFD700")),
+                Pair(stats.totalOvertimeMinutes.toFloat(), Color.parseColor("#FF5252")),
+                Pair(stats.totalBankMinutes.toFloat(), Color.parseColor("#64B5F6")),
+                Pair(stats.totalTravelMinutes.toFloat(), Color.parseColor("#B388FF"))
+            ),
+            expectedMinutes.toFloat()
+        )
+
+        binding.tvOutOfTown.text = "🚗 Giornate fuori sede: ${stats.outOfTownDays}"
+        binding.tvMealTickets.text = "🍽️ Buoni pasto: ${stats.mealTickets}"
+
+        if (stats.teatriniDays.isEmpty()) {
+            binding.tvTeatriniDays.text = "Nessun teatrino"
+        } else {
+            binding.tvTeatriniDays.text = stats.teatriniDays.joinToString(", ") { MonthlyStatsHelper.formatDate(it) }
+        }
+
+        if (stats.teatriniCount.isEmpty()) {
+            binding.tvTeatriniCount.text = "Nessun teatrino"
+        } else {
+            binding.tvTeatriniCount.text = stats.teatriniCount.entries.joinToString("\n") { "${it.key}: ${it.value}" }
+        }
+
+        if (stats.locationsCount.isEmpty()) {
+            binding.tvLocationsCount.text = "Nessuna presenza"
+        } else {
+            binding.tvLocationsCount.text = stats.locationsCount.entries.joinToString("\n") { "${it.key}: ${it.value} giorni" }
+        }
+
+        val agendaAdapter = DailyAgendaAdapter(stats.dailyStats) { day ->
+            val bundle = Bundle()
+            bundle.putString("date", day.date)
+            findNavController().navigate(R.id.dayDetailFragment, bundle)
+        }
+        binding.recyclerViewAgenda.layoutManager = LinearLayoutManager(requireContext())
+        binding.recyclerViewAgenda.adapter = agendaAdapter
+    }
+
+    private fun shareReport() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val allEntries = workDataStore.entriesFlow.first()
+            val weeklyHours = contractDataStore.weeklyHoursFlow.first()
+            val workDays = contractDataStore.workDaysFlow.first()
+            val productionDates = workDataStore.productionDaysFlow.first()
+            
+            val stats = MonthlyStatsHelper.calculateMonthlyStats(
+                allEntries, productionDates, currentYear, currentMonth, weeklyHours, workDays
+            )
+
+            val report = MonthlyStatsHelper.generateDetailedReport(stats, binding.tvMonthYear.text.toString())
+            
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_SUBJECT, "Riepilogo ${binding.tvMonthYear.text}")
+                putExtra(Intent.EXTRA_TEXT, report)
+            }
+            
+            startActivity(Intent.createChooser(intent, "Condividi riepilogo"))
+        }
+    }
+
+    private fun createBackup() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val allEntries = workDataStore.entriesFlow.first()
+            val weeklyHours = contractDataStore.weeklyHoursFlow.first()
+            val workDays = contractDataStore.workDaysFlow.first()
+            val productionDates = workDataStore.productionDaysFlow.first()
+            
+            val notes = emptyMap<String, String>()
+            
+            val backup = MonthlyStatsHelper.exportAllData(
+                allEntries, productionDates, notes, weeklyHours, workDays
+            )
+            
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_SUBJECT, "Backup Z Guard ${SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())}")
+                putExtra(Intent.EXTRA_TEXT, backup)
+            }
+            
+            startActivity(Intent.createChooser(intent, "Salva Backup"))
+            Toast.makeText(requireContext(), "Backup generato!", Toast.LENGTH_SHORT).show()
         }
     }
 
