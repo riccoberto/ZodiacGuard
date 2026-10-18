@@ -61,7 +61,6 @@ class WeeklyFragment : Fragment() {
             val weeklyHours = contractDataStore.weeklyHoursFlow.first()
             val workDays = contractDataStore.workDaysFlow.first()
             
-            // FIX: Leggiamo i giorni di produzione dal DataStore
             val productionDates = workDataStore.productionDaysFlow.first()
             
             val stats = WeeklyStatsHelper.calculateWeeklyStats(
@@ -86,12 +85,13 @@ class WeeklyFragment : Fragment() {
         val dailyContractMinutes = (weeklyHours * 60) / workDays
         val expectedMinutes = dailyContractMinutes * 6
         
+        // NUOVI COLORI
         binding.pieChart.setData(
             listOf(
                 Pair(stats.totalOrdinaryMinutes.toFloat(), Color.parseColor("#FFD700")),
-                Pair(stats.totalOvertimeMinutes.toFloat(), Color.parseColor("#C41E3A")),
-                Pair(stats.totalBankMinutes.toFloat(), Color.parseColor("#4A90E2")),
-                Pair(stats.totalTravelMinutes.toFloat(), Color.parseColor("#9C27B0"))
+                Pair(stats.totalOvertimeMinutes.toFloat(), Color.parseColor("#FF5252")),
+                Pair(stats.totalBankMinutes.toFloat(), Color.parseColor("#64B5F6")),
+                Pair(stats.totalTravelMinutes.toFloat(), Color.parseColor("#B388FF"))
             ),
             expectedMinutes.toFloat()
         )
@@ -120,7 +120,7 @@ class WeeklyFragment : Fragment() {
             Viaggio: ${binding.tvTotalTravel.text.toString().substringAfter(": ")}
             Saldo: ${binding.tvBalance.text.toString().substringAfter(": ")}
             🚗 Fuori sede: ${binding.tvOutOfTown.text.toString().substringAfter(": ")}
-            ️ Buoni pasto: ${binding.tvMealTickets.text.toString().substringAfter(": ")}
+            🍽️ Buoni pasto: ${binding.tvMealTickets.text.toString().substringAfter(": ")}
         """.trimIndent()
 
         val intent = Intent(Intent.ACTION_SEND).apply {
