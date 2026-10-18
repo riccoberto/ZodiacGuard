@@ -6,10 +6,9 @@ import android.content.IntentFilter
 import android.nfc.NfcAdapter
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import androidx.navigation.findNavController
-import androidx.navigation.ui.setupWithNavController
-import com.google.android.material.bottomnavigation.BottomNavigationView
+import androidx.navigation.fragment.NavHostFragment
 import com.zodiacguard.app.ui.settings.SettingsFragment
 
 class MainActivity : AppCompatActivity() {
@@ -22,10 +21,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        val navController = findNavController(R.id.nav_host_fragment)
-        val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottom_navigation)
-        bottomNavigationView.setupWithNavController(navController)
 
         // Inizializza NFC
         nfcAdapter = NfcAdapter.getDefaultAdapter(this)
@@ -42,7 +37,7 @@ class MainActivity : AppCompatActivity() {
         try {
             ndef.addDataType("*/*")
         } catch (e: IntentFilter.MalformedMimeTypeException) {
-            throw RuntimeException("fail", e)
+            Log.e("MainActivity", "NFC IntentFilter error", e)
         }
         intentFiltersArray = arrayOf(ndef)
         techListsArray = arrayOf(arrayOf(android.nfc.tech.NfcA::class.java.name))
@@ -74,7 +69,9 @@ class MainActivity : AppCompatActivity() {
 
             if (tag != null) {
                 // Trova il fragment Settings se è attivo e passa il tag
-                val currentFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment)?.childFragmentManager?.primaryNavigationFragment
+                val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as? NavHostFragment
+                val currentFragment = navHostFragment?.childFragmentManager?.primaryNavigationFragment
+                
                 if (currentFragment is SettingsFragment) {
                     currentFragment.onNfcTagDetected(tag)
                 }
