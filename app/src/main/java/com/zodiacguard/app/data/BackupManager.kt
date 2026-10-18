@@ -19,53 +19,55 @@ class BackupManager(private val context: Context) {
     companion object {
         private const val TAG = "BackupManager"
         private const val BACKUP_FOLDER_NAME = "ZGuard"
-        private const val BACKUP_FILE_NAME = "ZGuard_Backup.json" // UNICO FILE MASTER
+        private const val BACKUP_FILE_NAME = "ZGuard_Backup.json"
     }
 
-    /**
-     * Esegue il backup incrementale (aggiorna il file master con lo stato attuale)
-     */
     suspend fun performAutoBackup(): Boolean {
         return try {
             val now = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
             
-            // 1. Prepara la cartella Download/ZGuard
             val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
             val backupDir = File(downloadDir, BACKUP_FOLDER_NAME)
             
             if (!backupDir.exists()) {
-                val created = backupDir.mkdirs()
-                if (!created) {
-                    Log.e(TAG, "Impossibile creare la cartella di backup")
-                    return false
-                }
+                backupDir.mkdirs()
             }
 
-            // 2. Raccogli tutti i dati attuali
+            // 1. Raccogli dati
             val entries = workDataStore.entriesFlow.first()
             val productionDays = workDataStore.productionDaysFlow.first()
             val weeklyHours = contractDataStore.weeklyHoursFlow.first()
             val workDays = contractDataStore.workDaysFlow.first()
             val nfcUid = nfcBadgeManager.savedBadgeUid.first()
 
-            // 3. Costruisci il JSON
+            // 2. Raccogli Note (per ogni data presente nelle marcature)
+            val dates = entries.map { it.date }.distinct()
+            val notesJson = JSONObject()
+            for (date in dates) {
+                val note = workDataStore.getNoteForDate(date).first()
+                if (note.isNotEmpty()) {
+                    notesJson.put(date, note)
+                }
+            }
+
+            // 3. Costruisci JSON
             val backupJson = JSONObject()
             backupJson.put("version", "1.0")
             backupJson.put("lastUpdate", now)
             
-            // Impostazioni
             val settings = JSONObject()
             settings.put("weeklyHours", weeklyHours)
             settings.put("workDays", workDays)
             settings.put("nfcBadgeUid", nfcUid ?: "")
             backupJson.put("settings", settings)
 
-            // Giorni produzione
             val prodArray = JSONArray()
             productionDays.forEach { prodArray.put(it) }
             backupJson.put("productionDays", prodArray)
 
-            // Marcature
+            // Aggiungi le Note
+            backupJson.put("dailyNotes", notesJson)
+
             val entriesArray = JSONArray()
             entries.forEach { entry ->
                 val entryJson = JSONObject()
@@ -78,30 +80,23 @@ class BackupManager(private val context: Context) {
             }
             backupJson.put("entries", entriesArray)
 
-            // 4. Scrivi sul file master (sovrascrive il vecchio con i nuovi dati)
+            // 4. Scrivi file
             val backupFile = File(backupDir, BACKUP_FILE_NAME)
             backupFile.writeText(backupJson.toString(2))
 
-            Log.d(TAG, "Backup master aggiornato con successo: ${backupFile.absolutePath}")
+            Log.d(TAG, "Backup totale (con note) salvato in: ${backupFile.absolutePath}")
             true
 
         } catch (e: Exception) {
-            Log.e(TAG, "Errore durante il backup: ${e.message}", e)
+            Log.e(TAG, "Errore backup: ${e.message}", e)
             false
         }
     }
 
-    /**
-     * Controlla se esiste il file di backup master
-     */
     fun getBackupFile(): File? {
         val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
         val backupDir = File(downloadDir, BACKUP_FOLDER_NAME)
         val backupFile = File(backupDir, BACKUP_FILE_NAME)
-        
-        if (backupFile.exists()) {
-            return backupFile
-        }
-        return null
+        return if (backupFile.exists()) backupFile else null
     }
 }
