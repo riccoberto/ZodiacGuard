@@ -6,7 +6,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -29,10 +28,6 @@ class SettingsFragment : Fragment() {
     private var nfcAdapter: NfcAdapter? = null
     private var isRegisteringNfc = false
 
-    companion object {
-        private const val TAG = "SettingsFragment"
-    }
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -45,22 +40,27 @@ class SettingsFragment : Fragment() {
         return binding.root
     }
 
+    // Funzione helper per scrivere nella console
+    private fun logDebug(msg: String) {
+        if (_binding != null) {
+            binding.tvDebugLog.append("$msg\n")
+        }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        logDebug("Fragment creato. NFC disponibile: ${nfcAdapter != null}")
 
         // 1. Carica i valori contrattuali salvati
         viewLifecycleOwner.lifecycleScope.launch {
             contractDataStore.weeklyHoursFlow.collectLatest { hours ->
-                if (isAdded && _binding != null) {
-                    binding.etWeeklyHours.setText(hours.toString())
-                }
+                if (isAdded && _binding != null) binding.etWeeklyHours.setText(hours.toString())
             }
         }
         viewLifecycleOwner.lifecycleScope.launch {
             contractDataStore.workDaysFlow.collectLatest { days ->
-                if (isAdded && _binding != null) {
-                    binding.etWorkDays.setText(days.toString())
-                }
+                if (isAdded && _binding != null) binding.etWorkDays.setText(days.toString())
             }
         }
 
@@ -68,7 +68,6 @@ class SettingsFragment : Fragment() {
         binding.btnSaveContract.setOnClickListener {
             val hours = binding.etWeeklyHours.text.toString().toIntOrNull() ?: 38
             val days = binding.etWorkDays.text.toString().toIntOrNull() ?: 6
-
             viewLifecycleOwner.lifecycleScope.launch {
                 contractDataStore.saveContract(hours, days)
                 Toast.makeText(requireContext(), "Parametri salvati!", Toast.LENGTH_SHORT).show()
@@ -78,7 +77,7 @@ class SettingsFragment : Fragment() {
         // 3. Osserva lo stato del badge NFC
         viewLifecycleOwner.lifecycleScope.launch {
             nfcBadgeManager.savedBadgeUid.collectLatest { uid ->
-                Log.d(TAG, "savedBadgeUid flow: $uid")
+                logDebug("Flow DataStore aggiornato: UID = $uid")
                 if (isAdded && _binding != null) {
                     if (uid != null) {
                         binding.tvNfcStatus.text = "✅ Badge registrato (UID: ${uid.take(4)}...${uid.takeLast(4)})"
@@ -94,80 +93,67 @@ class SettingsFragment : Fragment() {
         // 4. Pulsante per registrare il badge
         binding.btnRegisterNfc.setOnClickListener {
             if (nfcAdapter == null) {
-                Toast.makeText(requireContext(), "NFC non supportato su questo dispositivo", Toast.LENGTH_SHORT).show()
+                logDebug("ERRORE: NFC non supportato!")
                 return@setOnClickListener
             }
             if (!nfcAdapter!!.isEnabled) {
-                Toast.makeText(requireContext(), "Attiva l'NFC dalle impostazioni del telefono", Toast.LENGTH_LONG).show()
+                logDebug("ERRORE: NFC disattivato nelle impostazioni!")
                 return@setOnClickListener
             }
             isRegisteringNfc = true
-            Log.d(TAG, "Modalità registrazione attivata")
-            Toast.makeText(requireContext(), "Avvicina ORA il badge al retro del telefono...", Toast.LENGTH_LONG).show()
+            logDebug(">>> MODALITÀ REGISTRAZIONE ATTIVATA <<<")
+            logDebug("Avvicina ora il badge...")
+            Toast.makeText(requireContext(), "Avvicina ORA il badge...", Toast.LENGTH_LONG).show()
         }
     }
 
     // Metodo pubblico chiamato da MainActivity quando rileva un tag NFC
     fun onNfcTagDetected(tag: android.nfc.Tag) {
-        Log.d(TAG, "onNfcTagDetected chiamato! isRegisteringNfc=$isRegisteringNfc")
-        Log.d(TAG, "isAdded=$isAdded, _binding!=null=${_binding != null}")
+        logDebug("onNfcTagDetected chiamato! isRegisteringNfc=$isRegisteringNfc")
         
-        // Controllo di sicurezza: il fragment è ancora valido?
         if (!isAdded || _binding == null) {
-            Log.w(TAG, "Fragment non valido, ignoro")
+            logDebug("ERRORE: Fragment non valido")
             return
         }
         
         if (isRegisteringNfc) {
             val uid = nfcBadgeManager.getTagUid(tag)
-            Log.d(TAG, "UID estratto: $uid")
+            logDebug("UID estratto dal tag: $uid")
+            logDebug("Tech list tag: ${tag.techList.joinToString(", ")}")
             
             if (uid != null) {
                 try {
-                    // Vibrazione di conferma
+                    // Vibrazione
                     val vibrator = requireContext().getSystemService(android.content.Context.VIBRATOR_SERVICE) as Vibrator
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        vibrator.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE))
+                        vibrator.vibrate(VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE)) // 300ms per distinguerla
                     } else {
                         @Suppress("DEPRECATION")
-                        vibrator.vibrate(200)
+                        vibrator.vibrate(300)
                     }
+                    logDebug("Vibrazione inviata (300ms)")
 
-                    // Salvataggio in modo sicuro
+                    // Salvataggio
                     viewLifecycleOwner.lifecycleScope.launch {
                         try {
-                            Log.d(TAG, "Chiamo saveBadge con UID: $uid")
+                            logDebug("Tentativo di salvataggio...")
                             nfcBadgeManager.saveBadge(uid, "Badge Principale")
-                            Log.d(TAG, "saveBadge completato")
-                            
-                            if (isAdded && _binding != null) {
-                                Toast.makeText(requireContext(), "Badge registrato con successo!", Toast.LENGTH_SHORT).show()
-                            }
+                            logDebug("SALVATAGGIO COMPLETATO!")
+                            Toast.makeText(requireContext(), "Badge registrato!", Toast.LENGTH_SHORT).show()
                             isRegisteringNfc = false
-                            Log.d(TAG, "Registrazione completata")
                         } catch (e: Exception) {
-                            Log.e(TAG, "Errore salvataggio: ${e.message}", e)
-                            if (isAdded && _binding != null) {
-                                Toast.makeText(requireContext(), "Errore salvataggio: ${e.message}", Toast.LENGTH_SHORT).show()
-                            }
+                            logDebug("ERRORE salvataggio: ${e.message}")
                         }
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Errore vibrazione: ${e.message}", e)
+                    logDebug("ERRORE vibrazione: ${e.message}")
                 }
             } else {
-                Log.e(TAG, "UID è null!")
-                if (isAdded && _binding != null) {
-                    Toast.makeText(requireContext(), "Impossibile leggere il badge", Toast.LENGTH_SHORT).show()
-                }
+                logDebug("ERRORE: UID è null, tag non leggibile")
             }
         } else {
-            Log.w(TAG, "Non in modalità registrazione")
+            logDebug("Tag ricevuto MA non siamo in modalità registrazione")
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
     }
 
     override fun onDestroyView() {
