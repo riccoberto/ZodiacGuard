@@ -1,13 +1,12 @@
 package com.zodiacguard.app.ui.settings
 
-import android.app.PendingIntent
 import android.content.Intent
-import android.content.IntentFilter
 import android.nfc.NfcAdapter
 import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -29,6 +28,10 @@ class SettingsFragment : Fragment() {
     
     private var nfcAdapter: NfcAdapter? = null
     private var isRegisteringNfc = false
+
+    companion object {
+        private const val TAG = "SettingsFragment"
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -75,6 +78,7 @@ class SettingsFragment : Fragment() {
         // 3. Osserva lo stato del badge NFC
         viewLifecycleOwner.lifecycleScope.launch {
             nfcBadgeManager.savedBadgeUid.collectLatest { uid ->
+                Log.d(TAG, "savedBadgeUid flow: $uid")
                 if (isAdded && _binding != null) {
                     if (uid != null) {
                         binding.tvNfcStatus.text = "✅ Badge registrato (UID: ${uid.take(4)}...${uid.takeLast(4)})"
@@ -98,19 +102,26 @@ class SettingsFragment : Fragment() {
                 return@setOnClickListener
             }
             isRegisteringNfc = true
+            Log.d(TAG, "Modalità registrazione attivata")
             Toast.makeText(requireContext(), "Avvicina ORA il badge al retro del telefono...", Toast.LENGTH_LONG).show()
         }
     }
 
     // Metodo pubblico chiamato da MainActivity quando rileva un tag NFC
     fun onNfcTagDetected(tag: android.nfc.Tag) {
+        Log.d(TAG, "onNfcTagDetected chiamato! isRegisteringNfc=$isRegisteringNfc")
+        Log.d(TAG, "isAdded=$isAdded, _binding!=null=${_binding != null}")
+        
         // Controllo di sicurezza: il fragment è ancora valido?
         if (!isAdded || _binding == null) {
+            Log.w(TAG, "Fragment non valido, ignoro")
             return
         }
         
         if (isRegisteringNfc) {
             val uid = nfcBadgeManager.getTagUid(tag)
+            Log.d(TAG, "UID estratto: $uid")
+            
             if (uid != null) {
                 try {
                     // Vibrazione di conferma
@@ -125,27 +136,38 @@ class SettingsFragment : Fragment() {
                     // Salvataggio in modo sicuro
                     viewLifecycleOwner.lifecycleScope.launch {
                         try {
+                            Log.d(TAG, "Chiamo saveBadge con UID: $uid")
                             nfcBadgeManager.saveBadge(uid, "Badge Principale")
+                            Log.d(TAG, "saveBadge completato")
+                            
                             if (isAdded && _binding != null) {
                                 Toast.makeText(requireContext(), "Badge registrato con successo!", Toast.LENGTH_SHORT).show()
                             }
                             isRegisteringNfc = false
+                            Log.d(TAG, "Registrazione completata")
                         } catch (e: Exception) {
+                            Log.e(TAG, "Errore salvataggio: ${e.message}", e)
                             if (isAdded && _binding != null) {
                                 Toast.makeText(requireContext(), "Errore salvataggio: ${e.message}", Toast.LENGTH_SHORT).show()
                             }
                         }
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    Log.e(TAG, "Errore vibrazione: ${e.message}", e)
+                }
+            } else {
+                Log.e(TAG, "UID è null!")
+                if (isAdded && _binding != null) {
+                    Toast.makeText(requireContext(), "Impossibile leggere il badge", Toast.LENGTH_SHORT).show()
                 }
             }
+        } else {
+            Log.w(TAG, "Non in modalità registrazione")
         }
     }
 
     override fun onResume() {
         super.onResume()
-        // Reset flag quando torniamo al fragment
     }
 
     override fun onDestroyView() {
