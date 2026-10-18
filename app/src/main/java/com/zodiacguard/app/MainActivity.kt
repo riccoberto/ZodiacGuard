@@ -68,26 +68,19 @@ class MainActivity : AppCompatActivity() {
             arrayOf(android.nfc.tech.NdefFormatable::class.java.name)
         )
         
-        Log.d("MainActivity", "NFC e Backup inizializzati")
-
-        // NUOVO: Controllo backup all'avvio
         checkForExistingBackup()
     }
 
     private fun checkForExistingBackup() {
         val backupFile = backupManager.getBackupFile()
         if (backupFile != null && backupFile.exists()) {
-            Log.d("MainActivity", "Trovato backup esistente: ${backupFile.absolutePath}")
-            
-            // Controlla se è la prima apertura (non abbiamo mai importato)
             val prefs = getSharedPreferences("zguard_prefs", Context.MODE_PRIVATE)
             val hasImported = prefs.getBoolean("has_imported_backup", false)
             
             if (!hasImported) {
-                // Mostra dialogo di ripristino
                 AlertDialog.Builder(this)
                     .setTitle("Backup Trovato")
-                    .setMessage("Ho trovato un backup precedente nella cartella Download. Vuoi ripristinare i tuoi dati?")
+                    .setMessage("Ho trovato un backup precedente nella cartella Download. Vuoi ripristinare i tuoi dati (marcature, note, contratto, badge)?")
                     .setPositiveButton("SÌ, RIPRISTINA") { dialog, _ ->
                         restoreFromBackup(backupFile)
                         prefs.edit().putBoolean("has_imported_backup", true).apply()
@@ -111,30 +104,34 @@ class MainActivity : AppCompatActivity() {
                 val workDataStore = WorkDataStore(this@MainActivity)
                 val contractDataStore = ContractDataStore(this@MainActivity)
                 
-                // 1. Ripristina impostazioni contratto
+                // 1. Impostazioni
                 val settings = backupJson.getJSONObject("settings")
-                val weeklyHours = settings.getInt("weeklyHours")
-                val workDays = settings.getInt("workDays")
-                contractDataStore.saveContract(weeklyHours, workDays)
+                contractDataStore.saveContract(settings.getInt("weeklyHours"), settings.getInt("workDays"))
                 
-                // 2. Ripristina badge NFC
+                // 2. Badge NFC
                 val nfcUid = settings.getString("nfcBadgeUid")
                 if (nfcUid.isNotEmpty()) {
                     nfcBadgeManager.saveBadge(nfcUid, "Badge Principale")
                 }
                 
-                // 3. Ripristina giorni produzione
+                // 3. Giorni produzione
                 val prodArray = backupJson.getJSONArray("productionDays")
-                val productionDays = mutableListOf<String>()
                 for (i in 0 until prodArray.length()) {
-                    productionDays.add(prodArray.getString(i))
+                    workDataStore.saveProductionMode(prodArray.getString(i), true)
                 }
-                // Salva i giorni produzione (sovrascrive)
-                for (day in productionDays) {
-                    workDataStore.saveProductionMode(day, true)
+
+                // 4. Note di giornata (NUOVO)
+                if (backupJson.has("dailyNotes")) {
+                    val notesJson = backupJson.getJSONObject("dailyNotes")
+                    val keys = notesJson.keys()
+                    while (keys.hasNext()) {
+                        val date = keys.next()
+                        val note = notesJson.getString(date)
+                        workDataStore.saveNote(date, note)
+                    }
                 }
                 
-                // 4. Ripristina marcature
+                // 5. Marcature
                 val entriesArray = backupJson.getJSONArray("entries")
                 for (i in 0 until entriesArray.length()) {
                     val entryJson = entriesArray.getJSONObject(i)
@@ -148,8 +145,7 @@ class MainActivity : AppCompatActivity() {
                     workDataStore.addEntry(entry)
                 }
                 
-                Toast.makeText(this@MainActivity, "Backup ripristinato con successo!", Toast.LENGTH_LONG).show()
-                Log.d("MainActivity", "Backup ripristinato")
+                Toast.makeText(this@MainActivity, "Tutto ripristinato! (Marcature, Note, Viaggi e Buoni Pasto verranno ricalcolati)", Toast.LENGTH_LONG).show()
                 
             } catch (e: Exception) {
                 Toast.makeText(this@MainActivity, "Errore nel ripristino: ${e.message}", Toast.LENGTH_LONG).show()
@@ -171,12 +167,7 @@ class MainActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
         lifecycleScope.launch(Dispatchers.IO) {
-            val success = backupManager.performAutoBackup()
-            if (success) {
-                Log.d("MainActivity", "Backup automatico salvato in Download/ZGuard")
-            } else {
-                Log.e("MainActivity", "Errore nel backup automatico")
-            }
+            backupManager.performAutoBackup()
         }
     }
 
@@ -202,8 +193,6 @@ class MainActivity : AppCompatActivity() {
 
             if (tag != null) {
                 val uid = nfcBadgeManager.getTagUid(tag)
-                Log.d("MainActivity", "Tag NFC: $uid")
-                
                 if (uid != null) {
                     val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as? NavHostFragment
                     val currentFragment = navHostFragment?.childFragmentManager?.primaryNavigationFragment
