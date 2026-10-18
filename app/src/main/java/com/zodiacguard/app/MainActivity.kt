@@ -1,20 +1,17 @@
 package com.zodiacguard.app
 
-import android.Manifest
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.PackageManager
 import android.nfc.NfcAdapter
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.NavHostFragment
 import com.zodiacguard.app.data.BackupManager
@@ -42,7 +39,6 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "MainActivity"
-        private const val REQUEST_STORAGE_PERMISSION = 1001
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -77,49 +73,15 @@ class MainActivity : AppCompatActivity() {
             arrayOf(android.nfc.tech.NdefFormatable::class.java.name)
         )
         
-        // Richiedi permessi storage prima di controllare il backup
-        checkStoragePermissions()
-    }
-
-    private fun checkStoragePermissions() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val readPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-            val writePermission = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-            
-            if (readPermission != PackageManager.PERMISSION_GRANTED || writePermission != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                    REQUEST_STORAGE_PERMISSION
-                )
-            } else {
-                // Permessi già concessi, controlla backup
-                checkForExistingBackup()
-            }
-        } else {
-            // Android < 6.0, permessi non necessari
-            checkForExistingBackup()
-        }
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        
-        if (requestCode == REQUEST_STORAGE_PERMISSION) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.d(TAG, "Permessi storage concessi")
-                checkForExistingBackup()
-            } else {
-                Log.w(TAG, "Permessi storage negati")
-                Toast.makeText(this, "Permessi di archiviazione necessari per il backup", Toast.LENGTH_LONG).show()
-            }
-        }
+        // Controllo backup diretto (senza richiesta permessi)
+        checkForExistingBackup()
     }
 
     private fun checkForExistingBackup() {
         val backupFile = backupManager.getBackupFile()
         if (backupFile != null && backupFile.exists()) {
             Log.d(TAG, "Backup trovato: ${backupFile.absolutePath}")
+            Log.d(TAG, "File leggibile: ${backupFile.canRead()}")
             
             val prefs = getSharedPreferences("zguard_prefs", Context.MODE_PRIVATE)
             val hasImported = prefs.getBoolean("has_imported_backup", false)
