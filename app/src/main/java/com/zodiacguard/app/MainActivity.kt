@@ -1,18 +1,84 @@
 package com.zodiacguard.app
 
+import android.app.PendingIntent
+import android.content.Intent
+import android.content.IntentFilter
+import android.nfc.NfcAdapter
+import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.zodiacguard.app.databinding.ActivityMainBinding
+import androidx.navigation.findNavController
+import androidx.navigation.ui.setupWithNavController
+import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.zodiacguard.app.ui.settings.SettingsFragment
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityMainBinding
+    private var nfcAdapter: NfcAdapter? = null
+    private var pendingIntent: PendingIntent? = null
+    private var intentFiltersArray: Array<IntentFilter>? = null
+    private var techListsArray: Array<Array<String>>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        val navController = findNavController(R.id.nav_host_fragment)
+        val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+        bottomNavigationView.setupWithNavController(navController)
+
+        // Inizializza NFC
+        nfcAdapter = NfcAdapter.getDefaultAdapter(this)
         
-        // Inizializza il ViewBinding
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        val intent = Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        } else {
+            PendingIntent.FLAG_UPDATE_CURRENT
+        }
+        pendingIntent = PendingIntent.getActivity(this, 0, intent, flags)
+        
+        val ndef = IntentFilter(NfcAdapter.ACTION_NDEF_DISCOVERED)
+        try {
+            ndef.addDataType("*/*")
+        } catch (e: IntentFilter.MalformedMimeTypeException) {
+            throw RuntimeException("fail", e)
+        }
+        intentFiltersArray = arrayOf(ndef)
+        techListsArray = arrayOf(arrayOf(android.nfc.tech.NfcA::class.java.name))
+    }
+
+    override fun onResume() {
+        super.onResume()
+        nfcAdapter?.enableForegroundDispatch(this, pendingIntent, intentFiltersArray, techListsArray)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        nfcAdapter?.disableForegroundDispatch(this)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        
+        if (NfcAdapter.ACTION_NDEF_DISCOVERED == intent.action || 
+            NfcAdapter.ACTION_TECH_DISCOVERED == intent.action || 
+            NfcAdapter.ACTION_TAG_DISCOVERED == intent.action) {
+            
+            val tag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent.getParcelableExtra(NfcAdapter.EXTRA_TAG, android.nfc.Tag::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
+            }
+
+            if (tag != null) {
+                // Trova il fragment Settings se è attivo e passa il tag
+                val currentFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment)?.childFragmentManager?.primaryNavigationFragment
+                if (currentFragment is SettingsFragment) {
+                    currentFragment.onNfcTagDetected(tag)
+                }
+            }
+        }
     }
 }
