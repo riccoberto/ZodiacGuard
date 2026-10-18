@@ -35,7 +35,7 @@ class DashboardFragment : Fragment() {
     private val binding get() = _binding!!
     private lateinit var workDataStore: WorkDataStore
     private var selectedActivity: String = "Servizio"
-    private var previousActivity: String = "Servizio" // Per ripristinare quando si disattiva produzione
+    private var previousActivity: String = "Servizio"
     private var selectedLocation: String = "Modena"
     private var selectedDate: String = ""
     private var isProductionMode: Boolean = false
@@ -93,20 +93,26 @@ class DashboardFragment : Fragment() {
             updateStatsUI()
         }
 
-        // MODIFICA 3: Switch Produzione con attività automatica
+        // Switch Produzione con aggiornamento marcature
         binding.switchProduction.setOnCheckedChangeListener { _, isChecked ->
             isProductionMode = isChecked
             if (isChecked) {
-                // Salva attività precedente e imposta Produzione
                 previousActivity = selectedActivity
                 selectedActivity = "Produzione"
                 binding.spinnerActivity.isEnabled = false
                 binding.spinnerActivity.alpha = 0.5f
+                // Aggiorna tutte le marcature esistenti
+                viewLifecycleOwner.lifecycleScope.launch {
+                    workDataStore.updateAllEntriesActivity(selectedDate, "Produzione")
+                }
             } else {
-                // Ripristina attività precedente
                 selectedActivity = previousActivity
                 binding.spinnerActivity.isEnabled = true
                 binding.spinnerActivity.alpha = 1.0f
+                // Ripristina attività precedente nelle marcature
+                viewLifecycleOwner.lifecycleScope.launch {
+                    workDataStore.updateAllEntriesActivity(selectedDate, previousActivity)
+                }
             }
             viewLifecycleOwner.lifecycleScope.launch {
                 workDataStore.saveProductionMode(selectedDate, isChecked)
@@ -281,7 +287,7 @@ class DashboardFragment : Fragment() {
         val extraLabel: String
         
         if (stats.isOvertime) {
-            extraColor = Color.parseColor("#FF5252") // NUOVO ROSSO
+            extraColor = Color.parseColor("#FF5252")
             extraLabel = "Straordinari: ${StatsHelper.minutesToText(stats.extraMinutes)}"
         } else {
             extraColor = Color.parseColor("#4A90E2")
@@ -297,7 +303,6 @@ class DashboardFragment : Fragment() {
         binding.progressBarContainer.post {
             val containerWidth = binding.progressBarContainer.width
             if (containerWidth > 0) {
-                // MODIFICA 1: Mostra linea bianca solo se è il giorno odierno
                 val today = WorkEntry.getCurrentDate()
                 if (selectedDate == today) {
                     val targetMinutes = StatsHelper.DAILY_TARGET_MINUTES
@@ -309,17 +314,17 @@ class DashboardFragment : Fragment() {
                     binding.barCurrentTime.layoutParams = params
                     binding.barCurrentTime.visibility = View.VISIBLE
                 } else {
-                    // Nascondi la linea bianca per giorni non odierni
                     binding.barCurrentTime.visibility = View.GONE
                 }
             }
             
-            // MODIFICA 2: Reset barra per giorni vuoti
             val total = stats.totalMinutes
             if (total == 0) {
-                binding.barOrdinary.layoutParams.width = 0
-                binding.barTravel.layoutParams.width = 0
-                binding.barExtra.layoutParams.width = 0
+                // FIX: Reset completo con weight=0 e width=0
+                val zeroParams = LinearLayout.LayoutParams(0, 0, 0f)
+                binding.barOrdinary.layoutParams = zeroParams
+                binding.barTravel.layoutParams = zeroParams
+                binding.barExtra.layoutParams = zeroParams
                 return@post
             }
             
@@ -340,7 +345,7 @@ class DashboardFragment : Fragment() {
             
             val extraColor = if (stats.isOvertime) Color.parseColor("#FF5252") else Color.parseColor("#4A90E2")
             binding.barExtra.setBackgroundColor(extraColor)
-            binding.barTravel.setBackgroundColor(Color.parseColor("#B388FF")) // NUOVO VIOLA
+            binding.barTravel.setBackgroundColor(Color.parseColor("#B388FF"))
         }
     }
 
