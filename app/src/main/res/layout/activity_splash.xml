@@ -4,18 +4,18 @@
     android:layout_height="match_parent"
     android:background="#000033">
 
-    <!-- Testo in alto -->
+    <!-- Testo in alto con font moderno -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="top|center_horizontal"
         android:layout_marginTop="60dp"
-        android:text="ZODIAC GUARD"
+        android:text="Z GUARD"
         android:textColor="#FFD700"
-        android:textSize="36sp"
+        android:textSize="42sp"
         android:textStyle="bold"
-        android:fontFamily="serif"
-        android:letterSpacing="0.1" />
+        android:fontFamily="sans-serif-condensed-medium"
+        android:letterSpacing="0.15" />
 
     <!-- Immagine al centro -->
     <ImageView
@@ -23,6 +23,6 @@
         android:layout_height="match_parent"
         android:src="@drawable/splash_logo"
         android:scaleType="centerCrop"
-        android:contentDescription="Zodiac Guard Logo" />
+        android:contentDescription="Z Guard Logo" />
 
 </FrameLayout>
