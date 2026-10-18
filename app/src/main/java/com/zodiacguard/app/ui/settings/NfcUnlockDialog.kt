@@ -5,6 +5,9 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -13,7 +16,6 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.slider.Slider
 import com.google.android.material.switchmaterial.SwitchMaterial
-import com.google.android.material.textfield.TextInputEditText
 import com.zodiacguard.app.R
 import com.zodiacguard.app.data.WorkDataStore
 import com.zodiacguard.app.data.WorkEntry
@@ -28,9 +30,20 @@ class NfcUnlockDialog(
     private lateinit var workDataStore: WorkDataStore
     private var isUnlocked = false
 
+    // Liste per i dropdown
+    private val activities = listOf("Servizio", "Trasferta", "Formazione", "Ferie", "Malattia", "Permesso")
+    private val locations = listOf("Modena", "Vignola", "Bologna", "Sede Centrale", "Cliente Esterno")
+
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialog = super.onCreateDialog(savedInstanceState)
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        
+        // Allarga il dialog
+        dialog.window?.setLayout(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.WRAP_CONTENT
+        )
+        
         return dialog
     }
 
@@ -53,11 +66,21 @@ class NfcUnlockDialog(
         val btnCheckIn = view.findViewById<MaterialButton>(R.id.btnCheckIn)
         val btnCheckOut = view.findViewById<MaterialButton>(R.id.btnCheckOut)
         val btnCancel = view.findViewById<MaterialButton>(R.id.btnCancel)
-        val etActivity = view.findViewById<TextInputEditText>(R.id.etActivity)
-        val etLocation = view.findViewById<TextInputEditText>(R.id.etLocation)
+        val actvActivity = view.findViewById<AutoCompleteTextView>(R.id.actvActivity)
+        val actvLocation = view.findViewById<AutoCompleteTextView>(R.id.actvLocation)
         val switchProduction = view.findViewById<SwitchMaterial>(R.id.switchProduction)
 
         tvBadgeInfo.text = "Badge: ${badgeUid.take(4)}...${badgeUid.takeLast(4)}"
+
+        // Configura dropdown Attività
+        val activityAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, activities)
+        actvActivity.setAdapter(activityAdapter)
+        actvActivity.setText("Servizio", false)
+
+        // Configura dropdown Luogo
+        val locationAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, locations)
+        actvLocation.setAdapter(locationAdapter)
+        actvLocation.setText("Modena", false)
 
         // Inizialmente disabilita tutto
         btnCheckIn.isEnabled = false
@@ -78,20 +101,20 @@ class NfcUnlockDialog(
                 btnCheckIn.isEnabled = true
                 btnCheckOut.isEnabled = true
                 sliderUnlock.isEnabled = false
-                Toast.makeText(requireContext(), "Sbloccato! Compila i dettagli e scegli ENTRATA o USCITA", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Sbloccato! Seleziona i dettagli e scegli ENTRATA o USCITA", Toast.LENGTH_SHORT).show()
             }
         })
 
         btnCheckIn.setOnClickListener {
-            val activity = etActivity.text.toString().ifEmpty { "Servizio" }
-            val location = etLocation.text.toString().ifEmpty { "Modena" }
+            val activity = actvActivity.text.toString().ifEmpty { "Servizio" }
+            val location = actvLocation.text.toString().ifEmpty { "Modena" }
             val isProduction = switchProduction.isChecked
             registerMarking("ENTRATA", activity, location, isProduction)
         }
 
         btnCheckOut.setOnClickListener {
-            val activity = etActivity.text.toString().ifEmpty { "Servizio" }
-            val location = etLocation.text.toString().ifEmpty { "Modena" }
+            val activity = actvActivity.text.toString().ifEmpty { "Servizio" }
+            val location = actvLocation.text.toString().ifEmpty { "Modena" }
             val isProduction = switchProduction.isChecked
             registerMarking("USCITA", activity, location, isProduction)
         }
