@@ -36,6 +36,7 @@
                 android:textColor="@color/white"
                 android:textSize="20sp"
                 android:textStyle="bold"
+                android:fontFamily="sans-serif-condensed-medium"
                 android:gravity="center" />
             
             <com.google.android.material.button.MaterialButton
@@ -55,6 +56,7 @@
             android:textColor="@color/zodiac_gold"
             android:textSize="18sp"
             android:textStyle="bold"
+            android:fontFamily="sans-serif-condensed-medium"
             android:layout_marginBottom="12dp" />
 
         <LinearLayout
@@ -71,7 +73,8 @@
                 android:layout_height="wrap_content"
                 android:text="Totale lavorate: 0h 00m"
                 android:textColor="@color/white"
-                android:textSize="14sp"
+                android:textSize="17sp"
+                android:textStyle="bold"
                 android:layout_marginBottom="4dp" />
             
             <TextView
@@ -79,9 +82,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Contratto attese (0 gg): 0h 00m"
-                android:textColor="#FFA500"
-                android:textSize="14sp"
-                android:textStyle="italic"
+                android:textColor="#FFB74D"
+                android:textSize="17sp"
+                android:textStyle="bold"
                 android:layout_marginBottom="4dp" />
             
             <TextView
@@ -89,7 +92,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Ordinarie: 0h 00m"
-                android:textColor="@color/zodiac_gold"
+                android:textColor="#FFD700"
                 android:textSize="14sp"
                 android:layout_marginBottom="4dp" />
             
@@ -98,7 +101,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Straordinari: 0h 00m"
-                android:textColor="#C41E3A"
+                android:textColor="#FF5252"
                 android:textSize="14sp"
                 android:layout_marginBottom="4dp" />
             
@@ -107,7 +110,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Banca ore: 0h 00m"
-                android:textColor="#4A90E2"
+                android:textColor="#64B5F6"
                 android:textSize="14sp"
                 android:layout_marginBottom="4dp" />
             
@@ -116,7 +119,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Viaggio: 0h 00m"
-                android:textColor="#9C27B0"
+                android:textColor="#B388FF"
                 android:textSize="14sp"
                 android:layout_marginBottom="4dp" />
             
@@ -126,7 +129,7 @@
                 android:layout_height="wrap_content"
                 android:text="Saldo: 0h 00m"
                 android:textColor="@color/white"
-                android:textSize="14sp"
+                android:textSize="17sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
@@ -137,6 +140,7 @@
             android:textColor="@color/zodiac_gold"
             android:textSize="18sp"
             android:textStyle="bold"
+            android:fontFamily="sans-serif-condensed-medium"
             android:layout_marginBottom="12dp" />
 
         <com.zodiacguard.app.ui.monthly.PieChartView
@@ -146,50 +150,6 @@
             android:layout_gravity="center_horizontal"
             android:layout_marginBottom="16dp" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="#1AFFFFFF"
-            android:padding="12dp"
-            android:layout_marginBottom="16dp">
-            
-            <TextView
-                android:id="@+id/tvLegendOrdinary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="🟡 Ordinarie: 0h 00m"
-                android:textColor="@color/zodiac_gold"
-                android:textSize="12sp"
-                android:layout_marginBottom="4dp" />
-            
-            <TextView
-                android:id="@+id/tvLegendOvertime"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="🔴 Straordinari: 0h 00m"
-                android:textColor="#C41E3A"
-                android:textSize="12sp"
-                android:layout_marginBottom="4dp" />
-            
-            <TextView
-                android:id="@+id/tvLegendBank"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text=" Banca Ore: 0h 00m"
-                android:textColor="#4A90E2"
-                android:textSize="12sp"
-                android:layout_marginBottom="4dp" />
-            
-            <TextView
-                android:id="@+id/tvLegendTravel"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="🟣 Viaggio: 0h 00m"
-                android:textColor="#9C27B0"
-                android:textSize="12sp" />
-        </LinearLayout>
-
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -197,6 +157,7 @@
             android:textColor="@color/zodiac_gold"
             android:textSize="18sp"
             android:textStyle="bold"
+            android:fontFamily="sans-serif-condensed-medium"
             android:layout_marginBottom="12dp" />
 
         <LinearLayout
@@ -266,7 +227,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="🚗 Giornate fuori sede: 0"
-                android:textColor="#9C27B0"
+                android:textColor="#B388FF"
                 android:textSize="14sp"
                 android:layout_marginBottom="4dp" />
             
@@ -286,6 +247,7 @@
             android:textColor="@color/zodiac_gold"
             android:textSize="18sp"
             android:textStyle="bold"
+            android:fontFamily="sans-serif-condensed-medium"
             android:layout_marginBottom="12dp" />
         
         <androidx.recyclerview.widget.RecyclerView
@@ -299,22 +261,4 @@
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:text="📤 CONDIVIDI RIEPILOGO"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:backgroundTint="@color/zodiac_gold"
-            android:textColor="@color/zodiac_navy"
-            android:layout_marginBottom="12dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnBackup"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:text="💾 BACKUP DATI"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:backgroundTint="#4A90E2"
-            android:textColor="@color/white"
-            android:layout_marginBottom="16dp" />
-
-    </LinearLayout>
-</ScrollView>
+            android
