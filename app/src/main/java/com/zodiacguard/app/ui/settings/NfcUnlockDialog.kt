@@ -30,9 +30,9 @@ class NfcUnlockDialog(
     private lateinit var workDataStore: WorkDataStore
     private var isUnlocked = false
 
-    // Liste per i dropdown
-    private val activities = listOf("Servizio", "Trasferta", "Formazione", "Ferie", "Malattia", "Permesso")
-    private val locations = listOf("Modena", "Vignola", "Bologna", "Sede Centrale", "Cliente Esterno")
+    // Liste CORRETTE (le stesse di "Registra Ore")
+    private val activities = arrayOf("Servizio", "Teatrino Montaggio", "Teatrino Smontaggio", "Teatrino Intero")
+    private val locations = arrayOf("Modena", "Vignola", "Castelfranco", "Bologna")
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialog = super.onCreateDialog(savedInstanceState)
@@ -72,12 +72,12 @@ class NfcUnlockDialog(
 
         tvBadgeInfo.text = "Badge: ${badgeUid.take(4)}...${badgeUid.takeLast(4)}"
 
-        // Configura dropdown Attività
+        // Configura dropdown Attività (con le liste corrette)
         val activityAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, activities)
         actvActivity.setAdapter(activityAdapter)
         actvActivity.setText("Servizio", false)
 
-        // Configura dropdown Luogo
+        // Configura dropdown Luogo (con le liste corrette)
         val locationAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, locations)
         actvLocation.setAdapter(locationAdapter)
         actvLocation.setText("Modena", false)
