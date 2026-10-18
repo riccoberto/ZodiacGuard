@@ -19,6 +19,7 @@
             android:textColor="@color/zodiac_gold"
             android:textSize="24sp"
             android:textStyle="bold"
+            android:fontFamily="sans-serif-condensed-medium"
             android:layout_marginBottom="16dp" />
 
         <LinearLayout
@@ -32,10 +33,10 @@
             <TextView android:id="@+id/tvDayDate" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="01 Ottobre 2026" android:textColor="@color/white" android:textSize="18sp" android:textStyle="bold" android:layout_marginBottom="8dp" />
             <TextView android:id="@+id/tvDayActivity" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Attività: Servizio" android:textColor="@color/white" android:textSize="14sp" android:layout_marginBottom="4dp" />
             <TextView android:id="@+id/tvDayLocation" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Sede: Modena" android:textColor="@color/white" android:textSize="14sp" android:layout_marginBottom="4dp" />
-            <TextView android:id="@+id/tvDayTotal" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Totale ore: 8h 30m" android:textColor="@color/zodiac_gold" android:textSize="16sp" android:textStyle="bold" android:layout_marginBottom="4dp" />
-            <TextView android:id="@+id/tvDayTravel" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Viaggio: 0h 00m" android:textColor="#9C27B0" android:textSize="14sp" android:layout_marginBottom="4dp" />
-            <TextView android:id="@+id/tvDayProduction" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Modalità Produzione: NO" android:textColor="#C41E3A" android:textSize="14sp" android:layout_marginBottom="4dp" />
-            <TextView android:id="@+id/tvDayMealTicket" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Buoni pasto: 0" android:textColor="@color/zodiac_gold" android:textSize="14sp" />
+            <TextView android:id="@+id/tvDayTotal" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Totale ore: 8h 30m" android:textColor="#FFD700" android:textSize="16sp" android:textStyle="bold" android:layout_marginBottom="4dp" />
+            <TextView android:id="@+id/tvDayTravel" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Viaggio: 0h 00m" android:textColor="#B388FF" android:textSize="14sp" android:layout_marginBottom="4dp" />
+            <TextView android:id="@+id/tvDayProduction" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Modalità Produzione: NO" android:textColor="#FF5252" android:textSize="14sp" android:layout_marginBottom="4dp" />
+            <TextView android:id="@+id/tvDayMealTicket" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="️ Buoni pasto: 0" android:textColor="@color/zodiac_gold" android:textSize="14sp" />
         </LinearLayout>
 
         <TextView
@@ -45,6 +46,7 @@
             android:textColor="@color/zodiac_gold"
             android:textSize="18sp"
             android:textStyle="bold"
+            android:fontFamily="sans-serif-condensed-medium"
             android:layout_marginBottom="8dp" />
 
         <androidx.recyclerview.widget.RecyclerView
