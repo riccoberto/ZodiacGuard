@@ -1,82 +1,196 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:background="#1A1A2E"
-    android:padding="24dp">
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="MARCATURA RAPIDA"
-        android:textColor="#FFD700"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="8dp" />
-
-    <TextView
-        android:id="@+id/tvBadgeInfo"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Badge rilevato"
-        android:textColor="#FFFFFF"
-        android:textSize="14sp"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="24dp" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Scorri per sbloccare:"
-        android:textColor="#AAAAAA"
-        android:textSize="14sp"
-        android:layout_marginBottom="12dp" />
-
-    <com.google.android.material.slider.Slider
-        android:id="@+id/sliderUnlock"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:valueFrom="0"
-        android:valueTo="100"
-        android:value="0"
-        app:thumbColor="#FFD700"
-        app:trackColor="#33FFFFFF"
-        android:layout_marginBottom="24dp" />
+    android:background="@android:color/transparent">
 
     <LinearLayout
-        android:id="@+id/layoutButtons"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:alpha="0.3">
+        android:orientation="vertical"
+        android:background="#1A1A2E"
+        android:padding="24dp"
+        android:layout_margin="16dp">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnCheckIn"
-            android:layout_width="0dp"
-            android:layout_height="56dp"
-            android:layout_weight="1"
-            android:text="ENTRATA"
-            app:backgroundTint="#66BB6A"
-            android:layout_marginEnd="8dp" />
+        <!-- Header -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🔓 MARCATURA RAPIDA"
+            android:textColor="#FFD700"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-condensed-medium"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="8dp" />
 
+        <TextView
+            android:id="@+id/tvBadgeInfo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Badge rilevato"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Slider per sbloccare -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Scorri per sbloccare:"
+            android:textColor="#AAAAAA"
+            android:textSize="14sp"
+            android:layout_marginBottom="12dp" />
+
+        <com.google.android.material.slider.Slider
+            android:id="@+id/sliderUnlock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:valueFrom="0"
+            android:valueTo="100"
+            android:value="0"
+            app:thumbColor="#FFD700"
+            app:trackColor="#33FFFFFF"
+            app:tickVisible="false"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Sezione dettagli (inizialmente disabilitata) -->
+        <LinearLayout
+            android:id="@+id/layoutDetails"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:alpha="0.3"
+            android:clickable="false"
+            android:focusable="false">
+
+            <!-- Attività -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Attività"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:layout_marginBottom="8dp" />
+            
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:boxStrokeColor="#FFD700"
+                app:hintTextColor="#FFD700"
+                app:boxBackgroundColor="#2A2A3E">
+                
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etActivity"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Es. Servizio, Trasferta"
+                    android:text="Servizio"
+                    android:textColor="#FFFFFF"
+                    android:inputType="text" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Luogo -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Luogo / Sede"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:layout_marginBottom="8dp" />
+            
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:boxStrokeColor="#FFD700"
+                app:hintTextColor="#FFD700"
+                app:boxBackgroundColor="#2A2A3E">
+                
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etLocation"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Es. Modena, Vignola, Bologna"
+                    android:text="Modena"
+                    android:textColor="#FFFFFF"
+                    android:inputType="text" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Switch Produzione -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="24dp">
+                
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Modalità Produzione"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp" />
+                
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/switchProduction"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="false"
+                    app:thumbTint="#FFD700"
+                    app:trackTint="#66BB6A" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Pulsanti Entrata/Uscita -->
+        <LinearLayout
+            android:id="@+id/layoutButtons"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:alpha="0.3"
+            android:clickable="false"
+            android:focusable="false">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCheckIn"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:text="ENTRATA"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:backgroundTint="#66BB6A"
+                android:textColor="#FFFFFF"
+                android:layout_marginEnd="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCheckOut"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:text="USCITA"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:backgroundTint="#FF5252"
+                android:textColor="#FFFFFF" />
+        </LinearLayout>
+
+        <!-- Pulsante Annulla -->
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnCheckOut"
-            android:layout_width="0dp"
-            android:layout_height="56dp"
-            android:layout_weight="1"
-            android:text="USCITA"
-            app:backgroundTint="#FF5252" />
+            android:id="@+id/btnCancel"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="ANNULLA"
+            android:textSize="14sp"
+            app:backgroundTint="#33FFFFFF"
+            android:textColor="#FFFFFF"
+            android:layout_marginTop="16dp" />
+
     </LinearLayout>
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnCancel"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:text="ANNULLA"
-        app:backgroundTint="#33FFFFFF"
-        android:layout_marginTop="16dp" />
-
-</LinearLayout>
+</ScrollView>
