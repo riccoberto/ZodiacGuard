@@ -6,6 +6,8 @@ import android.content.IntentFilter
 import android.nfc.NfcAdapter
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.fragment.NavHostFragment
@@ -59,10 +61,15 @@ class MainActivity : AppCompatActivity() {
         
         Log.d("MainActivity", "onCreate chiamato")
         
-        // Salva l'intent NFC per elaborarlo dopo (in onResume)
+        // Controlla se l'intent è NFC
         if (isNfcIntent(intent)) {
             pendingNfcIntent = intent
-            Log.d("MainActivity", "Intent NFC salvato per elaborazione successiva")
+            Log.d("MainActivity", "Intent NFC ricevuto in onCreate, elaboro dopo 1.5s...")
+            // Delay per dare tempo al NavHostFragment di caricarsi
+            Handler(Looper.getMainLooper()).postDelayed({
+                handleNfcIntent(pendingNfcIntent)
+                pendingNfcIntent = null
+            }, 1500)
         }
     }
 
@@ -70,13 +77,6 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         Log.d("MainActivity", "onResume chiamato")
         nfcAdapter?.enableForegroundDispatch(this, pendingIntent, intentFiltersArray, techListsArray)
-        
-        // Elabora l'intent NFC salvato (se presente) dopo che il fragment è stato creato
-        if (pendingNfcIntent != null) {
-            Log.d("MainActivity", "Elaboro intent NFC salvato...")
-            handleNfcIntent(pendingNfcIntent)
-            pendingNfcIntent = null
-        }
     }
 
     override fun onPause() {
@@ -120,18 +120,15 @@ class MainActivity : AppCompatActivity() {
                 Log.d("MainActivity", "Tag NFC rilevato con UID: $uid")
                 
                 if (uid != null) {
-                    // Controlla se siamo nel fragment Settings
                     val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as? NavHostFragment
                     val currentFragment = navHostFragment?.childFragmentManager?.primaryNavigationFragment
                     
                     Log.d("MainActivity", "Fragment corrente: ${currentFragment?.javaClass?.simpleName}")
                     
                     if (currentFragment is SettingsFragment) {
-                        // Siamo nelle Impostazioni: passa il tag al fragment per la registrazione
                         Log.d("MainActivity", "Passo il tag a SettingsFragment")
                         currentFragment.onNfcTagDetected(tag)
                     } else {
-                        // Non siamo nelle Impostazioni: controlla se è il badge registrato
                         CoroutineScope(Dispatchers.Main).launch {
                             try {
                                 val savedUid = nfcBadgeManager.savedBadgeUid.first()
