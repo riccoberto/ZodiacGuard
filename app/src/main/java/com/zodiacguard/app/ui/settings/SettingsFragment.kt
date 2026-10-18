@@ -1,6 +1,5 @@
 package com.zodiacguard.app.ui.settings
 
-import android.app.Dialog
 import android.content.Intent
 import android.nfc.NfcAdapter
 import android.net.Uri
@@ -9,16 +8,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.slider.Slider
-import com.zodiacguard.app.R
 import com.zodiacguard.app.data.BackupManager
 import com.zodiacguard.app.data.ContractDataStore
 import com.zodiacguard.app.data.NfcBadgeManager
@@ -27,13 +20,11 @@ import com.zodiacguard.app.data.WorkEntry
 import com.zodiacguard.app.databinding.FragmentSettingsBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import java.util.Calendar
 
 class SettingsFragment : Fragment() {
 
@@ -135,14 +126,13 @@ class SettingsFragment : Fragment() {
             Toast.makeText(requireContext(), "Avvicina ORA il badge...", Toast.LENGTH_LONG).show()
         }
 
-        // 5. NUOVO: Pulsante per ripristinare da backup
+        // 5. Pulsante per ripristinare da backup
         binding.btnRestoreBackup.setOnClickListener {
             logDebug("Apertura file picker per backup...")
             restoreBackupLauncher.launch(arrayOf("application/json", "*/*"))
         }
     }
 
-    // Metodo pubblico chiamato da MainActivity quando rileva un tag NFC
     fun onNfcTagDetected(tag: android.nfc.Tag) {
         logDebug("onNfcTagDetected chiamato! isRegisteringNfc=$isRegisteringNfc")
         
@@ -176,13 +166,11 @@ class SettingsFragment : Fragment() {
         }
     }
 
-    // NUOVO: Ripristina da file di backup selezionato manualmente
     private fun restoreFromBackupFile(uri: Uri) {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 logDebug("Inizio ripristino da: $uri")
                 
-                // Leggi il contenuto del file
                 val jsonContent = withContext(Dispatchers.IO) {
                     val inputStream = requireContext().contentResolver.openInputStream(uri)
                     val reader = BufferedReader(InputStreamReader(inputStream))
@@ -270,99 +258,5 @@ class SettingsFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-    }
-}
-
-// Dialog per marcatura rapida NFC (mantenuto qui per compatibilità)
-class NfcUnlockDialog(
-    private val badgeUid: String,
-    private val onMarkingComplete: () -> Unit
-) : DialogFragment() {
-
-    private lateinit var workDataStore: WorkDataStore
-    private var isUnlocked = false
-
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val dialog = super.onCreateDialog(savedInstanceState)
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-        return dialog
-    }
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        workDataStore = WorkDataStore(requireContext())
-        return inflater.inflate(R.layout.dialog_nfc_unlock, container, false)
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        val tvBadgeInfo = view.findViewById<TextView>(R.id.tvBadgeInfo)
-        val sliderUnlock = view.findViewById<Slider>(R.id.sliderUnlock)
-        val layoutButtons = view.findViewById<LinearLayout>(R.id.layoutButtons)
-        val btnCheckIn = view.findViewById<Button>(R.id.btnCheckIn)
-        val btnCheckOut = view.findViewById<Button>(R.id.btnCheckOut)
-        val btnCancel = view.findViewById<Button>(R.id.btnCancel)
-
-        tvBadgeInfo.text = "Badge: ${badgeUid.take(4)}...${badgeUid.takeLast(4)}"
-
-        btnCheckIn.isEnabled = false
-        btnCheckOut.isEnabled = false
-
-        sliderUnlock.addOnChangeListener(Slider.OnChangeListener { slider, value, fromUser ->
-            if (fromUser && value >= 100f && !isUnlocked) {
-                isUnlocked = true
-                layoutButtons.alpha = 1.0f
-                btnCheckIn.isEnabled = true
-                btnCheckOut.isEnabled = true
-                sliderUnlock.isEnabled = false
-                Toast.makeText(requireContext(), "Sbloccato! Scegli ENTRATA o USCITA", Toast.LENGTH_SHORT).show()
-            }
-        })
-
-        btnCheckIn.setOnClickListener {
-            registerMarking("ENTRATA")
-        }
-
-        btnCheckOut.setOnClickListener {
-            registerMarking("USCITA")
-        }
-
-        btnCancel.setOnClickListener {
-            dismiss()
-        }
-    }
-
-    private fun registerMarking(type: String) {
-        val now = Calendar.getInstance()
-        val hour = now.get(Calendar.HOUR_OF_DAY)
-        val minute = now.get(Calendar.MINUTE)
-        val minuteStr = String.format("%02d", minute)
-        
-        val entry = WorkEntry(
-            timestamp = now.timeInMillis,
-            type = type,
-            activity = "Servizio",
-            location = "Modena",
-            date = WorkEntry.getCurrentDate()
-        )
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                workDataStore.addEntry(entry)
-                Toast.makeText(
-                    requireContext(),
-                    "$type registrata alle $hour:$minuteStr",
-                    Toast.LENGTH_LONG
-                ).show()
-                onMarkingComplete()
-                dismiss()
-            } catch (e: Exception) {
-                Toast.makeText(requireContext(), "Errore: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
-        }
     }
 }
