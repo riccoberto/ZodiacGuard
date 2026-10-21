@@ -32,8 +32,21 @@ object MonthlyStatsHelper {
         val hasMealTicket: Boolean,
         val isTeatrino: Boolean,
         val entries: List<WorkEntry> = emptyList(),
-        val mealTickets: Int = 0
+        val mealTickets: Int = 0,
+        val overtimeMinutes: Int = 0
     )
+
+    fun getDatesInMonth(year: Int, month: Int): List<String> {
+        val calendar = Calendar.getInstance().apply {
+            clear()
+            set(year, month - 1, 1)
+        }
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT)
+        return (1..calendar.getActualMaximum(Calendar.DAY_OF_MONTH)).map { day ->
+            calendar.set(Calendar.DAY_OF_MONTH, day)
+            dateFormat.format(calendar.time)
+        }
+    }
 
     fun countWorkingDaysInMonth(year: Int, month: Int): Int {
         val cal = Calendar.getInstance()
@@ -58,7 +71,7 @@ object MonthlyStatsHelper {
         weeklyHours: Int,
         workDays: Int
     ): MonthlyStats {
-        val monthPrefix = String.format("%04d-%02d", year, month)
+        val monthPrefix = String.format(Locale.ROOT, "%04d-%02d", year, month)
         val monthEntries = allEntries.filter { it.date.startsWith(monthPrefix) }
 
         val workingDaysInMonth = countWorkingDaysInMonth(year, month)
@@ -159,7 +172,8 @@ object MonthlyStatsHelper {
                     hasMealTicket,
                     isTeatrino,
                     sorted,
-                    dailyMealTickets
+                    mealTickets = dailyMealTickets,
+                    overtimeMinutes = if (isProduction) extraDay else 0
                 )
             )
         }

@@ -29,117 +29,55 @@ class PdfReportGenerator(private val context: Context) {
         private const val PDF_FOLDER_NAME = "ZGuard"
         private const val PAGE_WIDTH = 595
         private const val PAGE_HEIGHT = 842
-        private const val PAGE_MARGIN = 40f
+        private const val PAGE_MARGIN = 20f
         private const val CONTENT_WIDTH = PAGE_WIDTH - PAGE_MARGIN * 2
-        private const val CONTENT_BOTTOM = PAGE_HEIGHT - 48f
+        private const val TABLE_TOP = 171f
+        private const val ROW_HEIGHT = 19f
+        private const val FOOTER_TOP = 798f
+
+        private val COLUMN_WIDTHS = floatArrayOf(45f, 139f, 68f, 56f, 102f, 145f)
+        private val COLUMN_HEADERS = arrayOf(
+            "GIORNO", "MARCATURE", "ICONE", "SEDE", "ATTIVITA", "TOTALE / STR"
+        )
     }
 
-    private data class PdfPage(val page: PdfDocument.Page, var contentY: Float)
-
-    private val titlePaint = textPaint(20f, Color.rgb(34, 47, 62), bold = true)
-    private val headingPaint = textPaint(12f, Color.rgb(34, 47, 62), bold = true)
-    private val bodyPaint = textPaint(10f, Color.rgb(54, 65, 76))
-    private val smallPaint = textPaint(9f, Color.rgb(85, 95, 105))
-    private val valuePaint = textPaint(11f, Color.rgb(34, 47, 62), bold = true)
-    private val goldPaint = textPaint(10f, Color.rgb(146, 105, 0), bold = true)
+    private val titlePaint = textPaint(15f, Color.rgb(34, 47, 62), bold = true)
+    private val monthPaint = textPaint(11f, Color.rgb(146, 105, 0), bold = true)
+    private val headingPaint = textPaint(8f, Color.rgb(34, 47, 62), bold = true)
+    private val bodyPaint = textPaint(7f, Color.rgb(54, 65, 76))
+    private val smallPaint = textPaint(6.3f, Color.rgb(85, 95, 105))
+    private val metricPaint = textPaint(7.3f, Color.rgb(34, 47, 62))
+    private val tableHeaderPaint = textPaint(6.2f, Color.WHITE, bold = true)
+    private val rowDatePaint = textPaint(6.7f, Color.rgb(34, 47, 62), bold = true)
     private val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(222, 226, 230)
-        strokeWidth = 1f
+        color = Color.rgb(220, 225, 230)
+        strokeWidth = 0.5f
     }
-    private val cardPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(246, 248, 250)
+    private val alternateRowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.rgb(247, 248, 250)
+    }
+    private val headerBackgroundPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.rgb(44, 62, 80)
     }
 
     fun generateMonthlyPdf(
         year: Int,
         month: Int,
         stats: MonthlyStatsHelper.MonthlyStats
-    ): Uri? {
-        if (stats.dailyStats.isEmpty()) return null
-
+    ): Uri {
         val document = PdfDocument()
         try {
-            var pageNumber = 1
-            var page = startPage(document, pageNumber)
+            val pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, 1).create()
+            val page = document.startPage(pageInfo)
+            val canvas = page.canvas
+            canvas.drawColor(Color.WHITE)
 
-            drawSummary(page.page.canvas, page, year, month, stats)
-            page.contentY += 20f
-            page.contentY = drawSectionHeading(
-                page.page.canvas,
-                page.contentY,
-                "AGENDA GIORNALIERA"
-            )
+            drawTitle(canvas, year, month)
+            drawSummary(canvas, stats)
+            drawAgenda(canvas, year, month, stats)
+            drawFooter(canvas)
+            document.finishPage(page)
 
-            for ((index, day) in stats.dailyStats.withIndex()) {
-                val activityLines = wrapText(
-                    "${day.activity} · ${day.location}",
-                    CONTENT_WIDTH - 20f,
-                    bodyPaint
-                )
-                val detailsLines = wrapText(formatDayDetails(day), CONTENT_WIDTH - 20f, smallPaint)
-                var remainingMarkLines = wrapText(
-                    formatMarkings(day.entries),
-                    CONTENT_WIDTH - 20f,
-                    smallPaint
-                )
-                var firstPart = true
-
-                while (firstPart || remainingMarkLines.isNotEmpty()) {
-                    val firstActivityLines = if (firstPart) activityLines else emptyList()
-                    val firstDetailsLines = if (firstPart) detailsLines else emptyList()
-                    val fixedLines = firstActivityLines.size + firstDetailsLines.size
-                    val availableMarkLines =
-                        ((CONTENT_BOTTOM - page.contentY - 25f) / 12f).toInt() - fixedLines
-
-                    if (availableMarkLines < 1 && page.contentY > 100f) {
-                        finishPage(document, page, pageNumber)
-                        pageNumber++
-                        page = startPage(document, pageNumber)
-                        page.contentY = drawSectionHeading(
-                            page.page.canvas,
-                            page.contentY,
-                            "AGENDA GIORNALIERA · CONTINUA"
-                        )
-                        continue
-                    }
-
-                    val markLineCount = minOf(
-                        remainingMarkLines.size,
-                        maxOf(1, availableMarkLines)
-                    )
-                    val cardMarkLines = remainingMarkLines.take(markLineCount)
-                    remainingMarkLines = remainingMarkLines.drop(markLineCount)
-                    val cardHeight = 25f + 12f *
-                        (fixedLines + cardMarkLines.size)
-
-                    drawDayCard(
-                        page.page.canvas,
-                        page.contentY,
-                        cardHeight,
-                        index,
-                        day,
-                        firstPart,
-                        firstActivityLines,
-                        firstDetailsLines,
-                        cardMarkLines
-                    )
-                    page.contentY += cardHeight + 7f
-                    firstPart = false
-
-                    if (remainingMarkLines.isNotEmpty()) {
-                        finishPage(document, page, pageNumber)
-                        pageNumber++
-                        page = startPage(document, pageNumber)
-                        page.contentY = drawSectionHeading(
-                            page.page.canvas,
-                            page.contentY,
-                            "AGENDA GIORNALIERA · CONTINUA"
-                        )
-                    }
-                }
-            }
-
-            finishPage(document, page, pageNumber)
             return savePdf(year, month, document)
         } catch (e: Exception) {
             android.util.Log.e(TAG, "Errore generazione PDF: ${e.message}", e)
@@ -149,208 +87,248 @@ class PdfReportGenerator(private val context: Context) {
         }
     }
 
-    private fun drawSummary(
-        canvas: Canvas,
-        page: PdfPage,
-        year: Int,
-        month: Int,
-        stats: MonthlyStatsHelper.MonthlyStats
-    ) {
+    private fun drawTitle(canvas: Canvas, year: Int, month: Int) {
         val monthLabel = SimpleDateFormat("MMMM yyyy", Locale.ITALIAN)
             .format(monthDate(year, month))
             .replaceFirstChar { it.uppercase(Locale.ITALIAN) }
 
-        canvas.drawText("RIEPILOGO MENSILE", PAGE_MARGIN, page.contentY, titlePaint)
-        page.contentY += 23f
-        canvas.drawText(monthLabel, PAGE_MARGIN, page.contentY, goldPaint)
-        page.contentY += 15f
+        canvas.drawText("RIEPILOGO MENSILE", PAGE_MARGIN, 31f, titlePaint)
+        canvas.drawText("· $monthLabel", PAGE_MARGIN, 45f, monthPaint)
+        canvas.drawLine(PAGE_MARGIN, 51f, PAGE_WIDTH - PAGE_MARGIN, 51f, linePaint)
+    }
 
-        drawSectionHeading(canvas, page.contentY, "RIEPILOGO ORE")
-        page.contentY += 27f
+    private fun drawSummary(canvas: Canvas, stats: MonthlyStatsHelper.MonthlyStats) {
+        canvas.drawText("RIEPILOGO ORE", PAGE_MARGIN, 64f, headingPaint)
 
-        val columnGap = 22f
-        val columnWidth = (CONTENT_WIDTH - columnGap) / 2f
-        val rightColumnX = PAGE_MARGIN + columnWidth + columnGap
-        val summaryRows = listOf(
-            "Totale lavorate" to MonthlyStatsHelper.minutesToText(stats.totalWorkedMinutes),
-            "Contratto attese (${stats.workingDaysInMonth} gg)" to
-                MonthlyStatsHelper.minutesToText(stats.totalContractMinutes),
-            "Ordinarie" to MonthlyStatsHelper.minutesToText(stats.totalOrdinaryMinutes),
-            "Straordinari" to MonthlyStatsHelper.minutesToText(stats.totalOvertimeMinutes),
-            "Banca ore" to MonthlyStatsHelper.minutesToText(stats.totalBankMinutes),
-            "Viaggio" to MonthlyStatsHelper.minutesToText(stats.totalTravelMinutes),
-            "Saldo" to signedMinutes(stats.balanceMinutes),
-            "Buoni pasto" to stats.mealTickets.toString(),
-            "Giornate fuori sede" to stats.outOfTownDays.toString()
+        val metrics = listOf(
+            "Lavorate ${MonthlyStatsHelper.minutesToText(stats.totalWorkedMinutes)}",
+            "Contratto attese (${stats.workingDaysInMonth} gg) ${MonthlyStatsHelper.minutesToText(stats.totalContractMinutes)}",
+            "Ordinarie ${MonthlyStatsHelper.minutesToText(stats.totalOrdinaryMinutes)}",
+            "Straordinari ${MonthlyStatsHelper.minutesToText(stats.totalOvertimeMinutes)}",
+            "Banca ore ${MonthlyStatsHelper.minutesToText(stats.totalBankMinutes)}",
+            "Viaggio ${MonthlyStatsHelper.minutesToText(stats.totalTravelMinutes)}",
+            "Saldo ${signedMinutes(stats.balanceMinutes)}",
+            "Buoni pasto ${stats.mealTickets}",
+            "Giornate fuori sede ${stats.outOfTownDays}"
         )
-
-        var leftY = page.contentY
-        var rightY = page.contentY
-        for ((index, row) in summaryRows.withIndex()) {
-            val columnX = if (index % 2 == 0) PAGE_MARGIN else rightColumnX
-            val rowY = if (index % 2 == 0) leftY else rightY
-            canvas.drawText(row.first, columnX, rowY, bodyPaint)
-            canvas.drawText(row.second, columnX + columnWidth - valuePaint.measureText(row.second), rowY, valuePaint)
-            if (index % 2 == 0) leftY += 21f else rightY += 21f
+        val summaryColumnWidth = CONTENT_WIDTH / 3f
+        for ((index, metric) in metrics.withIndex()) {
+            val row = index / 3
+            val column = index % 3
+            val x = PAGE_MARGIN + summaryColumnWidth * column
+            val baseline = 77f + row * 12f
+            drawFittedText(canvas, metric, x, baseline, summaryColumnWidth - 7f, metricPaint)
         }
-        page.contentY = maxOf(leftY, rightY) + 5f
 
-        drawSectionHeading(canvas, page.contentY, "ATTIVITÀ E SEDI")
-        page.contentY += 27f
-        val activities = stats.teatriniCount.entries
+        val teatrini = stats.teatriniCount.entries
             .sortedBy { it.key }
-            .joinToString("   ·   ") { "${it.key}: ${it.value}" }
+            .joinToString(" · ") { "${it.key}: ${it.value}" }
             .ifEmpty { "Nessun teatrino" }
-        val teatrinoDays = stats.teatriniDays
-            .joinToString("   ·   ") { formatShortDate(it) }
-            .ifEmpty { "Nessun teatrino" }
+        drawFittedText(canvas, "Teatrini: $teatrini", PAGE_MARGIN, 117f, CONTENT_WIDTH, smallPaint)
+
         val locations = stats.locationsCount.entries
             .sortedBy { it.key }
-            .joinToString("   ·   ") { "${it.key}: ${it.value} gg" }
+            .joinToString(" · ") { "${it.key}: ${it.value} gg" }
             .ifEmpty { "Nessuna presenza" }
+        drawFittedText(canvas, "Sedi: $locations", PAGE_MARGIN, 127f, CONTENT_WIDTH, smallPaint)
 
-        page.contentY = drawWrappedLabel(canvas, "Teatrini", activities, page.contentY)
-        page.contentY = drawWrappedLabel(canvas, "Giorni", teatrinoDays, page.contentY)
-        page.contentY = drawWrappedLabel(canvas, "Presenze", locations, page.contentY)
-    }
-
-    private fun drawWrappedLabel(
-        canvas: Canvas,
-        label: String,
-        value: String,
-        y: Float
-    ): Float {
-        canvas.drawText("$label:", PAGE_MARGIN, y, headingPaint)
-        val lines = wrapText(value, CONTENT_WIDTH - 74f, bodyPaint)
-        for ((index, line) in lines.withIndex()) {
-            canvas.drawText(line, PAGE_MARGIN + 74f, y + index * 13f, bodyPaint)
+        val teatrinoDays = stats.teatriniDays
+            .joinToString(" · ") { formatShortDate(it) }
+            .ifEmpty { "Nessuno" }
+        val dayLines = wrapText("Giorni teatrino: $teatrinoDays", CONTENT_WIDTH, smallPaint)
+        for ((index, line) in dayLines.withIndex()) {
+            canvas.drawText(line, PAGE_MARGIN, 137f + index * 8f, smallPaint)
         }
-        return y + maxOf(18f, lines.size * 13f) + 3f
     }
 
-    private fun drawSectionHeading(canvas: Canvas, y: Float, text: String): Float {
-        canvas.drawText(text, PAGE_MARGIN, y, headingPaint)
-        canvas.drawLine(PAGE_MARGIN, y + 5f, PAGE_WIDTH - PAGE_MARGIN, y + 5f, linePaint)
-        return y + 17f
-    }
-
-    private fun drawDayCard(
+    private fun drawAgenda(
         canvas: Canvas,
-        y: Float,
-        height: Float,
-        index: Int,
-        day: MonthlyStatsHelper.DailySummary,
-        firstPart: Boolean,
-        activityLines: List<String>,
-        detailsLines: List<String>,
-        markings: List<String>
+        year: Int,
+        month: Int,
+        stats: MonthlyStatsHelper.MonthlyStats
     ) {
-        val rect = RectF(PAGE_MARGIN, y, PAGE_WIDTH - PAGE_MARGIN, y + height)
-        if (index % 2 == 0) canvas.drawRoundRect(rect, 5f, 5f, cardPaint)
+        val monthDates = MonthlyStatsHelper.getDatesInMonth(year, month)
+        val daysByDate = stats.dailyStats.associateBy { it.date }
+        val dayLines = wrapText(
+            "Giorni teatrino: " +
+                stats.teatriniDays.joinToString(" · ") { formatShortDate(it) }
+                    .ifEmpty { "Nessuno" },
+            CONTENT_WIDTH,
+            smallPaint
+        )
+        val tableTop = maxOf(TABLE_TOP, 141f + dayLines.size * 8f + 5f)
+        drawTableHeader(canvas, tableTop)
 
-        val left = PAGE_MARGIN + 10f
-        var lineY = y + 15f
-        if (firstPart) {
-            val date = SimpleDateFormat("EEEE d MMMM yyyy", Locale.ITALIAN)
-                .format(parseDate(day.date))
-                .replaceFirstChar { it.uppercase(Locale.ITALIAN) }
-            canvas.drawText(date, left, lineY, headingPaint)
-        } else {
-            canvas.drawText(
-                "${SimpleDateFormat("dd/MM/yyyy", Locale.ITALIAN).format(parseDate(day.date))} · Marcature (continua)",
-                left,
-                lineY,
-                headingPaint
+        for ((index, date) in monthDates.withIndex()) {
+            val day = daysByDate[date]
+            val rowTop = tableTop + ROW_HEIGHT * (index + 1)
+            val baseline = rowTop + 12f
+
+            if (index % 2 == 0) {
+                canvas.drawRect(
+                    PAGE_MARGIN,
+                    rowTop,
+                    PAGE_WIDTH - PAGE_MARGIN,
+                    rowTop + ROW_HEIGHT,
+                    alternateRowPaint
+                )
+            }
+
+            canvas.drawText(formatWeekday(date), PAGE_MARGIN + 3f, baseline, rowDatePaint)
+            if (day != null) {
+                drawDay(canvas, baseline, day)
+            }
+
+            canvas.drawLine(
+                PAGE_MARGIN,
+                rowTop + ROW_HEIGHT,
+                PAGE_WIDTH - PAGE_MARGIN,
+                rowTop + ROW_HEIGHT,
+                linePaint
             )
         }
+    }
 
-        lineY += 14f
-        for (line in activityLines) {
-            canvas.drawText(line, left, lineY, bodyPaint)
-            lineY += 12f
-        }
-
-        for (line in detailsLines) {
-            canvas.drawText(line, left, lineY, smallPaint)
-            lineY += 12f
-        }
-
-        for (line in markings) {
-            canvas.drawText(line, left, lineY, smallPaint)
-            lineY += 12f
+    private fun drawTableHeader(canvas: Canvas, top: Float) {
+        canvas.drawRect(
+            PAGE_MARGIN,
+            top,
+            PAGE_WIDTH - PAGE_MARGIN,
+            top + ROW_HEIGHT,
+            headerBackgroundPaint
+        )
+        var x = PAGE_MARGIN
+        for (index in COLUMN_HEADERS.indices) {
+            canvas.drawText(COLUMN_HEADERS[index], x + 3f, top + 12f, tableHeaderPaint)
+            x += COLUMN_WIDTHS[index]
         }
     }
 
-    private fun formatDayDetails(day: MonthlyStatsHelper.DailySummary): String =
-        buildList {
-            add("Totale: ${MonthlyStatsHelper.minutesToText(day.totalMinutes)}")
-            add("Viaggio: ${MonthlyStatsHelper.minutesToText(day.travelMinutes)}")
-            add("Produzione: ${if (day.isProduction) "sì" else "no"}")
-            add("Buoni pasto: ${day.mealTickets}")
-        }.joinToString("   ·   ")
+    private fun drawDay(canvas: Canvas, baseline: Float, day: MonthlyStatsHelper.DailySummary) {
+        val starts = columnStarts()
+        val markings = day.entries.sortedBy { it.timestamp }.joinToString(" · ") { entry ->
+            val kind = if (entry.type == "ENTRATA") "E" else "U"
+            "${SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(entry.timestamp))} $kind"
+        }
+        drawFittedText(canvas, markings, starts[1] + 3f, baseline, COLUMN_WIDTHS[1] - 6f, smallPaint)
 
-    private fun formatMarkings(entries: List<WorkEntry>): String {
-        if (entries.isEmpty()) return "Marcature: nessuna"
+        val icons = buildList {
+            if (day.isProduction) add("P")
+            if (day.hasMealTicket) add("BP")
+            if (day.isTeatrino) add("T")
+            if (day.location != "Modena") add("KM")
+        }.joinToString(" · ")
+        drawFittedText(canvas, icons, starts[2] + 3f, baseline, COLUMN_WIDTHS[2] - 6f, smallPaint)
+        drawFittedText(
+            canvas,
+            day.location,
+            starts[3] + 3f,
+            baseline,
+            COLUMN_WIDTHS[3] - 6f,
+            smallPaint
+        )
+        drawFittedText(
+            canvas,
+            day.activity,
+            starts[4] + 3f,
+            baseline,
+            COLUMN_WIDTHS[4] - 6f,
+            smallPaint
+        )
 
-        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-        return entries.sortedBy { it.timestamp }.joinToString("   ·   ", "Marcature: ") { entry ->
-            "${timeFormat.format(Date(entry.timestamp))} ${entry.type}"
+        val timeX = starts[5] + 3f
+        val timeWidth = COLUMN_WIDTHS[5] - 6f
+        drawFittedText(
+            canvas,
+            MonthlyStatsHelper.minutesToText(day.totalMinutes),
+            timeX,
+            baseline - if (day.overtimeMinutes > 0) 3f else 0f,
+            timeWidth,
+            smallPaint
+        )
+        if (day.overtimeMinutes > 0) {
+            drawFittedText(
+                canvas,
+                "STR ${MonthlyStatsHelper.minutesToText(day.overtimeMinutes)}",
+                timeX,
+                baseline + 5f,
+                timeWidth,
+                smallPaint
+            )
         }
     }
+
+    private fun drawFooter(canvas: Canvas) {
+        canvas.drawLine(PAGE_MARGIN, FOOTER_TOP, PAGE_WIDTH - PAGE_MARGIN, FOOTER_TOP, linePaint)
+        val note =
+            "Le marcature possono differire di qualche minuto da quelle originali e sono riportate solo come riferimento."
+        drawFittedText(canvas, note, PAGE_MARGIN, FOOTER_TOP + 13f, CONTENT_WIDTH, smallPaint)
+        drawFittedText(
+            canvas,
+            "P = produzione · BP = buono pasto · T = teatrino · KM = rimborso chilometrico",
+            PAGE_MARGIN,
+            FOOTER_TOP + 23f,
+            CONTENT_WIDTH,
+            smallPaint
+        )
+    }
+
+    private fun columnStarts(): FloatArray {
+        val starts = FloatArray(COLUMN_WIDTHS.size)
+        var x = PAGE_MARGIN
+        for (index in COLUMN_WIDTHS.indices) {
+            starts[index] = x
+            x += COLUMN_WIDTHS[index]
+        }
+        return starts
+    }
+
+    private fun formatWeekday(date: String): String {
+        val formatted = SimpleDateFormat("EEE dd", Locale.ITALIAN).format(parseDate(date))
+        return formatted.replaceFirstChar { it.lowercase(Locale.ITALIAN) }
+    }
+
+    private fun formatShortDate(date: String): String =
+        SimpleDateFormat("dd/MM", Locale.ITALIAN).format(parseDate(date))
 
     private fun wrapText(text: String, maxWidth: Float, paint: Paint): List<String> {
         if (text.isBlank()) return listOf("")
 
-        val result = mutableListOf<String>()
-        var line = StringBuilder()
+        val lines = mutableListOf<String>()
+        var currentLine = StringBuilder()
         for (word in text.split(Regex("\\s+"))) {
-            val candidate = if (line.isEmpty()) word else "$line $word"
-            if (line.isNotEmpty() && paint.measureText(candidate) > maxWidth) {
-                result.add(line.toString())
-                line = StringBuilder(word)
+            val candidate = if (currentLine.isEmpty()) word else "$currentLine $word"
+            if (currentLine.isNotEmpty() && paint.measureText(candidate) > maxWidth) {
+                lines.add(currentLine.toString())
+                currentLine = StringBuilder(word)
             } else {
-                line = StringBuilder(candidate)
+                currentLine = StringBuilder(candidate)
             }
         }
-        if (line.isNotEmpty()) result.add(line.toString())
-        return result
+        if (currentLine.isNotEmpty()) lines.add(currentLine.toString())
+        return lines
     }
 
-    private fun startPage(document: PdfDocument, pageNumber: Int): PdfPage {
-        val info = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber).create()
-        val page = document.startPage(info)
-        page.canvas.drawColor(Color.WHITE)
-        page.canvas.drawText("Z GUARD", PAGE_MARGIN, 30f, headingPaint)
-        page.canvas.drawLine(
-            PAGE_MARGIN,
-            39f,
-            PAGE_WIDTH - PAGE_MARGIN,
-            39f,
-            linePaint
-        )
-        return PdfPage(page, 63f)
-    }
-
-    private fun finishPage(
-        document: PdfDocument,
-        page: PdfPage,
-        pageNumber: Int
+    private fun drawFittedText(
+        canvas: Canvas,
+        text: String,
+        x: Float,
+        baseline: Float,
+        maxWidth: Float,
+        paint: Paint
     ) {
-        page.page.canvas.drawLine(
-            PAGE_MARGIN,
-            PAGE_HEIGHT - 35f,
-            PAGE_WIDTH - PAGE_MARGIN,
-            PAGE_HEIGHT - 35f,
-            linePaint
-        )
-        val footer = "Pagina $pageNumber"
-        page.page.canvas.drawText(
-            footer,
-            PAGE_WIDTH - PAGE_MARGIN - smallPaint.measureText(footer),
-            PAGE_HEIGHT - 20f,
-            smallPaint
-        )
-        document.finishPage(page.page)
+        if (text.isEmpty()) return
+        val measuredWidth = paint.measureText(text)
+        if (measuredWidth <= maxWidth || measuredWidth == 0f) {
+            canvas.drawText(text, x, baseline, paint)
+            return
+        }
+
+        val scale = maxWidth / measuredWidth
+        canvas.save()
+        canvas.scale(scale, 1f, x, baseline)
+        canvas.drawText(text, x, baseline, paint)
+        canvas.restore()
     }
 
     private fun savePdf(year: Int, month: Int, document: PdfDocument): Uri {
@@ -415,16 +393,12 @@ class PdfReportGenerator(private val context: Context) {
 
     private fun signedMinutes(minutes: Int): String {
         val sign = if (minutes >= 0) "+" else "-"
-        val absolute = kotlin.math.abs(minutes)
-        return "$sign${MonthlyStatsHelper.minutesToText(absolute)}"
+        return "$sign${MonthlyStatsHelper.minutesToText(kotlin.math.abs(minutes))}"
     }
 
     private fun parseDate(date: String): Date =
         SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).parse(date)
             ?: throw IllegalArgumentException("Data non valida: $date")
-
-    private fun formatShortDate(date: String): String =
-        SimpleDateFormat("dd/MM", Locale.ITALIAN).format(parseDate(date))
 
     private fun monthDate(year: Int, month: Int): Date =
         Calendar.getInstance().apply { set(year, month - 1, 1) }.time

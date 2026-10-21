@@ -176,19 +176,15 @@ class MonthlyFragment : Fragment() {
             try {
                 val uri = PdfReportGenerator(requireContext()).generateMonthlyPdf(year, month, stats)
                 
-                if (uri != null) {
-                    val intent = Intent(Intent.ACTION_SEND).apply {
-                        type = "application/pdf"
-                        putExtra(Intent.EXTRA_SUBJECT, "Riepilogo $monthLabel")
-                        putExtra(Intent.EXTRA_STREAM, uri)
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    }
-                    
-                    startActivity(Intent.createChooser(intent, "Condividi PDF Riepilogo"))
-                    Toast.makeText(requireContext(), "PDF generato e pronto per la condivisione", Toast.LENGTH_LONG).show()
-                } else {
-                    Toast.makeText(requireContext(), "Nessuna marcatura trovata per questo mese", Toast.LENGTH_SHORT).show()
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "application/pdf"
+                    putExtra(Intent.EXTRA_SUBJECT, "Riepilogo $monthLabel")
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
+
+                startActivity(Intent.createChooser(intent, "Condividi PDF Riepilogo"))
+                Toast.makeText(requireContext(), "PDF generato e pronto per la condivisione", Toast.LENGTH_LONG).show()
             } catch (e: Exception) {
                 Toast.makeText(requireContext(), "Errore generazione PDF: ${e.message}", Toast.LENGTH_LONG).show()
             } finally {
