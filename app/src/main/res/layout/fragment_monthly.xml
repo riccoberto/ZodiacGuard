@@ -11,6 +11,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
+        <!-- Navigazione Mese -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -49,6 +50,7 @@
                 android:textColor="@color/zodiac_navy" />
         </LinearLayout>
 
+        <!-- Riepilogo Ore -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -133,6 +135,7 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
+        <!-- Grafico a Torta -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -150,6 +153,7 @@
             android:layout_gravity="center_horizontal"
             android:layout_marginBottom="16dp" />
 
+        <!-- Teatrini e Sedi -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -199,84 +203,4 @@
                 android:id="@+id/tvTeatriniCount"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Nessun teatrino"
-                android:textColor="@color/white"
-                android:textSize="14sp"
-                android:layout_marginBottom="12dp" />
-            
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Presenze per sede:"
-                android:textColor="@color/white"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="4dp" />
-            
-            <TextView
-                android:id="@+id/tvLocationsCount"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Nessuna presenza"
-                android:textColor="@color/white"
-                android:textSize="14sp"
-                android:layout_marginBottom="4dp" />
-            
-            <TextView
-                android:id="@+id/tvOutOfTown"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="🚗 Giornate fuori sede: 0"
-                android:textColor="#B388FF"
-                android:textSize="14sp"
-                android:layout_marginBottom="4dp" />
-            
-            <TextView
-                android:id="@+id/tvMealTickets"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="🍽️ Buoni pasto: 0"
-                android:textColor="@color/zodiac_gold"
-                android:textSize="14sp" />
-        </LinearLayout>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Agenda Giornaliera"
-            android:textColor="@color/zodiac_gold"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:fontFamily="sans-serif-condensed-medium"
-            android:layout_marginBottom="12dp" />
-        
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerViewAgenda"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnShareReport"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:text="📤 CONDIVIDI RIEPILOGO"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:backgroundTint="@color/zodiac_gold"
-            android:textColor="@color/zodiac_navy"
-            android:layout_marginBottom="12dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnBackup"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:text="💾 BACKUP DATI"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:backgroundTint="#64B5F6"
-            android:textColor="@color/white"
-            android:layout_marginBottom="16dp" />
-
-    </LinearLayout>
-</ScrollView>
+                android:text="Nessun teatr
