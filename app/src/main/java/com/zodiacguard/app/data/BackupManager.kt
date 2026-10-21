@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.flow.first
 import org.json.JSONArray
@@ -94,51 +95,60 @@ class BackupManager(private val context: Context) {
                 }
                 backupFile.writeText(jsonString)
                 Log.d(TAG, "Backup salvato nell'archivio privato dell'app")
-                return true
+            } else {
+                saveBackupToDownloads(jsonString)
             }
 
-            // 4. Salva usando MediaStore
-            val contentValues = ContentValues().apply {
-                put(MediaStore.Downloads.DISPLAY_NAME, BACKUP_FILE_NAME)
-                put(MediaStore.Downloads.MIME_TYPE, "application/json")
-                put(MediaStore.Downloads.RELATIVE_PATH, "${Environment.DIRECTORY_DOWNLOADS}/$BACKUP_FOLDER_NAME")
-                put(MediaStore.Downloads.IS_PENDING, 1)
-            }
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Errore backup: ${e.message}", e)
+            false
+        }
+    }
 
-            val resolver = context.contentResolver
-            val collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI
-            
-            // Cerca se esiste già un file con lo stesso nome e cancellalo
-            val existingUri = findExistingBackupUri()
-            if (existingUri != null) {
-                resolver.delete(existingUri, null, null)
-                Log.d(TAG, "Vecchio backup eliminato")
-            }
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun saveBackupToDownloads(jsonString: String) {
+        val contentValues = ContentValues().apply {
+            put(MediaStore.Downloads.DISPLAY_NAME, BACKUP_FILE_NAME)
+            put(MediaStore.Downloads.MIME_TYPE, "application/json")
+            put(MediaStore.Downloads.RELATIVE_PATH, "${Environment.DIRECTORY_DOWNLOADS}/$BACKUP_FOLDER_NAME")
+            put(MediaStore.Downloads.IS_PENDING, 1)
+        }
 
-            // Inserisci nuovo file
-            val uri = resolver.insert(collection, contentValues)
-                ?: throw IOException("Impossibile creare il file di backup")
+        val resolver = context.contentResolver
+        val collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI
+        val existingBackups = queryBackupUris()
+        val existingBackup = existingBackups.firstOrNull { it.first == BACKUP_FILE_NAME }
+        val uri = existingBackup?.second ?: resolver.insert(collection, contentValues)
+            ?: throw IOException("Impossibile creare il file di backup")
 
-            try {
-                resolver.openOutputStream(uri)?.use { outputStream ->
-                    outputStream.write(jsonString.toByteArray())
+        try {
+            resolver.openOutputStream(uri, if (existingBackup != null) "wt" else "w")
+                ?.use { outputStream ->
+                    outputStream.write(jsonString.toByteArray(Charsets.UTF_8))
                 } ?: throw IOException("Impossibile scrivere il file di backup")
 
+            if (existingBackup == null) {
                 val updateValues = ContentValues().apply {
                     put(MediaStore.Downloads.IS_PENDING, 0)
                 }
                 resolver.update(uri, updateValues, null, null)
-
-                Log.d(TAG, "Backup salvato con successo via MediaStore: $uri")
-                return true
-            } catch (e: Exception) {
-                resolver.delete(uri, null, null)
-                throw e
             }
 
+            existingBackups
+                .filter { it.second != uri }
+                .forEach { (_, duplicateUri) ->
+                    if (resolver.delete(duplicateUri, null, null) == 0) {
+                        throw IOException("Impossibile rimuovere un backup duplicato")
+                    }
+                }
+
+            Log.d(TAG, "Backup aggiornato via MediaStore: $uri")
         } catch (e: Exception) {
-            Log.e(TAG, "Errore backup: ${e.message}", e)
-            return false
+            if (existingBackup == null) {
+                resolver.delete(uri, null, null)
+            }
+            throw e
         }
     }
 
@@ -150,26 +160,48 @@ class BackupManager(private val context: Context) {
             return getLegacyBackupUri()
         }
 
-        val resolver = context.contentResolver
+        val matchingBackups = queryBackupUris()
+        return matchingBackups.firstOrNull { it.first == BACKUP_FILE_NAME }?.second
+            ?: matchingBackups.firstOrNull()?.second
+            ?: getLegacyBackupUri()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun queryBackupUris(): List<Pair<String, Uri>> {
         val collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI
-        
         val projection = arrayOf(
             MediaStore.Downloads._ID,
-            MediaStore.Downloads.DISPLAY_NAME,
-            MediaStore.Downloads.RELATIVE_PATH
+            MediaStore.Downloads.DISPLAY_NAME
         )
-        
-        val selection = "${MediaStore.Downloads.DISPLAY_NAME} = ? AND ${MediaStore.Downloads.RELATIVE_PATH} LIKE ?"
-        val selectionArgs = arrayOf(BACKUP_FILE_NAME, "%$BACKUP_FOLDER_NAME%")
-        
-        resolver.query(collection, projection, selection, selectionArgs, null)?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Downloads._ID))
-                return Uri.withAppendedPath(collection, id.toString())
+        val selection = "${MediaStore.Downloads.RELATIVE_PATH} = ?"
+        val relativePath = "${Environment.DIRECTORY_DOWNLOADS}/$BACKUP_FOLDER_NAME/"
+        val backups = mutableListOf<Pair<String, Uri>>()
+
+        val cursor = context.contentResolver.query(
+            collection,
+            projection,
+            selection,
+            arrayOf(relativePath),
+            null
+        ) ?: throw IOException("Impossibile cercare il file di backup")
+
+        cursor.use {
+            val idColumn = it.getColumnIndexOrThrow(MediaStore.Downloads._ID)
+            val nameColumn = it.getColumnIndexOrThrow(MediaStore.Downloads.DISPLAY_NAME)
+            while (it.moveToNext()) {
+                val name = it.getString(nameColumn)
+                if (isBackupFileName(name)) {
+                    val id = it.getLong(idColumn)
+                    backups.add(name to Uri.withAppendedPath(collection, id.toString()))
+                }
             }
         }
-        return getLegacyBackupUri()
+        return backups
     }
+
+    private fun isBackupFileName(name: String): Boolean =
+        name == BACKUP_FILE_NAME ||
+            name.matches(Regex("""^ZGuard_Backup \(\d+\)\.json$"""))
 
     private fun getLegacyBackupFile(): File =
         File(File(context.filesDir, BACKUP_FOLDER_NAME), BACKUP_FILE_NAME)

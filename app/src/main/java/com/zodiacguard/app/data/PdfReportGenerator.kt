@@ -345,6 +345,9 @@ class PdfReportGenerator(private val context: Context) {
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun savePdfToDownloads(fileName: String, pdfBytes: ByteArray): Uri {
         val resolver = context.contentResolver
+        val collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI
+        val existingPdfs = queryPdfUris(fileName)
+        val existingPdf = existingPdfs.firstOrNull { it.first == fileName }
         val values = ContentValues().apply {
             put(MediaStore.Downloads.DISPLAY_NAME, fileName)
             put(MediaStore.Downloads.MIME_TYPE, "application/pdf")
@@ -354,24 +357,73 @@ class PdfReportGenerator(private val context: Context) {
             )
             put(MediaStore.Downloads.IS_PENDING, 1)
         }
-        val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+        val uri = existingPdf?.second ?: resolver.insert(collection, values)
             ?: throw IOException("Impossibile creare il PDF in Download")
 
         try {
-            resolver.openOutputStream(uri)?.use { it.write(pdfBytes) }
+            resolver.openOutputStream(uri, if (existingPdf != null) "wt" else "w")
+                ?.use { it.write(pdfBytes) }
                 ?: throw IOException("Impossibile scrivere il PDF")
-            resolver.update(
-                uri,
-                ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) },
-                null,
-                null
-            )
+
+            if (existingPdf == null) {
+                resolver.update(
+                    uri,
+                    ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) },
+                    null,
+                    null
+                )
+            }
+
+            existingPdfs
+                .filter { it.second != uri }
+                .forEach { (_, duplicateUri) ->
+                    if (resolver.delete(duplicateUri, null, null) == 0) {
+                        throw IOException("Impossibile rimuovere un PDF duplicato")
+                    }
+                }
         } catch (e: Exception) {
-            resolver.delete(uri, null, null)
+            if (existingPdf == null) {
+                resolver.delete(uri, null, null)
+            }
             throw e
         }
 
         return uri
+    }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun queryPdfUris(fileName: String): List<Pair<String, Uri>> {
+        val collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI
+        val projection = arrayOf(
+            MediaStore.Downloads._ID,
+            MediaStore.Downloads.DISPLAY_NAME
+        )
+        val relativePath = "${Environment.DIRECTORY_DOWNLOADS}/$PDF_FOLDER_NAME/"
+        val cursor = context.contentResolver.query(
+            collection,
+            projection,
+            "${MediaStore.Downloads.RELATIVE_PATH} = ?",
+            arrayOf(relativePath),
+            null
+        ) ?: throw IOException("Impossibile cercare il PDF in Download")
+
+        val stem = fileName.substringBeforeLast('.')
+        val extension = fileName.substringAfterLast('.', "")
+        val duplicateName = Regex("""^${Regex.escape(stem)} \(\d+\)\.${Regex.escape(extension)}$""")
+        val pdfs = mutableListOf<Pair<String, Uri>>()
+
+        cursor.use {
+            val idColumn = it.getColumnIndexOrThrow(MediaStore.Downloads._ID)
+            val nameColumn = it.getColumnIndexOrThrow(MediaStore.Downloads.DISPLAY_NAME)
+            while (it.moveToNext()) {
+                val name = it.getString(nameColumn)
+                if (name == fileName || duplicateName.matches(name)) {
+                    val id = it.getLong(idColumn)
+                    pdfs.add(name to Uri.withAppendedPath(collection, id.toString()))
+                }
+            }
+        }
+        return pdfs
     }
 
     private fun savePdfToAppStorage(fileName: String, pdfBytes: ByteArray): Uri {
