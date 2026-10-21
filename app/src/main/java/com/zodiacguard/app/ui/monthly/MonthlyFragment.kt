@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
@@ -14,6 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.zodiacguard.app.R
 import com.zodiacguard.app.data.ContractDataStore
 import com.zodiacguard.app.data.MonthlyStatsHelper
+import com.zodiacguard.app.data.PdfReportGenerator
 import com.zodiacguard.app.data.WorkDataStore
 import com.zodiacguard.app.databinding.FragmentMonthlyBinding
 import kotlinx.coroutines.flow.first
@@ -29,7 +31,7 @@ class MonthlyFragment : Fragment() {
     private lateinit var contractDataStore: ContractDataStore
     
     private var currentYear: Int = Calendar.getInstance().get(Calendar.YEAR)
-    private var currentMonth: Int = Calendar.getInstance().get(Calendar.MONTH) + 1
+    private var currentMonth: Int = Calendar.getInstance().get(Calendar.MONTH) + 1 // 1-12
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -59,8 +61,8 @@ class MonthlyFragment : Fragment() {
             loadStats()
         }
 
-        binding.btnShareReport.setOnClickListener { shareReport() }
-        binding.btnBackup.setOnClickListener { createBackup() }
+        // Collega il pulsante al nuovo generatore PDF
+        binding.btnShareReport.setOnClickListener { shareReportAsPdf() }
 
         loadStats()
     }
@@ -145,50 +147,44 @@ class MonthlyFragment : Fragment() {
         binding.recyclerViewAgenda.adapter = agendaAdapter
     }
 
-    private fun shareReport() {
+    // NUOVA FUNZIONE: Genera e condivide PDF
+    private fun shareReportAsPdf() {
+        // Disabilita il pulsante per evitare doppi click
+        binding.btnShareReport.isEnabled = false
+        binding.btnShareReport.text = "⏳ Generazione PDF in corso..."
+        
         viewLifecycleOwner.lifecycleScope.launch {
-            val allEntries = workDataStore.entriesFlow.first()
-            val weeklyHours = contractDataStore.weeklyHoursFlow.first()
-            val workDays = contractDataStore.workDaysFlow.first()
-            val productionDates = workDataStore.productionDaysFlow.first()
-            
-            val stats = MonthlyStatsHelper.calculateMonthlyStats(
-                allEntries, productionDates, currentYear, currentMonth, weeklyHours, workDays
-            )
-
-            val report = MonthlyStatsHelper.generateDetailedReport(stats, binding.tvMonthYear.text.toString())
-            
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_SUBJECT, "Riepilogo ${binding.tvMonthYear.text}")
-                putExtra(Intent.EXTRA_TEXT, report)
+            try {
+                // Nota: currentMonth è 1-12, ma il generatore si aspetta 0-11 (stile Java Calendar)
+                val pdfFile = PdfReportGenerator(requireContext()).generateMonthlyPdf(currentYear, currentMonth - 1)
+                
+                if (pdfFile != null && pdfFile.exists()) {
+                    // Crea l'URI sicuro per la condivisione
+                    val uri = FileProvider.getUriForFile(
+                        requireContext(),
+                        "${requireContext().packageName}.fileprovider",
+                        pdfFile
+                    )
+                    
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "application/pdf"
+                        putExtra(Intent.EXTRA_SUBJECT, "Riepilogo ${binding.tvMonthYear.text}")
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    
+                    startActivity(Intent.createChooser(intent, "Condividi PDF Riepilogo"))
+                    Toast.makeText(requireContext(), "PDF salvato in Download/ZGuard", Toast.LENGTH_LONG).show()
+                } else {
+                    Toast.makeText(requireContext(), "Nessuna marcatura trovata per questo mese", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Errore generazione PDF: ${e.message}", Toast.LENGTH_LONG).show()
+            } finally {
+                // Ripristina il pulsante
+                binding.btnShareReport.isEnabled = true
+                binding.btnShareReport.text = "📄 ESPORTA RIEPILOGO PDF"
             }
-            
-            startActivity(Intent.createChooser(intent, "Condividi riepilogo"))
-        }
-    }
-
-    private fun createBackup() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            val allEntries = workDataStore.entriesFlow.first()
-            val weeklyHours = contractDataStore.weeklyHoursFlow.first()
-            val workDays = contractDataStore.workDaysFlow.first()
-            val productionDates = workDataStore.productionDaysFlow.first()
-            
-            val notes = emptyMap<String, String>()
-            
-            val backup = MonthlyStatsHelper.exportAllData(
-                allEntries, productionDates, notes, weeklyHours, workDays
-            )
-            
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_SUBJECT, "Backup Z Guard ${SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())}")
-                putExtra(Intent.EXTRA_TEXT, backup)
-            }
-            
-            startActivity(Intent.createChooser(intent, "Salva Backup"))
-            Toast.makeText(requireContext(), "Backup generato!", Toast.LENGTH_SHORT).show()
         }
     }
 
