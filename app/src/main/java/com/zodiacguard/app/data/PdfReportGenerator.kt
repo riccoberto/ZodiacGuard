@@ -273,8 +273,8 @@ class PdfReportGenerator(private val context: Context) {
         canvas.drawLine(margin, y, margin, tableBottom, thickLinePaint)
         canvas.drawLine(margin + tableWidth, y, margin + tableWidth, tableBottom, thickLinePaint)
 
-        val sortedKeys = groupedByDay.keys.toList()
-        sortedKeys.sort()
+          val sortedKeys = groupedByDay.keys.sorted()
+      
         
         var rowBg = false
         for (i in sortedKeys.indices) {
