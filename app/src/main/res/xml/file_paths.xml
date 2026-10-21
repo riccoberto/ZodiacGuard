@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Consente di condividere file dalla cartella Download -->
+    <external-path name="external_files" path="." />
+    <external-files-path name="external_files" path="." />
+</paths>
