@@ -35,7 +35,7 @@ class PdfReportGenerator(private val context: Context) {
                 val cal = Calendar.getInstance()
                 cal.timeInMillis = entry.timestamp
                 cal.get(Calendar.YEAR) == year && cal.get(Calendar.MONTH) == month
-            }.sortedBy { it.timestamp }
+            }.sortedBy { entry -> entry.timestamp }
 
             if (monthEntries.isEmpty()) return null
 
@@ -49,17 +49,17 @@ class PdfReportGenerator(private val context: Context) {
             val mealBadges = calculateMealBadges(monthEntries)
 
             // Conta attività
-            val teatrinoMontaggio = monthEntries.count { it.activity == "Teatrino Montaggio" }
-            val teatrinoSmontaggio = monthEntries.count { it.activity == "Teatrino Smontaggio" }
-            val teatrinoIntero = monthEntries.count { it.activity == "Teatrino Intero" }
-            val servizio = monthEntries.count { it.activity == "Servizio" }
+            val teatrinoMontaggio = monthEntries.count { entry -> entry.activity == "Teatrino Montaggio" }
+            val teatrinoSmontaggio = monthEntries.count { entry -> entry.activity == "Teatrino Smontaggio" }
+            val teatrinoIntero = monthEntries.count { entry -> entry.activity == "Teatrino Intero" }
+            val servizio = monthEntries.count { entry -> entry.activity == "Servizio" }
 
             // Presenza per sede
-            val presenceByLocation = monthEntries.groupBy { it.location }
-                .mapValues { it.value.size }
+            val presenceByLocation = monthEntries.groupBy { entry -> entry.location }
+                .mapValues { pair -> pair.value.size }
 
             // Raggruppa per giorno
-            val groupedByDay = monthEntries.groupBy { it.date }
+            val groupedByDay = monthEntries.groupBy { entry -> entry.date }
 
             // Crea PDF A4
             val pdfDocument = PdfDocument()
@@ -95,7 +95,13 @@ class PdfReportGenerator(private val context: Context) {
         val cal = Calendar.getInstance()
         cal.set(year, month, 1)
         val sdf = SimpleDateFormat("MMMM_yyyy", Locale.ITALIAN)
-        return sdf.format(cal.time).replaceFirstChar { c -> c.uppercase() }
+        val raw = sdf.format(cal.time)
+        return capitalizeFirst(raw)
+    }
+
+    private fun capitalizeFirst(s: String): String {
+        if (s.isEmpty()) return s
+        return s.substring(0, 1).uppercase(Locale.ITALIAN) + s.substring(1)
     }
 
     private fun drawPdf(
@@ -277,13 +283,13 @@ class PdfReportGenerator(private val context: Context) {
             }
             if (isProduction) icons.add("[P]")
             if (dayEntries.size >= 2) {
-                val first = dayEntries.minBy { it.timestamp }
-                val last = dayEntries.maxBy { it.timestamp }
+                val first = dayEntries.minBy { entry -> entry.timestamp }
+                val last = dayEntries.maxBy { entry -> entry.timestamp }
                 val hours = (last.timestamp - first.timestamp) / 3600000f
                 if (hours > 6) icons.add("[BP]")
             }
             val locationsNeedingTravel = listOf("Vignola", "Bologna", "Castelfranco")
-            if (dayEntries.any { it.location in locationsNeedingTravel }) icons.add("[V]")
+            if (dayEntries.any { entry -> entry.location in locationsNeedingTravel }) icons.add("[V]")
             canvas.drawText(icons.joinToString(" "), margin + colWidths[0] + colWidths[1] + 5f, y + 10f, bodyPaint)
 
             // Luogo
@@ -318,13 +324,15 @@ class PdfReportGenerator(private val context: Context) {
     }
 
     private suspend fun calculateTotalHours(entries: List<WorkEntry>): Float {
-        val grouped = entries.groupBy { it.date }
+        val grouped = entries.groupBy { entry -> entry.date }
         var total = 0f
         grouped.forEach { (_, dayEntries) ->
-            val sorted = dayEntries.sortedBy { it.timestamp }
-            for (i in 0 until sorted.size - 1 step 2) {
+            val sorted = dayEntries.sortedBy { entry -> entry.timestamp }
+            var i = 0
+            while (i < sorted.size - 1) {
                 val diff = (sorted[i + 1].timestamp - sorted[i].timestamp) / 3600000f
                 total += diff
+                i += 2
             }
         }
         return total
@@ -332,20 +340,14 @@ class PdfReportGenerator(private val context: Context) {
 
     private suspend fun calculateTravelMinutes(entries: List<WorkEntry>): Int {
         val travelLocations = listOf("Vignola", "Bologna", "Castelfranco")
-        return entries.count { it.location in travelLocations } * 30
+        return entries.count { entry -> entry.location in travelLocations } * 30
     }
 
     private suspend fun calculateMealBadges(entries: List<WorkEntry>): Int {
-        val grouped = entries.groupBy { it.date }
+        val grouped = entries.groupBy { entry -> entry.date }
         var badges = 0
         grouped.forEach { (_, dayEntries) ->
             if (dayEntries.size >= 2) {
-                val first = dayEntries.minBy { it.timestamp }
-                val last = dayEntries.maxBy { it.timestamp }
-                val hours = (last.timestamp - first.timestamp) / 3600000f
-                if (hours > 6) badges++
-            }
-        }
-        return badges
-    }
-}
+                val first = dayEntries.minBy { entry -> entry.timestamp }
+                val last = dayEntries.maxBy { entry -> entry.timestamp }
+                val hours = (last.timestamp - first.timestamp) / 3600000
