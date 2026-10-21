@@ -11,6 +11,7 @@ import android.os.Environment
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Locale
 
 class PdfReportGenerator(private val context: Context) {
 
@@ -78,9 +79,7 @@ class PdfReportGenerator(private val context: Context) {
             val pdfDir = File(downloadDir, PDF_FOLDER_NAME)
             if (!pdfDir.exists()) pdfDir.mkdirs()
 
-            val monthName = SimpleDateFormat("MMMM_yyyy", Locale.ITALIAN).format(
-                Calendar.getInstance().apply { set(year, month, 1) }.time
-            )
+            val monthName = getMonthName(year, month)
             val pdfFile = File(pdfDir, "Riepilogo_$monthName.pdf")
             pdfDocument.writeTo(pdfFile.outputStream())
             pdfDocument.close()
@@ -90,6 +89,13 @@ class PdfReportGenerator(private val context: Context) {
             android.util.Log.e(TAG, "Errore generazione PDF: ${e.message}", e)
             null
         }
+    }
+
+    private fun getMonthName(year: Int, month: Int): String {
+        val cal = Calendar.getInstance()
+        cal.set(year, month, 1)
+        val sdf = SimpleDateFormat("MMMM_yyyy", Locale.ITALIAN)
+        return sdf.format(cal.time).replaceFirstChar { c -> c.uppercase() }
     }
 
     private fun drawPdf(
@@ -104,7 +110,6 @@ class PdfReportGenerator(private val context: Context) {
     ) {
         val margin = 30f
         val pageWidth = 595f
-        val pageHeight = 842f
 
         // Colori B/N-friendly
         val black = Color.BLACK
@@ -153,17 +158,19 @@ class PdfReportGenerator(private val context: Context) {
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             isAntiAlias = true
         }
+        val subtitlePaint = Paint().apply {
+            color = darkGray
+            textSize = 20f
+            isAntiAlias = true
+        }
 
         var y = margin + 10f
 
         // TITOLO
         canvas.drawText("RIEPILOGO MESE", margin, y, titlePaint)
-        val monthName = SimpleDateFormat("MMMM yyyy", Locale.ITALIAN).format(
-            Calendar.getInstance().apply { set(year, month, 1) }.time
-        ).replaceFirstChar { it.uppercase() }
+        val monthName = getMonthName(year, month)
         val titleWidth = titlePaint.measureText("RIEPILOGO MESE")
-        canvas.drawText(": $monthName", margin + titleWidth + 10f, y, 
-            Paint().apply { color = darkGray; textSize = 20f; isAntiAlias = true })
+        canvas.drawText(": $monthName", margin + titleWidth + 10f, y, subtitlePaint)
         y += 6f
         canvas.drawLine(margin, y, pageWidth - margin, y, thickLinePaint)
         y += 15f
