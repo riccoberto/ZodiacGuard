@@ -17,9 +17,19 @@ class PieChartView @JvmOverloads constructor(
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
-        textSize = 28f
+        textSize = 18f
         textAlign = Paint.Align.CENTER
         isFakeBoldText = true
+    }
+    private val centerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.rgb(25, 36, 55)
+        style = Paint.Style.FILL
+    }
+    private val centerLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.rgb(170, 183, 202)
+        textSize = 10f
+        textAlign = Paint.Align.CENTER
+        letterSpacing = 0.08f
     }
     private val rectF = RectF()
     
@@ -60,7 +70,7 @@ class PieChartView @JvmOverloads constructor(
                     // NUOVO: Disegna etichetta percentuale al centro della fetta
                     if (sweepAngle > 15) { // Solo se la fetta è abbastanza grande
                         val midAngle = startAngle + sweepAngle / 2
-                        val midRadius = size / 4
+                        val midRadius = size * 0.39f
                         val x = (size / 2 + midRadius * Math.cos(Math.toRadians(midAngle.toDouble()))).toFloat()
                         val y = (size / 2 + midRadius * Math.sin(Math.toRadians(midAngle.toDouble()))).toFloat()
                         val percentage = ((value / expectedTotal) * 100).toInt()
@@ -85,7 +95,7 @@ class PieChartView @JvmOverloads constructor(
                 // NUOVO: Disegna etichetta percentuale
                 if (sweepAngle > 15) {
                     val midAngle = startAngle + sweepAngle / 2
-                    val midRadius = size / 4
+                    val midRadius = size * 0.39f
                     val x = (size / 2 + midRadius * Math.cos(Math.toRadians(midAngle.toDouble()))).toFloat()
                     val y = (size / 2 + midRadius * Math.sin(Math.toRadians(midAngle.toDouble()))).toFloat()
                     val percentage = ((value / total) * 100).toInt()
@@ -95,5 +105,17 @@ class PieChartView @JvmOverloads constructor(
                 startAngle += sweepAngle
             }
         }
+
+        val center = size / 2f
+        canvas.drawCircle(center, center, size * 0.27f, centerPaint)
+        val workedHours = total.toInt() / 60
+        val workedMinutes = total.toInt() % 60
+        canvas.drawText(
+            String.format(java.util.Locale.ROOT, "%dh %02dm", workedHours, workedMinutes),
+            center,
+            center - 1f,
+            textPaint
+        )
+        canvas.drawText("LAVORATE", center, center + 17f, centerLabelPaint)
     }
 }

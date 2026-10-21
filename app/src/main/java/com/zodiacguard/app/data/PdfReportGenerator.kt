@@ -63,7 +63,8 @@ class PdfReportGenerator(private val context: Context) {
     fun generateMonthlyPdf(
         year: Int,
         month: Int,
-        stats: MonthlyStatsHelper.MonthlyStats
+        stats: MonthlyStatsHelper.MonthlyStats,
+        displayName: String = ""
     ): Uri {
         val document = PdfDocument()
         try {
@@ -72,7 +73,7 @@ class PdfReportGenerator(private val context: Context) {
             val canvas = page.canvas
             canvas.drawColor(Color.WHITE)
 
-            drawTitle(canvas, year, month)
+            drawTitle(canvas, year, month, displayName)
             drawSummary(canvas, stats)
             drawAgenda(canvas, year, month, stats)
             drawFooter(canvas)
@@ -87,13 +88,16 @@ class PdfReportGenerator(private val context: Context) {
         }
     }
 
-    private fun drawTitle(canvas: Canvas, year: Int, month: Int) {
+    private fun drawTitle(canvas: Canvas, year: Int, month: Int, displayName: String) {
         val monthLabel = SimpleDateFormat("MMMM yyyy", Locale.ITALIAN)
             .format(monthDate(year, month))
             .replaceFirstChar { it.uppercase(Locale.ITALIAN) }
 
         canvas.drawText("RIEPILOGO MENSILE", PAGE_MARGIN, 31f, titlePaint)
-        canvas.drawText("· $monthLabel", PAGE_MARGIN, 45f, monthPaint)
+        val title = listOf(monthLabel, displayName.trim())
+            .filter { it.isNotEmpty() }
+            .joinToString(" · ")
+        drawFittedText(canvas, title, PAGE_MARGIN, 45f, CONTENT_WIDTH, monthPaint)
         canvas.drawLine(PAGE_MARGIN, 51f, PAGE_WIDTH - PAGE_MARGIN, 51f, linePaint)
     }
 

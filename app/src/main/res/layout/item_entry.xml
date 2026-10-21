@@ -4,7 +4,7 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:padding="12dp"
-    android:background="#1AFFFFFF"
+    android:background="@drawable/bg_surface_card"
     android:layout_marginBottom="6dp"
     android:gravity="center_vertical">
 
@@ -16,20 +16,24 @@
         android:textColor="@color/white"
         android:textSize="14sp" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnEdit"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        android:text="️"
+        android:text="✎"
+        android:contentDescription="Modifica marcatura"
+        android:textSize="18sp"
         android:backgroundTint="@color/zodiac_gold"
         android:textColor="@color/zodiac_navy"
         android:layout_marginEnd="8dp"/>
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnDelete"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        android:text="️"
+        android:text="×"
+        android:contentDescription="Elimina marcatura"
+        android:textSize="22sp"
         android:backgroundTint="#C41E3A"
         android:textColor="@color/white"/>
 </LinearLayout>

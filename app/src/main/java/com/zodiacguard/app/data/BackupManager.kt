@@ -64,6 +64,7 @@ class BackupManager(private val context: Context) {
             settings.put("weeklyHours", weeklyHours)
             settings.put("workDays", workDays)
             settings.put("nfcBadgeUid", nfcUid ?: "")
+            settings.put("displayName", UserProfilePreferences.getDisplayName(context))
             backupJson.put("settings", settings)
 
             val prodArray = JSONArray()

@@ -14,12 +14,47 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Il Mio Contratto"
+            android:text="Impostazioni personali"
             android:textColor="@color/zodiac_gold"
             android:textSize="24sp"
             android:textStyle="bold"
-            android:fontFamily="sans-serif-condensed-medium"
-            android:layout_marginBottom="24dp" />
+            android:fontFamily="sans-serif-medium"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Il nome scelto apparirà accanto al mese nel PDF riepilogativo."
+            android:textColor="@color/zodiac_text_muted"
+            android:textSize="14sp"
+            android:layout_marginBottom="12dp" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:hint="Nome da mostrare nel PDF"
+            app:boxStrokeColor="@color/zodiac_gold"
+            app:hintTextColor="@color/zodiac_gold">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etDisplayName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPersonName|textCapWords"
+                android:maxLength="50"
+                android:singleLine="true"
+                android:textColor="@color/white" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Il Mio Contratto"
+            android:textColor="@color/zodiac_gold"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium"
+            android:layout_marginBottom="16dp" />
 
         <!-- Ore Settimanali -->
         <TextView
@@ -71,7 +106,7 @@
             android:id="@+id/btnSaveContract"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="SALVA PARAMETRI"
+            android:text="SALVA IMPOSTAZIONI"
             android:textSize="16sp"
             android:textStyle="bold"
             app:backgroundTint="@color/zodiac_gold"
@@ -93,7 +128,7 @@
             android:textColor="@color/zodiac_gold"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:fontFamily="sans-serif-condensed-medium"
+            android:fontFamily="sans-serif-medium"
             android:layout_marginBottom="8dp" />
             
         <TextView
@@ -108,9 +143,12 @@
             android:id="@+id/btnRegisterNfc"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="📡 REGISTRA IL MIO BADGE"
+            android:text="REGISTRA IL MIO BADGE"
             android:textSize="16sp"
             android:textStyle="bold"
+            app:icon="@drawable/ic_nfc"
+            app:iconGravity="textStart"
+            app:iconPadding="12dp"
             app:backgroundTint="#64B5F6"
             android:textColor="@color/white"
             android:layout_marginBottom="16dp" />
@@ -141,7 +179,7 @@
             android:textColor="@color/zodiac_gold"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:fontFamily="sans-serif-condensed-medium"
+            android:fontFamily="sans-serif-medium"
             android:layout_marginBottom="8dp" />
             
         <TextView
@@ -156,9 +194,12 @@
             android:id="@+id/btnRestoreBackup"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="📥 RIPRISTINA DA BACKUP"
+            android:text="RIPRISTINA DA BACKUP"
             android:textSize="16sp"
             android:textStyle="bold"
+            app:icon="@drawable/ic_restore"
+            app:iconGravity="textStart"
+            app:iconPadding="12dp"
             app:backgroundTint="#66BB6A"
             android:textColor="@color/white"
             android:layout_marginBottom="16dp" />
@@ -178,8 +219,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:minHeight="150dp"
-            android:background="#000000"
-            android:textColor="#00FF00"
+            android:background="@drawable/bg_surface_card"
+            android:textColor="#9AE6B4"
             android:textSize="12sp"
             android:fontFamily="monospace"
             android:padding="12dp"

@@ -15,6 +15,7 @@ import androidx.lifecycle.lifecycleScope
 import com.zodiacguard.app.data.BackupManager
 import com.zodiacguard.app.data.ContractDataStore
 import com.zodiacguard.app.data.NfcBadgeManager
+import com.zodiacguard.app.data.UserProfilePreferences
 import com.zodiacguard.app.data.WorkDataStore
 import com.zodiacguard.app.data.WorkEntry
 import com.zodiacguard.app.databinding.FragmentSettingsBinding
@@ -72,6 +73,8 @@ class SettingsFragment : Fragment() {
 
         logDebug("Fragment creato. NFC disponibile: ${nfcAdapter != null}")
 
+        binding.etDisplayName.setText(UserProfilePreferences.getDisplayName(requireContext()))
+
         // 1. Carica i valori contrattuali salvati
         viewLifecycleOwner.lifecycleScope.launch {
             contractDataStore.weeklyHoursFlow.collectLatest { hours ->
@@ -88,9 +91,13 @@ class SettingsFragment : Fragment() {
         binding.btnSaveContract.setOnClickListener {
             val hours = binding.etWeeklyHours.text.toString().toIntOrNull() ?: 38
             val days = binding.etWorkDays.text.toString().toIntOrNull() ?: 6
+            UserProfilePreferences.saveDisplayName(
+                requireContext(),
+                binding.etDisplayName.text?.toString().orEmpty()
+            )
             viewLifecycleOwner.lifecycleScope.launch {
                 contractDataStore.saveContract(hours, days)
-                Toast.makeText(requireContext(), "Parametri salvati!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Impostazioni salvate!", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -186,6 +193,10 @@ class SettingsFragment : Fragment() {
                 // 1. Ripristina impostazioni contratto
                 if (backupJson.has("settings")) {
                     val settings = backupJson.getJSONObject("settings")
+                    UserProfilePreferences.saveDisplayName(
+                        requireContext(),
+                        settings.optString("displayName", "")
+                    )
                     val weeklyHours = settings.optInt("weeklyHours", 38)
                     val workDays = settings.optInt("workDays", 6)
                     contractDataStore.saveContract(weeklyHours, workDays)

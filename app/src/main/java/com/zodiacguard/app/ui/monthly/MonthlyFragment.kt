@@ -15,6 +15,7 @@ import com.zodiacguard.app.R
 import com.zodiacguard.app.data.ContractDataStore
 import com.zodiacguard.app.data.MonthlyStatsHelper
 import com.zodiacguard.app.data.PdfReportGenerator
+import com.zodiacguard.app.data.UserProfilePreferences
 import com.zodiacguard.app.data.WorkDataStore
 import com.zodiacguard.app.databinding.FragmentMonthlyBinding
 import kotlinx.coroutines.Job
@@ -174,7 +175,12 @@ class MonthlyFragment : Fragment() {
         
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val uri = PdfReportGenerator(requireContext()).generateMonthlyPdf(year, month, stats)
+                val uri = PdfReportGenerator(requireContext()).generateMonthlyPdf(
+                    year,
+                    month,
+                    stats,
+                    UserProfilePreferences.getDisplayName(requireContext())
+                )
                 
                 val intent = Intent(Intent.ACTION_SEND).apply {
                     type = "application/pdf"

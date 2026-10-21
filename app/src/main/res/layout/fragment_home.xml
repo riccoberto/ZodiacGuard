@@ -6,56 +6,76 @@
     android:background="@color/zodiac_navy"
     android:gravity="center"
     android:orientation="vertical"
-    android:padding="32dp">
+    android:padding="24dp">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Z GUARD"
+        android:text="ZGUARD"
         android:textColor="@color/zodiac_gold"
-        android:textSize="38sp"
+        android:textSize="36sp"
         android:textStyle="bold"
-        android:fontFamily="sans-serif-condensed-medium"
-        android:letterSpacing="0.12"
-        android:layout_marginBottom="48dp" />
+        android:fontFamily="sans-serif-medium"
+        android:letterSpacing="0.14"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Il tuo tempo, sotto controllo."
+        android:textColor="@color/zodiac_text_muted"
+        android:textSize="14sp"
+        android:layout_marginBottom="36dp" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnDashboard"
         android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:text="📝 REGISTRA ORE"
-        android:textSize="16sp"
+        android:layout_height="60dp"
+        android:text="REGISTRA ORE"
+        android:textSize="15sp"
         android:textStyle="bold"
+        app:icon="@drawable/ic_home_clock"
+        app:iconGravity="textStart"
+        app:iconPadding="12dp"
         app:backgroundTint="#66BB6A"
         android:textColor="@color/white"
-        android:layout_marginBottom="16dp" />
+        android:layout_marginBottom="12dp" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnWeekly"
         android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:text="📈 RIEPILOGO SETTIMANALE"
-        android:textSize="16sp"
+        android:layout_height="60dp"
+        android:text="RIEPILOGO SETTIMANALE"
+        android:textSize="15sp"
+        app:icon="@drawable/ic_home_weekly"
+        app:iconGravity="textStart"
+        app:iconPadding="12dp"
         app:backgroundTint="@color/zodiac_gold"
         android:textColor="@color/zodiac_navy"
-        android:layout_marginBottom="16dp" />
+        android:layout_marginBottom="12dp" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnMonthly"
         android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:text="📊 RIEPILOGO MENSILE"
-        android:textSize="16sp"
+        android:layout_height="60dp"
+        android:text="RIEPILOGO MENSILE"
+        android:textSize="15sp"
+        app:icon="@drawable/ic_home_monthly"
+        app:iconGravity="textStart"
+        app:iconPadding="12dp"
         app:backgroundTint="@color/zodiac_gold"
         android:textColor="@color/zodiac_navy"
-        android:layout_marginBottom="16dp" />
+        android:layout_marginBottom="12dp" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnSettings"
         android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:text="⚙️ IMPOSTAZIONI"
-        android:textSize="16sp"
+        android:layout_height="60dp"
+        android:text="IMPOSTAZIONI"
+        android:textSize="15sp"
+        app:icon="@drawable/ic_home_settings"
+        app:iconGravity="textStart"
+        app:iconPadding="12dp"
         app:backgroundTint="@color/zodiac_gold"
         android:textColor="@color/zodiac_navy" />
 

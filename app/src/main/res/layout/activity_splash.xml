@@ -2,7 +2,7 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000033">
+    android:background="@color/zodiac_navy">
 
     <!-- Testo in alto con font moderno -->
     <TextView
@@ -10,11 +10,11 @@
         android:layout_height="wrap_content"
         android:layout_gravity="top|center_horizontal"
         android:layout_marginTop="60dp"
-        android:text="Z GUARD"
-        android:textColor="#FFD700"
+        android:text="ZGUARD"
+        android:textColor="@color/zodiac_gold"
         android:textSize="42sp"
         android:textStyle="bold"
-        android:fontFamily="sans-serif-condensed-medium"
+        android:fontFamily="sans-serif-medium"
         android:letterSpacing="0.15" />
 
     <!-- Immagine al centro -->

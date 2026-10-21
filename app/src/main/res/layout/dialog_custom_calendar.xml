@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="320dp"
     android:layout_height="wrap_content"
-    android:background="#1A1A1A"
+    android:background="@drawable/bg_surface_card"
     android:orientation="vertical"
     android:padding="16dp">
 
@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Ottobre 2026"
-        android:textColor="#FFD700"
+        android:textColor="@color/zodiac_gold"
         android:textSize="20sp"
         android:textStyle="bold"
         android:gravity="center"
@@ -29,6 +29,6 @@
         android:layout_height="48dp"
         android:text="CHIUDI"
         android:backgroundTint="#FFD700"
-        android:textColor="#000033" />
+        android:textColor="@color/zodiac_navy" />
 
 </LinearLayout>

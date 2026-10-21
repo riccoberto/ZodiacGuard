@@ -1,31 +1,23 @@
 package com.zodiacguard.app
 
 import android.app.PendingIntent
-import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.net.Uri
 import android.nfc.NfcAdapter
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.NavHostFragment
 import com.zodiacguard.app.data.BackupManager
-import com.zodiacguard.app.data.ContractDataStore
 import com.zodiacguard.app.data.NfcBadgeManager
-import com.zodiacguard.app.data.WorkDataStore
-import com.zodiacguard.app.data.WorkEntry
 import com.zodiacguard.app.ui.settings.NfcUnlockDialog
 import com.zodiacguard.app.ui.settings.SettingsFragment
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.json.JSONObject
 
 class MainActivity : AppCompatActivity() {
 
@@ -72,136 +64,6 @@ class MainActivity : AppCompatActivity() {
             arrayOf(android.nfc.tech.NdefFormatable::class.java.name)
         )
         
-        checkForExistingBackup()
-    }
-
-    private fun checkForExistingBackup() {
-        // NUOVO: Usiamo getBackupUri() invece di getBackupFile()
-        val backupUri = backupManager.getBackupUri()
-        if (backupUri != null) {
-            Log.d(TAG, "Backup trovato: $backupUri")
-            
-            val prefs = getSharedPreferences("zguard_prefs", Context.MODE_PRIVATE)
-            val hasImported = prefs.getBoolean("has_imported_backup", false)
-            
-            if (!hasImported) {
-                AlertDialog.Builder(this)
-                    .setTitle("Backup Trovato")
-                    .setMessage("Ho trovato un backup precedente nella cartella Download. Vuoi ripristinare i tuoi dati (marcature, note, contratto, badge)?")
-                    .setPositiveButton("SÌ, RIPRISTINA") { dialog, _ ->
-                        restoreFromBackup(backupUri)
-                        prefs.edit().putBoolean("has_imported_backup", true).apply()
-                        dialog.dismiss()
-                    }
-                    .setNegativeButton("NO, INIZIA DA ZERO") { dialog, _ ->
-                        prefs.edit().putBoolean("has_imported_backup", true).apply()
-                        dialog.dismiss()
-                    }
-                    .show()
-            }
-        } else {
-            Log.d(TAG, "Nessun backup trovato")
-        }
-    }
-
-    // NUOVO: Accetta Uri invece di File
-    private fun restoreFromBackup(uri: Uri) {
-        lifecycleScope.launch {
-            try {
-                Log.d(TAG, "Inizio ripristino da URI: $uri")
-                
-                // Leggiamo il contenuto usando il nuovo metodo del BackupManager
-                val jsonContent = withContext(Dispatchers.IO) { 
-                    backupManager.readBackupContent(uri)
-                }
-
-                if (jsonContent == null) {
-                    Toast.makeText(this@MainActivity, "Impossibile leggere il file di backup", Toast.LENGTH_LONG).show()
-                    return@launch
-                }
-
-                Log.d(TAG, "File letto, lunghezza: ${jsonContent.length} caratteri")
-                val backupJson = JSONObject(jsonContent)
-                
-                val workDataStore = WorkDataStore(this@MainActivity)
-                val contractDataStore = ContractDataStore(this@MainActivity)
-                
-                // 1. Impostazioni contratto
-                if (backupJson.has("settings")) {
-                    val settings = backupJson.getJSONObject("settings")
-                    val weeklyHours = settings.optInt("weeklyHours", 38)
-                    val workDays = settings.optInt("workDays", 6)
-                    contractDataStore.saveContract(weeklyHours, workDays)
-                    Log.d(TAG, "Contratto ripristinato: $weeklyHours ore, $workDays giorni")
-                }
-                
-                // 2. Badge NFC
-                if (backupJson.has("settings")) {
-                    val settings = backupJson.getJSONObject("settings")
-                    val nfcUid = settings.optString("nfcBadgeUid", "")
-                    if (nfcUid.isNotEmpty()) {
-                        nfcBadgeManager.saveBadge(nfcUid, "Badge Principale")
-                        Log.d(TAG, "Badge NFC ripristinato: $nfcUid")
-                    }
-                }
-                
-                // 3. Giorni produzione
-                if (backupJson.has("productionDays")) {
-                    val prodArray = backupJson.getJSONArray("productionDays")
-                    for (i in 0 until prodArray.length()) {
-                        val day = prodArray.getString(i)
-                        workDataStore.saveProductionMode(day, true)
-                    }
-                    Log.d(TAG, "Giorni produzione ripristinati: ${prodArray.length()}")
-                }
-
-                // 4. Note di giornata
-                if (backupJson.has("dailyNotes")) {
-                    val notesJson = backupJson.getJSONObject("dailyNotes")
-                    val keys = notesJson.keys()
-                    var noteCount = 0
-                    while (keys.hasNext()) {
-                        val date = keys.next()
-                        val note = notesJson.getString(date)
-                        workDataStore.saveNote(date, note)
-                        noteCount++
-                    }
-                    Log.d(TAG, "Note ripristinate: $noteCount")
-                }
-                
-                // 5. Marcature
-                if (backupJson.has("entries")) {
-                    val entriesArray = backupJson.getJSONArray("entries")
-                    var entryCount = 0
-                    for (i in 0 until entriesArray.length()) {
-                        val entryJson = entriesArray.getJSONObject(i)
-                        val entry = WorkEntry(
-                            timestamp = entryJson.getLong("timestamp"),
-                            type = entryJson.getString("type"),
-                            activity = entryJson.optString("activity", "Servizio"),
-                            location = entryJson.optString("location", "Modena"),
-                            date = entryJson.getString("date")
-                        )
-                        workDataStore.addEntry(entry)
-                        entryCount++
-                    }
-                    Log.d(TAG, "Marcature ripristinate: $entryCount")
-                }
-                
-                Toast.makeText(
-                    this@MainActivity, 
-                    "Backup ripristinato con successo!", 
-                    Toast.LENGTH_LONG
-                ).show()
-                Log.d(TAG, "Ripristino completato")
-                
-            } catch (e: Exception) {
-                val errorMsg = "Errore nel ripristino: ${e.message}"
-                Toast.makeText(this@MainActivity, errorMsg, Toast.LENGTH_LONG).show()
-                Log.e(TAG, "Errore ripristino", e)
-                e.printStackTrace()
-            }
-        }
     }
 
     override fun onResume() {
