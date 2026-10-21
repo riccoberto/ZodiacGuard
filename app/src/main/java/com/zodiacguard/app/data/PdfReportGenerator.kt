@@ -30,7 +30,6 @@ class PdfReportGenerator(private val context: Context) {
             val weeklyHours = contractDataStore.weeklyHoursFlow.first()
             val workDays = contractDataStore.workDaysFlow.first()
 
-            // Filtra marcature del mese
             val monthEntries = mutableListOf<WorkEntry>()
             for (entry in entries) {
                 val cal = Calendar.getInstance()
@@ -43,7 +42,6 @@ class PdfReportGenerator(private val context: Context) {
 
             if (monthEntries.isEmpty()) return null
 
-            // Calcola totali
             val totalHours = calculateTotalHours(monthEntries)
             val expectedHours = workDays * weeklyHours
             val ordinaryHours = if (totalHours < expectedHours) totalHours else expectedHours
@@ -52,7 +50,6 @@ class PdfReportGenerator(private val context: Context) {
             val travelMinutes = calculateTravelMinutes(monthEntries)
             val mealBadges = calculateMealBadges(monthEntries)
 
-            // Conta attività
             var teatrinoMontaggio = 0
             var teatrinoSmontaggio = 0
             var teatrinoIntero = 0
@@ -66,14 +63,12 @@ class PdfReportGenerator(private val context: Context) {
                 }
             }
 
-            // Presenza per sede
             val presenceByLocation = mutableMapOf<String, Int>()
             for (entry in monthEntries) {
                 val count = presenceByLocation[entry.location] ?: 0
                 presenceByLocation[entry.location] = count + 1
             }
 
-            // Raggruppa per giorno
             val groupedByDay = mutableMapOf<String, MutableList<WorkEntry>>()
             for (entry in monthEntries) {
                 val list = groupedByDay[entry.date] ?: mutableListOf()
@@ -81,7 +76,6 @@ class PdfReportGenerator(private val context: Context) {
                 groupedByDay[entry.date] = list
             }
 
-            // Crea PDF A4
             val pdfDocument = PdfDocument()
             val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
             val page = pdfDocument.startPage(pageInfo)
@@ -94,7 +88,6 @@ class PdfReportGenerator(private val context: Context) {
 
             pdfDocument.finishPage(page)
 
-            // Salva file
             val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
             val pdfDir = File(downloadDir, PDF_FOLDER_NAME)
             if (!pdfDir.exists()) pdfDir.mkdirs()
@@ -190,7 +183,6 @@ class PdfReportGenerator(private val context: Context) {
 
         var y = margin + 10f
 
-        // TITOLO
         canvas.drawText("RIEPILOGO MESE", margin, y, titlePaint)
         val monthName = getMonthName(year, month)
         val titleWidth = titlePaint.measureText("RIEPILOGO MESE")
@@ -199,7 +191,6 @@ class PdfReportGenerator(private val context: Context) {
         canvas.drawLine(margin, y, pageWidth - margin, y, thickLinePaint)
         y += 15f
 
-        // BOX RIEPILOGO
         val boxHeight = 110f
         val boxRect = RectF(margin, y, pageWidth - margin, y + boxHeight)
         val borderPaint = Paint().apply { color = black; strokeWidth = 1f; style = Paint.Style.STROKE; isAntiAlias = true }
@@ -227,14 +218,13 @@ class PdfReportGenerator(private val context: Context) {
         canvas.drawText("Servizio: $servizio gg", col2X, lineY, bodyPaint); lineY += lineSpacing + 3f
         
         canvas.drawText("PRESENZA PER SEDE:", col2X, lineY, headerPaint); lineY += lineSpacing
-        for ((loc, count) in presenceByLocation) {
-            canvas.drawText("  - $loc: $count gg", col2X, lineY, bodyPaint)
+        for (pair in presenceByLocation.entries) {
+            canvas.drawText("  - ${pair.key}: ${pair.value} gg", col2X, lineY, bodyPaint)
             lineY += lineSpacing
         }
 
         y += boxHeight + 12f
 
-        // TABELLA GIORNI
         val colWidths = floatArrayOf(35f, 115f, 95f, 85f, 110f)
         val headers = arrayOf("Giorno", "Marcate", "Icone", "Luogo", "Attività")
         val tableWidth = colWidths.sum()
@@ -258,4 +248,133 @@ class PdfReportGenerator(private val context: Context) {
         var rowBg = false
         for (date in sortedDays) {
             val dayEntries = groupedByDay[date] ?: continue
-            val day
+            val dayNum = date.split("-").last().toIntOrNull() ?: 0
+            val isProduction = productionDays.contains(date)
+
+            if (rowBg) {
+                val bgPaint = Paint().apply { color = lightGray; isAntiAlias = true }
+                canvas.drawRect(margin + 1f, y, margin + tableWidth - 1f, y + 14f, bgPaint)
+            }
+            rowBg = !rowBg
+
+            canvas.drawLine(margin, y, margin + tableWidth, y, linePaint)
+            canvas.drawText("$dayNum", margin + 5f, y + 10f, headerPaint)
+
+            val times = mutableListOf<String>()
+            for (entry in dayEntries) {
+                val cal = Calendar.getInstance()
+                cal.timeInMillis = entry.timestamp
+                times.add(String.format("%02d:%02d", cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE)))
+            }
+            val timeRange = if (times.size >= 2) "${times.first()}-${times.last()}" else times.joinToString(", ")
+            canvas.drawText(timeRange, margin + colWidths[0] + 5f, y + 10f, bodyPaint)
+
+            val icons = mutableListOf<String>()
+            for (entry in dayEntries) {
+                if (entry.activity == "Teatrino Montaggio" || entry.activity == "Teatrino Smontaggio" || entry.activity == "Teatrino Intero") {
+                    icons.add("[T]")
+                } else if (entry.activity == "Servizio") {
+                    icons.add("[S]")
+                }
+            }
+            if (isProduction) icons.add("[P]")
+            if (dayEntries.size >= 2) {
+                var firstTime = dayEntries[0].timestamp
+                var lastTime = dayEntries[0].timestamp
+                for (entry in dayEntries) {
+                    if (entry.timestamp < firstTime) firstTime = entry.timestamp
+                    if (entry.timestamp > lastTime) lastTime = entry.timestamp
+                }
+                val hours = (lastTime - firstTime) / 3600000f
+                if (hours > 6) icons.add("[BP]")
+            }
+            val travelLocations = listOf("Vignola", "Bologna", "Castelfranco")
+            var needsTravel = false
+            for (entry in dayEntries) {
+                if (entry.location in travelLocations) {
+                    needsTravel = true
+                    break
+                }
+            }
+            if (needsTravel) icons.add("[V]")
+            canvas.drawText(icons.joinToString(" "), margin + colWidths[0] + colWidths[1] + 5f, y + 10f, bodyPaint)
+
+            val location = dayEntries[0].location
+            canvas.drawText(location, margin + colWidths[0] + colWidths[1] + colWidths[2] + 5f, y + 10f, bodyPaint)
+
+            val activity = dayEntries[0].activity
+            canvas.drawText(activity, margin + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + 5f, y + 10f, bodyPaint)
+
+            y += 14f
+        }
+
+        canvas.drawLine(margin, y, margin + tableWidth, y, thickLinePaint)
+        y += 10f
+
+        canvas.drawText("Legenda: [T]=Teatrino  [S]=Servizio  [P]=Produzione  [BP]=Buono Pasto  [V]=Viaggio", margin, y, smallPaint)
+        y += 10f
+
+        canvas.drawText(
+            "Nota: le marcature riportate sono indicative e possono variare di alcuni minuti rispetto ai rilevamenti del marcatempo aziendale.",
+            margin, y, smallPaint
+        )
+    }
+
+    private fun formatHours(hours: Float): String {
+        return "${hours.toInt()}h"
+    }
+
+    private suspend fun calculateTotalHours(entries: List<WorkEntry>): Float {
+        val grouped = mutableMapOf<String, MutableList<WorkEntry>>()
+        for (entry in entries) {
+            val list = grouped[entry.date] ?: mutableListOf()
+            list.add(entry)
+            grouped[entry.date] = list
+        }
+        var total = 0f
+        for (pair in grouped.entries) {
+            val dayEntries = pair.value
+            dayEntries.sortBy { it.timestamp }
+            var i = 0
+            while (i < dayEntries.size - 1) {
+                val diff = (dayEntries[i + 1].timestamp - dayEntries[i].timestamp) / 3600000f
+                total += diff
+                i += 2
+            }
+        }
+        return total
+    }
+
+    private suspend fun calculateTravelMinutes(entries: List<WorkEntry>): Int {
+        val travelLocations = listOf("Vignola", "Bologna", "Castelfranco")
+        var count = 0
+        for (entry in entries) {
+            if (entry.location in travelLocations) count++
+        }
+        return count * 30
+    }
+
+    private suspend fun calculateMealBadges(entries: List<WorkEntry>): Int {
+        val grouped = mutableMapOf<String, MutableList<WorkEntry>>()
+        for (entry in entries) {
+            val list = grouped[entry.date] ?: mutableListOf()
+            list.add(entry)
+            grouped[entry.date] = list
+        }
+        var badges = 0
+        for (pair in grouped.entries) {
+            val dayEntries = pair.value
+            if (dayEntries.size >= 2) {
+                var firstTime = dayEntries[0].timestamp
+                var lastTime = dayEntries[0].timestamp
+                for (entry in dayEntries) {
+                    if (entry.timestamp < firstTime) firstTime = entry.timestamp
+                    if (entry.timestamp > lastTime) lastTime = entry.timestamp
+                }
+                val hours = (lastTime - firstTime) / 3600000f
+                if (hours > 6) badges++
+            }
+        }
+        return badges
+    }
+}
