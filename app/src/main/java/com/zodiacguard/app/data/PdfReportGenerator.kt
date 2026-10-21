@@ -31,35 +31,55 @@ class PdfReportGenerator(private val context: Context) {
             val workDays = contractDataStore.workDaysFlow.first()
 
             // Filtra marcature del mese
-            val monthEntries = entries.filter { entry ->
+            val monthEntries = mutableListOf<WorkEntry>()
+            for (entry in entries) {
                 val cal = Calendar.getInstance()
                 cal.timeInMillis = entry.timestamp
-                cal.get(Calendar.YEAR) == year && cal.get(Calendar.MONTH) == month
-            }.sortedBy { entry -> entry.timestamp }
+                if (cal.get(Calendar.YEAR) == year && cal.get(Calendar.MONTH) == month) {
+                    monthEntries.add(entry)
+                }
+            }
+            monthEntries.sortBy { it.timestamp }
 
             if (monthEntries.isEmpty()) return null
 
             // Calcola totali
             val totalHours = calculateTotalHours(monthEntries)
             val expectedHours = workDays * weeklyHours
-            val ordinaryHours = minOf(totalHours, expectedHours)
-            val overtimeHours = maxOf(0f, totalHours - expectedHours)
+            val ordinaryHours = if (totalHours < expectedHours) totalHours else expectedHours
+            val overtimeHours = if (totalHours > expectedHours) totalHours - expectedHours else 0f
             val bankHours = totalHours - expectedHours
             val travelMinutes = calculateTravelMinutes(monthEntries)
             val mealBadges = calculateMealBadges(monthEntries)
 
             // Conta attività
-            val teatrinoMontaggio = monthEntries.count { entry -> entry.activity == "Teatrino Montaggio" }
-            val teatrinoSmontaggio = monthEntries.count { entry -> entry.activity == "Teatrino Smontaggio" }
-            val teatrinoIntero = monthEntries.count { entry -> entry.activity == "Teatrino Intero" }
-            val servizio = monthEntries.count { entry -> entry.activity == "Servizio" }
+            var teatrinoMontaggio = 0
+            var teatrinoSmontaggio = 0
+            var teatrinoIntero = 0
+            var servizio = 0
+            for (entry in monthEntries) {
+                when (entry.activity) {
+                    "Teatrino Montaggio" -> teatrinoMontaggio++
+                    "Teatrino Smontaggio" -> teatrinoSmontaggio++
+                    "Teatrino Intero" -> teatrinoIntero++
+                    "Servizio" -> servizio++
+                }
+            }
 
             // Presenza per sede
-            val presenceByLocation = monthEntries.groupBy { entry -> entry.location }
-                .mapValues { pair -> pair.value.size }
+            val presenceByLocation = mutableMapOf<String, Int>()
+            for (entry in monthEntries) {
+                val count = presenceByLocation[entry.location] ?: 0
+                presenceByLocation[entry.location] = count + 1
+            }
 
             // Raggruppa per giorno
-            val groupedByDay = monthEntries.groupBy { entry -> entry.date }
+            val groupedByDay = mutableMapOf<String, MutableList<WorkEntry>>()
+            for (entry in monthEntries) {
+                val list = groupedByDay[entry.date] ?: mutableListOf()
+                list.add(entry)
+                groupedByDay[entry.date] = list
+            }
 
             // Crea PDF A4
             val pdfDocument = PdfDocument()
@@ -117,14 +137,12 @@ class PdfReportGenerator(private val context: Context) {
         val margin = 30f
         val pageWidth = 595f
 
-        // Colori B/N-friendly
         val black = Color.BLACK
         val white = Color.WHITE
         val lightGray = Color.parseColor("#F0F0F0")
         val mediumGray = Color.parseColor("#CCCCCC")
         val darkGray = Color.parseColor("#333333")
 
-        // Paints
         val titlePaint = Paint().apply {
             color = black
             textSize = 20f
@@ -181,15 +199,11 @@ class PdfReportGenerator(private val context: Context) {
         canvas.drawLine(margin, y, pageWidth - margin, y, thickLinePaint)
         y += 15f
 
-        // BOX RIEPILOGO (con bordo nero, sfondo bianco)
+        // BOX RIEPILOGO
         val boxHeight = 110f
         val boxRect = RectF(margin, y, pageWidth - margin, y + boxHeight)
-        
-        // Bordo nero
         val borderPaint = Paint().apply { color = black; strokeWidth = 1f; style = Paint.Style.STROKE; isAntiAlias = true }
         canvas.drawRect(boxRect, borderPaint)
-        
-        // Sfondo bianco
         val boxBgPaint = Paint().apply { color = white; isAntiAlias = true }
         canvas.drawRect(margin + 1f, y + 1f, pageWidth - margin - 1f, y + boxHeight - 1f, boxBgPaint)
 
@@ -198,7 +212,6 @@ class PdfReportGenerator(private val context: Context) {
         var lineY = y + 14f
         val lineSpacing = 13f
 
-        // Colonna sinistra - Ore
         canvas.drawText("ORE LAVORATE: ${formatHours(totalHours)}", col1X, lineY, headerPaint); lineY += lineSpacing
         canvas.drawText("Ore attese: ${formatHours(expectedHours)}", col1X, lineY, bodyPaint); lineY += lineSpacing
         canvas.drawText("Ordinarie: ${formatHours(ordinaryHours)}", col1X, lineY, bodyPaint); lineY += lineSpacing
@@ -207,7 +220,6 @@ class PdfReportGenerator(private val context: Context) {
         canvas.drawText("Viaggio: ${travelMinutes} min", col1X, lineY, bodyPaint); lineY += lineSpacing
         canvas.drawText("Buoni pasto: $mealBadges", col1X, lineY, bodyPaint)
 
-        // Colonna destra - Attività e sedi
         lineY = y + 14f
         canvas.drawText("TEATRINO MONTAGGIO: $teatrinoMontaggio gg", col2X, lineY, headerPaint); lineY += lineSpacing
         canvas.drawText("Teatrino Smontaggio: $teatrinoSmontaggio gg", col2X, lineY, bodyPaint); lineY += lineSpacing
@@ -215,7 +227,7 @@ class PdfReportGenerator(private val context: Context) {
         canvas.drawText("Servizio: $servizio gg", col2X, lineY, bodyPaint); lineY += lineSpacing + 3f
         
         canvas.drawText("PRESENZA PER SEDE:", col2X, lineY, headerPaint); lineY += lineSpacing
-        presenceByLocation.forEach { (loc, count) ->
+        for ((loc, count) in presenceByLocation) {
             canvas.drawText("  - $loc: $count gg", col2X, lineY, bodyPaint)
             lineY += lineSpacing
         }
@@ -227,127 +239,23 @@ class PdfReportGenerator(private val context: Context) {
         val headers = arrayOf("Giorno", "Marcate", "Icone", "Luogo", "Attività")
         val tableWidth = colWidths.sum()
 
-        // Header tabella (sfondo nero, testo bianco)
         val headerRect = RectF(margin, y, margin + tableWidth, y + 14f)
         val headerBgPaint = Paint().apply { color = black; isAntiAlias = true }
         canvas.drawRect(headerRect, headerBgPaint)
         
         var x = margin + 5f
-        headers.forEachIndexed { i, h ->
-            canvas.drawText(h, x, y + 10f, whiteTextPaint)
+        for (i in headers.indices) {
+            canvas.drawText(headers[i], x, y + 10f, whiteTextPaint)
             x += colWidths[i]
         }
         y += 14f
 
-        // Bordi laterali tabella
         val tableBottom = y + (groupedByDay.size * 14f) + 5f
         canvas.drawLine(margin, y, margin, tableBottom, thickLinePaint)
         canvas.drawLine(margin + tableWidth, y, margin + tableWidth, tableBottom, thickLinePaint)
 
-        // Righe giorni
         val sortedDays = groupedByDay.keys.sorted()
         var rowBg = false
-        sortedDays.forEach { date ->
-            val dayEntries = groupedByDay[date] ?: return@forEach
-            val dayNum = date.split("-").last().toIntOrNull() ?: 0
-            val isProduction = productionDays.contains(date)
-
-            // Sfondo alternato grigio chiarissimo (visibile anche in B/N)
-            if (rowBg) {
-                val bgPaint = Paint().apply { color = lightGray; isAntiAlias = true }
-                canvas.drawRect(margin + 1f, y, margin + tableWidth - 1f, y + 14f, bgPaint)
-            }
-            rowBg = !rowBg
-
-            // Linea separatrice
-            canvas.drawLine(margin, y, margin + tableWidth, y, linePaint)
-
-            // Giorno (grassetto)
-            canvas.drawText("$dayNum", margin + 5f, y + 10f, headerPaint)
-
-            // Marcate (tutti gli orari)
-            val times = dayEntries.map { entry ->
-                val cal = Calendar.getInstance().apply { timeInMillis = entry.timestamp }
-                String.format("%02d:%02d", cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE))
-            }
-            val timeRange = if (times.size >= 2) "${times.first()}-${times.last()}" else times.joinToString(", ")
-            canvas.drawText(timeRange, margin + colWidths[0] + 5f, y + 10f, bodyPaint)
-
-            // Icone (testuali per B/N)
-            val icons = mutableListOf<String>()
-            dayEntries.forEach { entry ->
-                when (entry.activity) {
-                    "Teatrino Montaggio", "Teatrino Smontaggio", "Teatrino Intero" -> icons.add("[T]")
-                    "Servizio" -> icons.add("[S]")
-                }
-            }
-            if (isProduction) icons.add("[P]")
-            if (dayEntries.size >= 2) {
-                val first = dayEntries.minBy { entry -> entry.timestamp }
-                val last = dayEntries.maxBy { entry -> entry.timestamp }
-                val hours = (last.timestamp - first.timestamp) / 3600000f
-                if (hours > 6) icons.add("[BP]")
-            }
-            val locationsNeedingTravel = listOf("Vignola", "Bologna", "Castelfranco")
-            if (dayEntries.any { entry -> entry.location in locationsNeedingTravel }) icons.add("[V]")
-            canvas.drawText(icons.joinToString(" "), margin + colWidths[0] + colWidths[1] + 5f, y + 10f, bodyPaint)
-
-            // Luogo
-            val location = dayEntries.first().location
-            canvas.drawText(location, margin + colWidths[0] + colWidths[1] + colWidths[2] + 5f, y + 10f, bodyPaint)
-
-            // Attività
-            val activity = dayEntries.first().activity
-            canvas.drawText(activity, margin + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + 5f, y + 10f, bodyPaint)
-
-            y += 14f
-        }
-
-        // Linea finale tabella
-        canvas.drawLine(margin, y, margin + tableWidth, y, thickLinePaint)
-        y += 10f
-
-        // Legenda icone (piccola, in basso)
-        canvas.drawText("Legenda: [T]=Teatrino  [S]=Servizio  [P]=Produzione  [BP]=Buono Pasto  [V]=Viaggio", margin, y, smallPaint)
-        y += 10f
-
-        // Nota finale
-        canvas.drawText(
-            "Nota: le marcature riportate sono indicative e possono variare di alcuni minuti rispetto ai rilevamenti del marcatempo aziendale.",
-            margin, y, smallPaint
-        )
-    }
-
-    // Funzione helper per formattare le ore
-    private fun formatHours(hours: Float): String {
-        return "${hours.toInt()}h"
-    }
-
-    private suspend fun calculateTotalHours(entries: List<WorkEntry>): Float {
-        val grouped = entries.groupBy { entry -> entry.date }
-        var total = 0f
-        grouped.forEach { (_, dayEntries) ->
-            val sorted = dayEntries.sortedBy { entry -> entry.timestamp }
-            var i = 0
-            while (i < sorted.size - 1) {
-                val diff = (sorted[i + 1].timestamp - sorted[i].timestamp) / 3600000f
-                total += diff
-                i += 2
-            }
-        }
-        return total
-    }
-
-    private suspend fun calculateTravelMinutes(entries: List<WorkEntry>): Int {
-        val travelLocations = listOf("Vignola", "Bologna", "Castelfranco")
-        return entries.count { entry -> entry.location in travelLocations } * 30
-    }
-
-    private suspend fun calculateMealBadges(entries: List<WorkEntry>): Int {
-        val grouped = entries.groupBy { entry -> entry.date }
-        var badges = 0
-        grouped.forEach { (_, dayEntries) ->
-            if (dayEntries.size >= 2) {
-                val first = dayEntries.minBy { entry -> entry.timestamp }
-                val last = dayEntries.maxBy { entry -> entry.timestamp }
-                val hours = (last.timestamp - first.timestamp) / 3600000
+        for (date in sortedDays) {
+            val dayEntries = groupedByDay[date] ?: continue
+            val day
