@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import android.os.Environment
@@ -59,9 +60,9 @@ class PdfReportGenerator(private val context: Context) {
             // Raggruppa per giorno
             val groupedByDay = monthEntries.groupBy { it.date }
 
-            // Crea PDF
+            // Crea PDF A4
             val pdfDocument = PdfDocument()
-            val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create() // A4 in points
+            val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
             val page = pdfDocument.startPage(pageInfo)
             val canvas = page.canvas
 
@@ -105,27 +106,28 @@ class PdfReportGenerator(private val context: Context) {
         val pageWidth = 595f
         val pageHeight = 842f
 
-        // Colori
-        val navyColor = Color.parseColor("#1A2B4A")
-        val goldColor = Color.parseColor("#C9A227")
-        val lightGray = Color.parseColor("#F5F5F5")
-        val textColor = Color.parseColor("#1A1A1A")
+        // Colori B/N-friendly
+        val black = Color.BLACK
+        val white = Color.WHITE
+        val lightGray = Color.parseColor("#F0F0F0")
+        val mediumGray = Color.parseColor("#CCCCCC")
+        val darkGray = Color.parseColor("#333333")
 
         // Paints
         val titlePaint = Paint().apply {
-            color = navyColor
-            textSize = 22f
-            typeface = Typeface.DEFAULT_BOLD
+            color = black
+            textSize = 20f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             isAntiAlias = true
         }
         val headerPaint = Paint().apply {
-            color = textColor
+            color = black
             textSize = 9f
-            typeface = Typeface.DEFAULT_BOLD
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             isAntiAlias = true
         }
         val bodyPaint = Paint().apply {
-            color = textColor
+            color = darkGray
             textSize = 8f
             isAntiAlias = true
         }
@@ -133,82 +135,101 @@ class PdfReportGenerator(private val context: Context) {
             color = Color.GRAY
             textSize = 6f
             isAntiAlias = true
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.ITALIC)
         }
         val linePaint = Paint().apply {
-            color = Color.LTGRAY
+            color = mediumGray
             strokeWidth = 0.5f
             isAntiAlias = true
         }
-        val goldLinePaint = Paint().apply {
-            color = goldColor
-            strokeWidth = 2f
+        val thickLinePaint = Paint().apply {
+            color = black
+            strokeWidth = 1.5f
+            isAntiAlias = true
+        }
+        val whiteTextPaint = Paint().apply {
+            color = white
+            textSize = 8f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             isAntiAlias = true
         }
 
         var y = margin + 10f
 
-        // Titolo
+        // TITOLO
+        canvas.drawText("RIEPILOGO MESE", margin, y, titlePaint)
         val monthName = SimpleDateFormat("MMMM yyyy", Locale.ITALIAN).format(
             Calendar.getInstance().apply { set(year, month, 1) }.time
         ).replaceFirstChar { it.uppercase() }
-        canvas.drawText("RIEPILOGO MESE: $monthName", margin, y, titlePaint)
-        y += 8f
-        canvas.drawLine(margin, y, pageWidth - margin, y, goldLinePaint)
+        val titleWidth = titlePaint.measureText("RIEPILOGO MESE")
+        canvas.drawText(": $monthName", margin + titleWidth + 10f, y, 
+            Paint().apply { color = darkGray; textSize = 20f; isAntiAlias = true })
+        y += 6f
+        canvas.drawLine(margin, y, pageWidth - margin, y, thickLinePaint)
         y += 15f
 
-        // Box riepilogo
-        val boxHeight = 95f
-        val boxPaint = Paint().apply { color = lightGray; isAntiAlias = true }
-        canvas.drawRect(margin, y, pageWidth - margin, y + boxHeight, boxPaint)
+        // BOX RIEPILOGO (con bordo nero, sfondo bianco)
+        val boxHeight = 110f
+        val boxRect = RectF(margin, y, pageWidth - margin, y + boxHeight)
+        
+        // Bordo nero
+        val borderPaint = Paint().apply { color = black; strokeWidth = 1f; style = Paint.Style.STROKE; isAntiAlias = true }
+        canvas.drawRect(boxRect, borderPaint)
+        
+        // Sfondo bianco
+        val boxBgPaint = Paint().apply { color = white; isAntiAlias = true }
+        canvas.drawRect(margin + 1f, y + 1f, pageWidth - margin - 1f, y + boxHeight - 1f, boxBgPaint)
 
         val col1X = margin + 10f
-        val col2X = pageWidth / 2 + 10f
-        var lineY = y + 12f
-        val lineSpacing = 11f
+        val col2X = pageWidth / 2 + 5f
+        var lineY = y + 14f
+        val lineSpacing = 13f
 
-        // Colonna sinistra
-        canvas.drawText("Ore Lavorate: ${formatHours(totalHours)}", col1X, lineY, bodyPaint); lineY += lineSpacing
-        canvas.drawText("Ore Attese: ${formatHours(expectedHours)}", col1X, lineY, bodyPaint); lineY += lineSpacing
+        // Colonna sinistra - Ore
+        canvas.drawText("ORE LAVORATE: ${formatHours(totalHours)}", col1X, lineY, headerPaint); lineY += lineSpacing
+        canvas.drawText("Ore attese: ${formatHours(expectedHours)}", col1X, lineY, bodyPaint); lineY += lineSpacing
         canvas.drawText("Ordinarie: ${formatHours(ordinaryHours)}", col1X, lineY, bodyPaint); lineY += lineSpacing
         canvas.drawText("Straordinarie: ${formatHours(overtimeHours)}", col1X, lineY, bodyPaint); lineY += lineSpacing
-        canvas.drawText("Banca Ore: ${formatHours(bankHours)}", col1X, lineY, bodyPaint); lineY += lineSpacing
-        canvas.drawText("Viaggio: ${travelMinutes}m", col1X, lineY, bodyPaint); lineY += lineSpacing
-        canvas.drawText("Buoni Pasto: $mealBadges", col1X, lineY, bodyPaint)
+        canvas.drawText("Banca ore: ${formatHours(bankHours)}", col1X, lineY, bodyPaint); lineY += lineSpacing
+        canvas.drawText("Viaggio: ${travelMinutes} min", col1X, lineY, bodyPaint); lineY += lineSpacing
+        canvas.drawText("Buoni pasto: $mealBadges", col1X, lineY, bodyPaint)
 
-        // Colonna destra
-        lineY = y + 12f
-        canvas.drawText("Teatrino Montaggio: $teatrinoMontaggio gg", col2X, lineY, bodyPaint); lineY += lineSpacing
+        // Colonna destra - Attività e sedi
+        lineY = y + 14f
+        canvas.drawText("TEATRINO MONTAGGIO: $teatrinoMontaggio gg", col2X, lineY, headerPaint); lineY += lineSpacing
         canvas.drawText("Teatrino Smontaggio: $teatrinoSmontaggio gg", col2X, lineY, bodyPaint); lineY += lineSpacing
         canvas.drawText("Teatrino Intero: $teatrinoIntero gg", col2X, lineY, bodyPaint); lineY += lineSpacing
-        canvas.drawText("Servizio: $servizio gg", col2X, lineY, bodyPaint); lineY += lineSpacing + 5f
-        canvas.drawText("Presenza per sede:", col2X, lineY, headerPaint); lineY += lineSpacing
+        canvas.drawText("Servizio: $servizio gg", col2X, lineY, bodyPaint); lineY += lineSpacing + 3f
+        
+        canvas.drawText("PRESENZA PER SEDE:", col2X, lineY, headerPaint); lineY += lineSpacing
         presenceByLocation.forEach { (loc, count) ->
-            canvas.drawText("  $loc: $count gg", col2X, lineY, bodyPaint)
+            canvas.drawText("  - $loc: $count gg", col2X, lineY, bodyPaint)
             lineY += lineSpacing
         }
 
-        y += boxHeight + 10f
+        y += boxHeight + 12f
 
-        // Tabella giorni
-        val colWidths = floatArrayOf(35f, 110f, 90f, 80f, 70f)
+        // TABELLA GIORNI
+        val colWidths = floatArrayOf(35f, 115f, 95f, 85f, 110f)
         val headers = arrayOf("Giorno", "Marcate", "Icone", "Luogo", "Attività")
-        val tableTop = y
+        val tableWidth = colWidths.sum()
 
-        // Header tabella
-        val headerBg = Paint().apply { color = navyColor; isAntiAlias = true }
-        canvas.drawRect(margin, y, pageWidth - margin, y + 14f, headerBg)
-        val headerTextPaint = Paint().apply {
-            color = Color.WHITE
-            textSize = 8f
-            typeface = Typeface.DEFAULT_BOLD
-            isAntiAlias = true
-        }
+        // Header tabella (sfondo nero, testo bianco)
+        val headerRect = RectF(margin, y, margin + tableWidth, y + 14f)
+        val headerBgPaint = Paint().apply { color = black; isAntiAlias = true }
+        canvas.drawRect(headerRect, headerBgPaint)
+        
         var x = margin + 5f
         headers.forEachIndexed { i, h ->
-            canvas.drawText(h, x, y + 10f, headerTextPaint)
+            canvas.drawText(h, x, y + 10f, whiteTextPaint)
             x += colWidths[i]
         }
         y += 14f
+
+        // Bordi laterali tabella
+        val tableBottom = y + (groupedByDay.size * 14f) + 5f
+        canvas.drawLine(margin, y, margin, tableBottom, thickLinePaint)
+        canvas.drawLine(margin + tableWidth, y, margin + tableWidth, tableBottom, thickLinePaint)
 
         // Righe giorni
         val sortedDays = groupedByDay.keys.sorted()
@@ -218,15 +239,18 @@ class PdfReportGenerator(private val context: Context) {
             val dayNum = date.split("-").last().toIntOrNull() ?: 0
             val isProduction = productionDays.contains(date)
 
-            // Sfondo alternato
+            // Sfondo alternato grigio chiarissimo (visibile anche in B/N)
             if (rowBg) {
                 val bgPaint = Paint().apply { color = lightGray; isAntiAlias = true }
-                canvas.drawRect(margin, y, pageWidth - margin, y + 13f, bgPaint)
+                canvas.drawRect(margin + 1f, y, margin + tableWidth - 1f, y + 14f, bgPaint)
             }
             rowBg = !rowBg
 
-            // Giorno
-            canvas.drawText("$dayNum", margin + 5f, y + 10f, bodyPaint)
+            // Linea separatrice
+            canvas.drawLine(margin, y, margin + tableWidth, y, linePaint)
+
+            // Giorno (grassetto)
+            canvas.drawText("$dayNum", margin + 5f, y + 10f, headerPaint)
 
             // Marcate (tutti gli orari)
             val times = dayEntries.map { entry ->
@@ -236,16 +260,23 @@ class PdfReportGenerator(private val context: Context) {
             val timeRange = if (times.size >= 2) "${times.first()}-${times.last()}" else times.joinToString(", ")
             canvas.drawText(timeRange, margin + colWidths[0] + 5f, y + 10f, bodyPaint)
 
-            // Icone (emoji + testo)
+            // Icone (emoji + indicatori B/N)
             val icons = mutableListOf<String>()
             dayEntries.forEach { entry ->
                 when (entry.activity) {
-                    "Teatrino Montaggio", "Teatrino Smontaggio", "Teatrino Intero" -> icons.add("🎪")
-                    "Servizio" -> icons.add("🔧")
+                    "Teatrino Montaggio", "Teatrino Smontaggio", "Teatrino Intero" -> icons.add("[T]")
+                    "Servizio" -> icons.add("[S]")
                 }
             }
-            if (isProduction) icons.add("⭐")
-            if (dayEntries.any { it.type == "ENTRATA" || it.type == "USCITA" }) icons.add("🍽️")
+            if (isProduction) icons.add("[P]")
+            if (dayEntries.size >= 2) {
+                val first = dayEntries.minBy { it.timestamp }
+                val last = dayEntries.maxBy { it.timestamp }
+                val hours = (last.timestamp - first.timestamp) / 3600000f
+                if (hours > 6) icons.add("[BP]")
+            }
+            val locationsNeedingTravel = listOf("Vignola", "Bologna", "Castelfranco")
+            if (dayEntries.any { it.location in locationsNeedingTravel }) icons.add("[V]")
             canvas.drawText(icons.joinToString(" "), margin + colWidths[0] + colWidths[1] + 5f, y + 10f, bodyPaint)
 
             // Luogo
@@ -254,53 +285,4 @@ class PdfReportGenerator(private val context: Context) {
 
             // Attività
             val activity = dayEntries.first().activity
-            canvas.drawText(activity, margin + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + 5f, y + 10f, bodyPaint)
-
-            y += 13f
-        }
-
-        // Linea finale
-        y += 5f
-        canvas.drawLine(margin, y, pageWidth - margin, y, goldLinePaint)
-        y += 10f
-
-        // Nota finale
-        canvas.drawText(
-            "Nota: le marcature riportate sono indicative e possono variare di alcuni minuti rispetto ai rilevamenti del marcatempo aziendale.",
-            margin, y, smallPaint
-        )
-    }
-
-    private fun formatHours(hours: Float): String = "${hours.toInt()}h"
-
-    private suspend fun calculateTotalHours(entries: List<WorkEntry>): Float {
-        val grouped = entries.groupBy { it.date }
-        var total = 0f
-        grouped.forEach { (_, dayEntries) ->
-            val sorted = dayEntries.sortedBy { it.timestamp }
-            for (i in 0 until sorted.size - 1 step 2) {
-                val diff = (sorted[i + 1].timestamp - sorted[i].timestamp) / 3600000f
-                total += diff
-            }
-        }
-        return total
-    }
-
-    private suspend fun calculateTravelMinutes(entries: List<WorkEntry>): Int {
-        return entries.count { it.location == "Vignola" || it.location == "Bologna" || it.location == "Castelfranco" } * 30
-    }
-
-    private suspend fun calculateMealBadges(entries: List<WorkEntry>): Int {
-        val grouped = entries.groupBy { it.date }
-        var badges = 0
-        grouped.forEach { (_, dayEntries) ->
-            if (dayEntries.size >= 2) {
-                val first = dayEntries.minBy { it.timestamp }
-                val last = dayEntries.maxBy { it.timestamp }
-                val hours = (last.timestamp - first.timestamp) / 3600000f
-                if (hours > 6) badges++
-            }
-        }
-        return badges
-    }
-}
+            canvas.drawText(activity, margin + colWidths[0] + colWidths[1] + colWidths[2]
