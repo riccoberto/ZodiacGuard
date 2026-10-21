@@ -7,7 +7,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
@@ -156,16 +155,9 @@ class MonthlyFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 // Nota: currentMonth è 1-12, ma il generatore si aspetta 0-11 (stile Java Calendar)
-                val pdfFile = PdfReportGenerator(requireContext()).generateMonthlyPdf(currentYear, currentMonth - 1)
+                val uri = PdfReportGenerator(requireContext()).generateMonthlyPdf(currentYear, currentMonth - 1)
                 
-                if (pdfFile != null && pdfFile.exists()) {
-                    // Crea l'URI sicuro per la condivisione
-                    val uri = FileProvider.getUriForFile(
-                        requireContext(),
-                        "${requireContext().packageName}.fileprovider",
-                        pdfFile
-                    )
-                    
+                if (uri != null) {
                     val intent = Intent(Intent.ACTION_SEND).apply {
                         type = "application/pdf"
                         putExtra(Intent.EXTRA_SUBJECT, "Riepilogo ${binding.tvMonthYear.text}")
@@ -174,7 +166,7 @@ class MonthlyFragment : Fragment() {
                     }
                     
                     startActivity(Intent.createChooser(intent, "Condividi PDF Riepilogo"))
-                    Toast.makeText(requireContext(), "PDF salvato in Download/ZGuard", Toast.LENGTH_LONG).show()
+                    Toast.makeText(requireContext(), "PDF generato e pronto per la condivisione", Toast.LENGTH_LONG).show()
                 } else {
                     Toast.makeText(requireContext(), "Nessuna marcatura trovata per questo mese", Toast.LENGTH_SHORT).show()
                 }

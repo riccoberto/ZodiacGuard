@@ -1,5 +1,6 @@
 package com.zodiacguard.app.data
 
+import android.content.ContentValues
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -7,9 +8,16 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
+import android.net.Uri
+import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
+import androidx.annotation.RequiresApi
+import androidx.core.content.FileProvider
 import kotlinx.coroutines.flow.first
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -24,7 +32,7 @@ class PdfReportGenerator(private val context: Context) {
         private const val PDF_FOLDER_NAME = "ZGuard"
     }
 
-    suspend fun generateMonthlyPdf(year: Int, month: Int): File? {
+    suspend fun generateMonthlyPdf(year: Int, month: Int): Uri? {
         return try {
             val entries = workDataStore.entriesFlow.first()
             val productionDays = workDataStore.productionDaysFlow.first()
@@ -93,34 +101,86 @@ class PdfReportGenerator(private val context: Context) {
 
             // 6. Crea PDF A4
             val pdfDocument = PdfDocument()
-            val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
-            val page = pdfDocument.startPage(pageInfo)
-            val canvas = page.canvas
+            val pdfBytes = try {
+                val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
+                val page = pdfDocument.startPage(pageInfo)
+                drawPdf(
+                    page.canvas, year, month, totalHours, expectedHours, ordinaryHours,
+                    overtimeHours, bankHours, travelMinutes, mealBadges,
+                    teatrinoMontaggio, teatrinoSmontaggio, teatrinoIntero, servizio,
+                    presenceByLocation, groupedByDay, productionDays
+                )
+                pdfDocument.finishPage(page)
 
-            drawPdf(canvas, year, month, totalHours, expectedHours, ordinaryHours,
-                overtimeHours, bankHours, travelMinutes, mealBadges,
-                teatrinoMontaggio, teatrinoSmontaggio, teatrinoIntero, servizio,
-                presenceByLocation, groupedByDay, productionDays)
-
-            pdfDocument.finishPage(page)
-
-            // 7. Salva file
-            val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            val pdfDir = File(downloadDir, PDF_FOLDER_NAME)
-            if (!pdfDir.exists()) {
-                pdfDir.mkdirs()
+                ByteArrayOutputStream().use { output ->
+                    pdfDocument.writeTo(output)
+                    output.toByteArray()
+                }
+            } finally {
+                pdfDocument.close()
             }
 
             val monthName = getMonthName(year, month)
-            val pdfFile = File(pdfDir, "Riepilogo_$monthName.pdf")
-            pdfDocument.writeTo(pdfFile.outputStream())
-            pdfDocument.close()
-
-            pdfFile
+            val fileName = "Riepilogo_$monthName.pdf"
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                savePdfToDownloads(fileName, pdfBytes)
+            } else {
+                savePdfToAppStorage(fileName, pdfBytes)
+            }
         } catch (e: Exception) {
             android.util.Log.e(TAG, "Errore generazione PDF: ${e.message}", e)
-            null
+            throw e
         }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun savePdfToDownloads(fileName: String, pdfBytes: ByteArray): Uri {
+        val resolver = context.contentResolver
+        val contentValues = ContentValues().apply {
+            put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+            put(MediaStore.Downloads.MIME_TYPE, "application/pdf")
+            put(
+                MediaStore.Downloads.RELATIVE_PATH,
+                "${Environment.DIRECTORY_DOWNLOADS}/$PDF_FOLDER_NAME"
+            )
+            put(MediaStore.Downloads.IS_PENDING, 1)
+        }
+        val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+            ?: throw IOException("Impossibile creare il PDF in Download")
+
+        try {
+            resolver.openOutputStream(uri)?.use { output ->
+                output.write(pdfBytes)
+            } ?: throw IOException("Impossibile scrivere il PDF")
+            resolver.update(
+                uri,
+                ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) },
+                null,
+                null
+            )
+        } catch (e: Exception) {
+            resolver.delete(uri, null, null)
+            throw e
+        }
+
+        return uri
+    }
+
+    private fun savePdfToAppStorage(fileName: String, pdfBytes: ByteArray): Uri {
+        val downloadDirectory = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+            ?: throw IOException("Archivio esterno dell'app non disponibile")
+        val pdfDirectory = File(downloadDirectory, PDF_FOLDER_NAME)
+        if (!pdfDirectory.exists() && !pdfDirectory.mkdirs()) {
+            throw IOException("Impossibile creare la cartella del PDF")
+        }
+
+        val pdfFile = File(pdfDirectory, fileName)
+        pdfFile.writeBytes(pdfBytes)
+        return FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            pdfFile
+        )
     }
 
     private fun getMonthName(year: Int, month: Int): String {

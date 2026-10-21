@@ -7,10 +7,13 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
+import androidx.core.content.FileProvider
 import kotlinx.coroutines.flow.first
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedReader
+import java.io.File
+import java.io.IOException
 import java.io.InputStreamReader
 import java.text.SimpleDateFormat
 import java.util.*
@@ -82,6 +85,18 @@ class BackupManager(private val context: Context) {
 
             val jsonString = backupJson.toString(2)
 
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                val backupFile = getLegacyBackupFile()
+                val backupDirectory = backupFile.parentFile
+                    ?: throw IllegalStateException("Cartella di backup non disponibile")
+                if (!backupDirectory.exists() && !backupDirectory.mkdirs()) {
+                    throw IllegalStateException("Impossibile creare la cartella di backup")
+                }
+                backupFile.writeText(jsonString)
+                Log.d(TAG, "Backup salvato nell'archivio privato dell'app")
+                return true
+            }
+
             // 4. Salva usando MediaStore
             val contentValues = ContentValues().apply {
                 put(MediaStore.Downloads.DISPLAY_NAME, BACKUP_FILE_NAME)
@@ -102,22 +117,23 @@ class BackupManager(private val context: Context) {
 
             // Inserisci nuovo file
             val uri = resolver.insert(collection, contentValues)
-            if (uri != null) {
+                ?: throw IOException("Impossibile creare il file di backup")
+
+            try {
                 resolver.openOutputStream(uri)?.use { outputStream ->
                     outputStream.write(jsonString.toByteArray())
-                }
-                
-                // Aggiorna IS_PENDING a 0 (file completo)
+                } ?: throw IOException("Impossibile scrivere il file di backup")
+
                 val updateValues = ContentValues().apply {
                     put(MediaStore.Downloads.IS_PENDING, 0)
                 }
                 resolver.update(uri, updateValues, null, null)
-                
+
                 Log.d(TAG, "Backup salvato con successo via MediaStore: $uri")
                 return true
-            } else {
-                Log.e(TAG, "Impossibile creare il file di backup")
-                return false
+            } catch (e: Exception) {
+                resolver.delete(uri, null, null)
+                throw e
             }
 
         } catch (e: Exception) {
@@ -130,6 +146,10 @@ class BackupManager(private val context: Context) {
      * Trova l'URI del backup esistente
      */
     private fun findExistingBackupUri(): Uri? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            return getLegacyBackupUri()
+        }
+
         val resolver = context.contentResolver
         val collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI
         
@@ -148,7 +168,23 @@ class BackupManager(private val context: Context) {
                 return Uri.withAppendedPath(collection, id.toString())
             }
         }
-        return null
+        return getLegacyBackupUri()
+    }
+
+    private fun getLegacyBackupFile(): File =
+        File(File(context.filesDir, BACKUP_FOLDER_NAME), BACKUP_FILE_NAME)
+
+    private fun getLegacyBackupUri(): Uri? {
+        val backupFile = getLegacyBackupFile()
+        return if (backupFile.isFile) {
+            FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                backupFile
+            )
+        } else {
+            null
+        }
     }
 
     /**
