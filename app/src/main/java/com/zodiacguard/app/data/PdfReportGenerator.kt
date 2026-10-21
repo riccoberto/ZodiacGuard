@@ -10,7 +10,7 @@ import android.graphics.pdf.PdfDocument
 import android.os.Environment
 import java.io.File
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Calendar
 
 class PdfReportGenerator(private val context: Context) {
 
@@ -260,7 +260,7 @@ class PdfReportGenerator(private val context: Context) {
             val timeRange = if (times.size >= 2) "${times.first()}-${times.last()}" else times.joinToString(", ")
             canvas.drawText(timeRange, margin + colWidths[0] + 5f, y + 10f, bodyPaint)
 
-            // Icone (emoji + indicatori B/N)
+            // Icone (testuali per B/N)
             val icons = mutableListOf<String>()
             dayEntries.forEach { entry ->
                 when (entry.activity) {
@@ -285,4 +285,60 @@ class PdfReportGenerator(private val context: Context) {
 
             // Attività
             val activity = dayEntries.first().activity
-            canvas.drawText(activity, margin + colWidths[0] + colWidths[1] + colWidths[2]
+            canvas.drawText(activity, margin + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + 5f, y + 10f, bodyPaint)
+
+            y += 14f
+        }
+
+        // Linea finale tabella
+        canvas.drawLine(margin, y, margin + tableWidth, y, thickLinePaint)
+        y += 10f
+
+        // Legenda icone (piccola, in basso)
+        canvas.drawText("Legenda: [T]=Teatrino  [S]=Servizio  [P]=Produzione  [BP]=Buono Pasto  [V]=Viaggio", margin, y, smallPaint)
+        y += 10f
+
+        // Nota finale
+        canvas.drawText(
+            "Nota: le marcature riportate sono indicative e possono variare di alcuni minuti rispetto ai rilevamenti del marcatempo aziendale.",
+            margin, y, smallPaint
+        )
+    }
+
+    // Funzione helper per formattare le ore
+    private fun formatHours(hours: Float): String {
+        return "${hours.toInt()}h"
+    }
+
+    private suspend fun calculateTotalHours(entries: List<WorkEntry>): Float {
+        val grouped = entries.groupBy { it.date }
+        var total = 0f
+        grouped.forEach { (_, dayEntries) ->
+            val sorted = dayEntries.sortedBy { it.timestamp }
+            for (i in 0 until sorted.size - 1 step 2) {
+                val diff = (sorted[i + 1].timestamp - sorted[i].timestamp) / 3600000f
+                total += diff
+            }
+        }
+        return total
+    }
+
+    private suspend fun calculateTravelMinutes(entries: List<WorkEntry>): Int {
+        val travelLocations = listOf("Vignola", "Bologna", "Castelfranco")
+        return entries.count { it.location in travelLocations } * 30
+    }
+
+    private suspend fun calculateMealBadges(entries: List<WorkEntry>): Int {
+        val grouped = entries.groupBy { it.date }
+        var badges = 0
+        grouped.forEach { (_, dayEntries) ->
+            if (dayEntries.size >= 2) {
+                val first = dayEntries.minBy { it.timestamp }
+                val last = dayEntries.maxBy { it.timestamp }
+                val hours = (last.timestamp - first.timestamp) / 3600000f
+                if (hours > 6) badges++
+            }
+        }
+        return badges
+    }
+}
