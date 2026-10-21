@@ -3,7 +3,7 @@ package com.zodiacguard.app.ui.dashboard
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
+import android.widget.ImageButton
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.zodiacguard.app.R
@@ -19,8 +19,8 @@ class EntryAdapter(
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val tvInfo: TextView = view.findViewById(R.id.tvEntryInfo)
-        val btnEdit: Button = view.findViewById(R.id.btnEdit)
-        val btnDelete: Button = view.findViewById(R.id.btnDelete)
+        val btnEdit: ImageButton = view.findViewById(R.id.btnEdit)
+        val btnDelete: ImageButton = view.findViewById(R.id.btnDelete)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {

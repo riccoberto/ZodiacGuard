@@ -16,24 +16,24 @@
         android:textColor="@color/white"
         android:textSize="14sp" />
 
-    <com.google.android.material.button.MaterialButton
+    <ImageButton
         android:id="@+id/btnEdit"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        android:text="✎"
         android:contentDescription="Modifica marcatura"
-        android:textSize="18sp"
-        android:backgroundTint="@color/zodiac_gold"
-        android:textColor="@color/zodiac_navy"
-        android:layout_marginEnd="8dp"/>
+        android:src="@drawable/ic_edit_mark"
+        android:background="@drawable/bg_edit_action"
+        android:padding="11dp"
+        android:scaleType="fitCenter"
+        android:layout_marginEnd="8dp" />
 
-    <com.google.android.material.button.MaterialButton
+    <ImageButton
         android:id="@+id/btnDelete"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        android:text="×"
         android:contentDescription="Elimina marcatura"
-        android:textSize="22sp"
-        android:backgroundTint="#C41E3A"
-        android:textColor="@color/white"/>
+        android:src="@drawable/ic_delete_mark"
+        android:background="@drawable/bg_delete_action"
+        android:padding="11dp"
+        android:scaleType="fitCenter" />
 </LinearLayout>

@@ -1,12 +1,17 @@
 package com.zodiacguard.app.ui.monthly
 
 import android.content.Context
+import android.app.AlertDialog
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
+import android.view.ViewGroup
+import android.widget.LinearLayout
+import android.widget.TextView
+import kotlin.math.roundToInt
 
 class PieChartView @JvmOverloads constructor(
     context: Context,
@@ -17,7 +22,7 @@ class PieChartView @JvmOverloads constructor(
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
-        textSize = 18f
+        textSize = 18f * resources.displayMetrics.density
         textAlign = Paint.Align.CENTER
         isFakeBoldText = true
     }
@@ -27,7 +32,7 @@ class PieChartView @JvmOverloads constructor(
     }
     private val centerLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.rgb(170, 183, 202)
-        textSize = 10f
+        textSize = 10f * resources.displayMetrics.density
         textAlign = Paint.Align.CENTER
         letterSpacing = 0.08f
     }
@@ -37,6 +42,13 @@ class PieChartView @JvmOverloads constructor(
     private var total: Float = 0f
     private var expectedTotal: Float = 0f
     private val expectedColor = 0xFFFFA500.toInt()
+
+    init {
+        isClickable = true
+        isFocusable = true
+        contentDescription = "Grafico distribuzione ore. Tocca per ingrandire."
+        setOnClickListener { showExpandedChart() }
+    }
 
     fun setData(newData: List<Pair<Float, Int>>, expected: Float = 0f) {
         data = newData
@@ -116,6 +128,61 @@ class PieChartView @JvmOverloads constructor(
             center - 1f,
             textPaint
         )
-        canvas.drawText("LAVORATE", center, center + 17f, centerLabelPaint)
+        canvas.drawText(
+            "LAVORATE",
+            center,
+            center + 17f * resources.displayMetrics.density,
+            centerLabelPaint
+        )
+    }
+
+    override fun performClick(): Boolean = super.performClick()
+
+    private fun showExpandedChart() {
+        val density = resources.displayMetrics.density
+        val dialogContent = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(
+                (20 * density).roundToInt(),
+                (8 * density).roundToInt(),
+                (20 * density).roundToInt(),
+                (8 * density).roundToInt()
+            )
+        }
+        val enlargedChart = PieChartView(context).apply {
+            setData(data, expectedTotal)
+            contentDescription = "Grafico ingrandito della distribuzione delle ore"
+            isClickable = false
+            isFocusable = false
+            setOnClickListener(null)
+        }
+        dialogContent.addView(
+            enlargedChart,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                (minOf(340, (resources.displayMetrics.widthPixels / density).roundToInt() - 72) * density)
+                    .roundToInt()
+            )
+        )
+        dialogContent.addView(
+            TextView(context).apply {
+                text = "Tocca fuori dal grafico o premi Chiudi per tornare al riepilogo."
+                textSize = 13f
+                setTextColor(Color.rgb(170, 183, 202))
+                gravity = android.view.Gravity.CENTER
+            },
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = (8 * density).roundToInt()
+            }
+        )
+
+        AlertDialog.Builder(context)
+            .setTitle("Distribuzione ore")
+            .setView(dialogContent)
+            .setPositiveButton("Chiudi", null)
+            .show()
     }
 }

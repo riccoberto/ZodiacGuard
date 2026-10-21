@@ -77,10 +77,11 @@
 
         <com.zodiacguard.app.ui.monthly.PieChartView
             android:id="@+id/pieChart"
-            android:layout_width="200dp"
-            android:layout_height="200dp"
+            android:layout_width="240dp"
+            android:layout_height="240dp"
             android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="16dp"
+            android:contentDescription="Grafico distribuzione ore. Tocca per ingrandire." />
 
         <LinearLayout
             android:layout_width="match_parent"

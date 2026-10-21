@@ -8,6 +8,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.text.Editable
+import android.text.TextWatcher
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
@@ -74,6 +76,18 @@ class SettingsFragment : Fragment() {
         logDebug("Fragment creato. NFC disponibile: ${nfcAdapter != null}")
 
         binding.etDisplayName.setText(UserProfilePreferences.getDisplayName(requireContext()))
+        binding.etDisplayName.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+
+            override fun afterTextChanged(s: Editable?) {
+                UserProfilePreferences.saveDisplayName(
+                    requireContext(),
+                    s?.toString().orEmpty()
+                )
+            }
+        })
 
         // 1. Carica i valori contrattuali salvati
         viewLifecycleOwner.lifecycleScope.launch {
@@ -173,6 +187,19 @@ class SettingsFragment : Fragment() {
         }
     }
 
+    override fun onPause() {
+        saveDisplayName()
+        super.onPause()
+    }
+
+    private fun saveDisplayName() {
+        val currentBinding = _binding ?: return
+        UserProfilePreferences.saveDisplayName(
+            requireContext(),
+            currentBinding.etDisplayName.text?.toString().orEmpty()
+        )
+    }
+
     private fun restoreFromBackupFile(uri: Uri) {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
@@ -193,10 +220,12 @@ class SettingsFragment : Fragment() {
                 // 1. Ripristina impostazioni contratto
                 if (backupJson.has("settings")) {
                     val settings = backupJson.getJSONObject("settings")
-                    UserProfilePreferences.saveDisplayName(
-                        requireContext(),
-                        settings.optString("displayName", "")
-                    )
+                    if (settings.has("displayName")) {
+                        UserProfilePreferences.saveDisplayName(
+                            requireContext(),
+                            settings.optString("displayName", "")
+                        )
+                    }
                     val weeklyHours = settings.optInt("weeklyHours", 38)
                     val workDays = settings.optInt("workDays", 6)
                     contractDataStore.saveContract(weeklyHours, workDays)
