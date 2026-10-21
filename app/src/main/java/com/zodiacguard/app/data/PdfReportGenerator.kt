@@ -8,6 +8,7 @@ import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import android.os.Environment
+import kotlinx.coroutines.flow.first
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -143,7 +144,7 @@ class PdfReportGenerator(private val context: Context) {
         teatrinoMontaggio: Int, teatrinoSmontaggio: Int, teatrinoIntero: Int, servizio: Int,
         presenceByLocation: Map<String, Int>,
         groupedByDay: Map<String, List<WorkEntry>>,
-        productionDays: List<String>
+        productionDays: Set<String>
     ) {
         val margin = 30f
         val pageWidth = 595f
