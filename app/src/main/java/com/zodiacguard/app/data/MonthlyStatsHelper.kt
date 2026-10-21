@@ -31,7 +31,8 @@ object MonthlyStatsHelper {
         val activity: String,
         val hasMealTicket: Boolean,
         val isTeatrino: Boolean,
-        val entries: List<WorkEntry> = emptyList() // NUOVO: marcature dettagliate
+        val entries: List<WorkEntry> = emptyList(),
+        val mealTickets: Int = 0
     )
 
     fun countWorkingDaysInMonth(year: Int, month: Int): Int {
@@ -131,6 +132,7 @@ object MonthlyStatsHelper {
             if (location != "Modena") outOfTownDays++
 
             var hasMealTicket = false
+            var dailyMealTickets = 0
             var lastExitTime: Long? = null
             for (entry in sorted) {
                 if (entry.type == "USCITA") {
@@ -140,13 +142,25 @@ object MonthlyStatsHelper {
                     if (pauseMinutes < 120 && pauseMinutes > 0) {
                         hasMealTicket = true
                         mealTickets += 2
+                        dailyMealTickets += 2
                     }
                     lastExitTime = null
                 }
             }
 
             dailySummaries.add(
-                DailySummary(date, totalDayMinutes, travelMinutes, isProduction, location, activity, hasMealTicket, isTeatrino, sorted)
+                DailySummary(
+                    date,
+                    totalDayMinutes,
+                    travelMinutes,
+                    isProduction,
+                    location,
+                    activity,
+                    hasMealTicket,
+                    isTeatrino,
+                    sorted,
+                    dailyMealTickets
+                )
             )
         }
                 val balance = totalWorked - totalContractMinutes

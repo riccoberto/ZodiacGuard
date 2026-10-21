@@ -14,129 +14,360 @@ import android.os.Environment
 import android.provider.MediaStore
 import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
-import kotlinx.coroutines.flow.first
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
 import java.util.Locale
 
 class PdfReportGenerator(private val context: Context) {
 
-    private val workDataStore = WorkDataStore(context)
-    private val contractDataStore = ContractDataStore(context)
-
     companion object {
         private const val TAG = "PdfReportGenerator"
         private const val PDF_FOLDER_NAME = "ZGuard"
+        private const val PAGE_WIDTH = 595
+        private const val PAGE_HEIGHT = 842
+        private const val PAGE_MARGIN = 40f
+        private const val CONTENT_WIDTH = PAGE_WIDTH - PAGE_MARGIN * 2
+        private const val CONTENT_BOTTOM = PAGE_HEIGHT - 48f
     }
 
-    suspend fun generateMonthlyPdf(year: Int, month: Int): Uri? {
-        return try {
-            val entries = workDataStore.entriesFlow.first()
-            val productionDays = workDataStore.productionDaysFlow.first()
-            val weeklyHours = contractDataStore.weeklyHoursFlow.first()
-            val workDays = contractDataStore.workDaysFlow.first()
+    private data class PdfPage(val page: PdfDocument.Page, var contentY: Float)
 
-            // 1. Filtra marcature del mese in modo esplicito
-            val monthEntries = mutableListOf<WorkEntry>()
-            for (entry in entries) {
-                val cal = Calendar.getInstance()
-                cal.timeInMillis = entry.timestamp
-                if (cal.get(Calendar.YEAR) == year && cal.get(Calendar.MONTH) == month) {
-                    monthEntries.add(entry)
-                }
-            }
-            
-            // Ordinamento esplicito senza lambda 'it'
-            monthEntries.sortWith(Comparator { a, b -> 
-                a.timestamp.compareTo(b.timestamp) 
-            })
+    private val titlePaint = textPaint(20f, Color.rgb(34, 47, 62), bold = true)
+    private val headingPaint = textPaint(12f, Color.rgb(34, 47, 62), bold = true)
+    private val bodyPaint = textPaint(10f, Color.rgb(54, 65, 76))
+    private val smallPaint = textPaint(9f, Color.rgb(85, 95, 105))
+    private val valuePaint = textPaint(11f, Color.rgb(34, 47, 62), bold = true)
+    private val goldPaint = textPaint(10f, Color.rgb(146, 105, 0), bold = true)
+    private val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.rgb(222, 226, 230)
+        strokeWidth = 1f
+    }
+    private val cardPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.rgb(246, 248, 250)
+    }
 
-            if (monthEntries.isEmpty()) return null
+    fun generateMonthlyPdf(
+        year: Int,
+        month: Int,
+        stats: MonthlyStatsHelper.MonthlyStats
+    ): Uri? {
+        if (stats.dailyStats.isEmpty()) return null
 
-            // 2. Calcola totali
-            val totalHours = calculateTotalHours(monthEntries)
-            val expectedHours = workDays.toFloat() * weeklyHours.toFloat()
-            val ordinaryHours = if (totalHours < expectedHours) totalHours else expectedHours
-            val overtimeHours = if (totalHours > expectedHours) totalHours - expectedHours else 0f
-            val bankHours = totalHours - expectedHours
-            val travelMinutes = calculateTravelMinutes(monthEntries)
-            val mealBadges = calculateMealBadges(monthEntries)
+        val document = PdfDocument()
+        try {
+            var pageNumber = 1
+            var page = startPage(document, pageNumber)
 
-            // 3. Conta attività
-            var teatrinoMontaggio = 0
-            var teatrinoSmontaggio = 0
-            var teatrinoIntero = 0
-            var servizio = 0
-            for (entry in monthEntries) {
-                when (entry.activity) {
-                    "Teatrino Montaggio" -> teatrinoMontaggio++
-                    "Teatrino Smontaggio" -> teatrinoSmontaggio++
-                    "Teatrino Intero" -> teatrinoIntero++
-                    "Servizio" -> servizio++
-                }
-            }
+            drawSummary(page.page.canvas, page, year, month, stats)
+            page.contentY += 20f
+            page.contentY = drawSectionHeading(
+                page.page.canvas,
+                page.contentY,
+                "AGENDA GIORNALIERA"
+            )
 
-            // 4. Presenza per sede
-            val presenceByLocation = mutableMapOf<String, Int>()
-            for (entry in monthEntries) {
-                val currentCount = presenceByLocation[entry.location] ?: 0
-                presenceByLocation[entry.location] = currentCount + 1
-            }
-
-            // 5. Raggruppa per giorno
-            val groupedByDay = mutableMapOf<String, MutableList<WorkEntry>>()
-            for (entry in monthEntries) {
-                val list = groupedByDay[entry.date]
-                if (list == null) {
-                    val newList = mutableListOf<WorkEntry>()
-                    newList.add(entry)
-                    groupedByDay[entry.date] = newList
-                } else {
-                    list.add(entry)
-                }
-            }
-
-            // 6. Crea PDF A4
-            val pdfDocument = PdfDocument()
-            val pdfBytes = try {
-                val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
-                val page = pdfDocument.startPage(pageInfo)
-                drawPdf(
-                    page.canvas, year, month, totalHours, expectedHours, ordinaryHours,
-                    overtimeHours, bankHours, travelMinutes, mealBadges,
-                    teatrinoMontaggio, teatrinoSmontaggio, teatrinoIntero, servizio,
-                    presenceByLocation, groupedByDay, productionDays
+            for ((index, day) in stats.dailyStats.withIndex()) {
+                val activityLines = wrapText(
+                    "${day.activity} · ${day.location}",
+                    CONTENT_WIDTH - 20f,
+                    bodyPaint
                 )
-                pdfDocument.finishPage(page)
+                val detailsLines = wrapText(formatDayDetails(day), CONTENT_WIDTH - 20f, smallPaint)
+                var remainingMarkLines = wrapText(
+                    formatMarkings(day.entries),
+                    CONTENT_WIDTH - 20f,
+                    smallPaint
+                )
+                var firstPart = true
 
-                ByteArrayOutputStream().use { output ->
-                    pdfDocument.writeTo(output)
-                    output.toByteArray()
+                while (firstPart || remainingMarkLines.isNotEmpty()) {
+                    val firstActivityLines = if (firstPart) activityLines else emptyList()
+                    val firstDetailsLines = if (firstPart) detailsLines else emptyList()
+                    val fixedLines = firstActivityLines.size + firstDetailsLines.size
+                    val availableMarkLines =
+                        ((CONTENT_BOTTOM - page.contentY - 25f) / 12f).toInt() - fixedLines
+
+                    if (availableMarkLines < 1 && page.contentY > 100f) {
+                        finishPage(document, page, pageNumber)
+                        pageNumber++
+                        page = startPage(document, pageNumber)
+                        page.contentY = drawSectionHeading(
+                            page.page.canvas,
+                            page.contentY,
+                            "AGENDA GIORNALIERA · CONTINUA"
+                        )
+                        continue
+                    }
+
+                    val markLineCount = minOf(
+                        remainingMarkLines.size,
+                        maxOf(1, availableMarkLines)
+                    )
+                    val cardMarkLines = remainingMarkLines.take(markLineCount)
+                    remainingMarkLines = remainingMarkLines.drop(markLineCount)
+                    val cardHeight = 25f + 12f *
+                        (fixedLines + cardMarkLines.size)
+
+                    drawDayCard(
+                        page.page.canvas,
+                        page.contentY,
+                        cardHeight,
+                        index,
+                        day,
+                        firstPart,
+                        firstActivityLines,
+                        firstDetailsLines,
+                        cardMarkLines
+                    )
+                    page.contentY += cardHeight + 7f
+                    firstPart = false
+
+                    if (remainingMarkLines.isNotEmpty()) {
+                        finishPage(document, page, pageNumber)
+                        pageNumber++
+                        page = startPage(document, pageNumber)
+                        page.contentY = drawSectionHeading(
+                            page.page.canvas,
+                            page.contentY,
+                            "AGENDA GIORNALIERA · CONTINUA"
+                        )
+                    }
                 }
-            } finally {
-                pdfDocument.close()
             }
 
-            val monthName = getMonthName(year, month)
-            val fileName = "Riepilogo_$monthName.pdf"
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                savePdfToDownloads(fileName, pdfBytes)
-            } else {
-                savePdfToAppStorage(fileName, pdfBytes)
-            }
+            finishPage(document, page, pageNumber)
+            return savePdf(year, month, document)
         } catch (e: Exception) {
             android.util.Log.e(TAG, "Errore generazione PDF: ${e.message}", e)
             throw e
+        } finally {
+            document.close()
+        }
+    }
+
+    private fun drawSummary(
+        canvas: Canvas,
+        page: PdfPage,
+        year: Int,
+        month: Int,
+        stats: MonthlyStatsHelper.MonthlyStats
+    ) {
+        val monthLabel = SimpleDateFormat("MMMM yyyy", Locale.ITALIAN)
+            .format(monthDate(year, month))
+            .replaceFirstChar { it.uppercase(Locale.ITALIAN) }
+
+        canvas.drawText("RIEPILOGO MENSILE", PAGE_MARGIN, page.contentY, titlePaint)
+        page.contentY += 23f
+        canvas.drawText(monthLabel, PAGE_MARGIN, page.contentY, goldPaint)
+        page.contentY += 15f
+
+        drawSectionHeading(canvas, page.contentY, "RIEPILOGO ORE")
+        page.contentY += 27f
+
+        val columnGap = 22f
+        val columnWidth = (CONTENT_WIDTH - columnGap) / 2f
+        val rightColumnX = PAGE_MARGIN + columnWidth + columnGap
+        val summaryRows = listOf(
+            "Totale lavorate" to MonthlyStatsHelper.minutesToText(stats.totalWorkedMinutes),
+            "Contratto attese (${stats.workingDaysInMonth} gg)" to
+                MonthlyStatsHelper.minutesToText(stats.totalContractMinutes),
+            "Ordinarie" to MonthlyStatsHelper.minutesToText(stats.totalOrdinaryMinutes),
+            "Straordinari" to MonthlyStatsHelper.minutesToText(stats.totalOvertimeMinutes),
+            "Banca ore" to MonthlyStatsHelper.minutesToText(stats.totalBankMinutes),
+            "Viaggio" to MonthlyStatsHelper.minutesToText(stats.totalTravelMinutes),
+            "Saldo" to signedMinutes(stats.balanceMinutes),
+            "Buoni pasto" to stats.mealTickets.toString(),
+            "Giornate fuori sede" to stats.outOfTownDays.toString()
+        )
+
+        var leftY = page.contentY
+        var rightY = page.contentY
+        for ((index, row) in summaryRows.withIndex()) {
+            val columnX = if (index % 2 == 0) PAGE_MARGIN else rightColumnX
+            val rowY = if (index % 2 == 0) leftY else rightY
+            canvas.drawText(row.first, columnX, rowY, bodyPaint)
+            canvas.drawText(row.second, columnX + columnWidth - valuePaint.measureText(row.second), rowY, valuePaint)
+            if (index % 2 == 0) leftY += 21f else rightY += 21f
+        }
+        page.contentY = maxOf(leftY, rightY) + 5f
+
+        drawSectionHeading(canvas, page.contentY, "ATTIVITÀ E SEDI")
+        page.contentY += 27f
+        val activities = stats.teatriniCount.entries
+            .sortedBy { it.key }
+            .joinToString("   ·   ") { "${it.key}: ${it.value}" }
+            .ifEmpty { "Nessun teatrino" }
+        val teatrinoDays = stats.teatriniDays
+            .joinToString("   ·   ") { formatShortDate(it) }
+            .ifEmpty { "Nessun teatrino" }
+        val locations = stats.locationsCount.entries
+            .sortedBy { it.key }
+            .joinToString("   ·   ") { "${it.key}: ${it.value} gg" }
+            .ifEmpty { "Nessuna presenza" }
+
+        page.contentY = drawWrappedLabel(canvas, "Teatrini", activities, page.contentY)
+        page.contentY = drawWrappedLabel(canvas, "Giorni", teatrinoDays, page.contentY)
+        page.contentY = drawWrappedLabel(canvas, "Presenze", locations, page.contentY)
+    }
+
+    private fun drawWrappedLabel(
+        canvas: Canvas,
+        label: String,
+        value: String,
+        y: Float
+    ): Float {
+        canvas.drawText("$label:", PAGE_MARGIN, y, headingPaint)
+        val lines = wrapText(value, CONTENT_WIDTH - 74f, bodyPaint)
+        for ((index, line) in lines.withIndex()) {
+            canvas.drawText(line, PAGE_MARGIN + 74f, y + index * 13f, bodyPaint)
+        }
+        return y + maxOf(18f, lines.size * 13f) + 3f
+    }
+
+    private fun drawSectionHeading(canvas: Canvas, y: Float, text: String): Float {
+        canvas.drawText(text, PAGE_MARGIN, y, headingPaint)
+        canvas.drawLine(PAGE_MARGIN, y + 5f, PAGE_WIDTH - PAGE_MARGIN, y + 5f, linePaint)
+        return y + 17f
+    }
+
+    private fun drawDayCard(
+        canvas: Canvas,
+        y: Float,
+        height: Float,
+        index: Int,
+        day: MonthlyStatsHelper.DailySummary,
+        firstPart: Boolean,
+        activityLines: List<String>,
+        detailsLines: List<String>,
+        markings: List<String>
+    ) {
+        val rect = RectF(PAGE_MARGIN, y, PAGE_WIDTH - PAGE_MARGIN, y + height)
+        if (index % 2 == 0) canvas.drawRoundRect(rect, 5f, 5f, cardPaint)
+
+        val left = PAGE_MARGIN + 10f
+        var lineY = y + 15f
+        if (firstPart) {
+            val date = SimpleDateFormat("EEEE d MMMM yyyy", Locale.ITALIAN)
+                .format(parseDate(day.date))
+                .replaceFirstChar { it.uppercase(Locale.ITALIAN) }
+            canvas.drawText(date, left, lineY, headingPaint)
+        } else {
+            canvas.drawText(
+                "${SimpleDateFormat("dd/MM/yyyy", Locale.ITALIAN).format(parseDate(day.date))} · Marcature (continua)",
+                left,
+                lineY,
+                headingPaint
+            )
+        }
+
+        lineY += 14f
+        for (line in activityLines) {
+            canvas.drawText(line, left, lineY, bodyPaint)
+            lineY += 12f
+        }
+
+        for (line in detailsLines) {
+            canvas.drawText(line, left, lineY, smallPaint)
+            lineY += 12f
+        }
+
+        for (line in markings) {
+            canvas.drawText(line, left, lineY, smallPaint)
+            lineY += 12f
+        }
+    }
+
+    private fun formatDayDetails(day: MonthlyStatsHelper.DailySummary): String =
+        buildList {
+            add("Totale: ${MonthlyStatsHelper.minutesToText(day.totalMinutes)}")
+            add("Viaggio: ${MonthlyStatsHelper.minutesToText(day.travelMinutes)}")
+            add("Produzione: ${if (day.isProduction) "sì" else "no"}")
+            add("Buoni pasto: ${day.mealTickets}")
+        }.joinToString("   ·   ")
+
+    private fun formatMarkings(entries: List<WorkEntry>): String {
+        if (entries.isEmpty()) return "Marcature: nessuna"
+
+        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+        return entries.sortedBy { it.timestamp }.joinToString("   ·   ", "Marcature: ") { entry ->
+            "${timeFormat.format(Date(entry.timestamp))} ${entry.type}"
+        }
+    }
+
+    private fun wrapText(text: String, maxWidth: Float, paint: Paint): List<String> {
+        if (text.isBlank()) return listOf("")
+
+        val result = mutableListOf<String>()
+        var line = StringBuilder()
+        for (word in text.split(Regex("\\s+"))) {
+            val candidate = if (line.isEmpty()) word else "$line $word"
+            if (line.isNotEmpty() && paint.measureText(candidate) > maxWidth) {
+                result.add(line.toString())
+                line = StringBuilder(word)
+            } else {
+                line = StringBuilder(candidate)
+            }
+        }
+        if (line.isNotEmpty()) result.add(line.toString())
+        return result
+    }
+
+    private fun startPage(document: PdfDocument, pageNumber: Int): PdfPage {
+        val info = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber).create()
+        val page = document.startPage(info)
+        page.canvas.drawColor(Color.WHITE)
+        page.canvas.drawText("Z GUARD", PAGE_MARGIN, 30f, headingPaint)
+        page.canvas.drawLine(
+            PAGE_MARGIN,
+            39f,
+            PAGE_WIDTH - PAGE_MARGIN,
+            39f,
+            linePaint
+        )
+        return PdfPage(page, 63f)
+    }
+
+    private fun finishPage(
+        document: PdfDocument,
+        page: PdfPage,
+        pageNumber: Int
+    ) {
+        page.page.canvas.drawLine(
+            PAGE_MARGIN,
+            PAGE_HEIGHT - 35f,
+            PAGE_WIDTH - PAGE_MARGIN,
+            PAGE_HEIGHT - 35f,
+            linePaint
+        )
+        val footer = "Pagina $pageNumber"
+        page.page.canvas.drawText(
+            footer,
+            PAGE_WIDTH - PAGE_MARGIN - smallPaint.measureText(footer),
+            PAGE_HEIGHT - 20f,
+            smallPaint
+        )
+        document.finishPage(page.page)
+    }
+
+    private fun savePdf(year: Int, month: Int, document: PdfDocument): Uri {
+        val output = ByteArrayOutputStream()
+        document.writeTo(output)
+        val fileName = "Riepilogo_${getMonthName(year, month)}.pdf"
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            savePdfToDownloads(fileName, output.toByteArray())
+        } else {
+            savePdfToAppStorage(fileName, output.toByteArray())
         }
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun savePdfToDownloads(fileName: String, pdfBytes: ByteArray): Uri {
         val resolver = context.contentResolver
-        val contentValues = ContentValues().apply {
+        val values = ContentValues().apply {
             put(MediaStore.Downloads.DISPLAY_NAME, fileName)
             put(MediaStore.Downloads.MIME_TYPE, "application/pdf")
             put(
@@ -145,13 +376,12 @@ class PdfReportGenerator(private val context: Context) {
             )
             put(MediaStore.Downloads.IS_PENDING, 1)
         }
-        val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+        val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
             ?: throw IOException("Impossibile creare il PDF in Download")
 
         try {
-            resolver.openOutputStream(uri)?.use { output ->
-                output.write(pdfBytes)
-            } ?: throw IOException("Impossibile scrivere il PDF")
+            resolver.openOutputStream(uri)?.use { it.write(pdfBytes) }
+                ?: throw IOException("Impossibile scrivere il PDF")
             resolver.update(
                 uri,
                 ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) },
@@ -183,335 +413,35 @@ class PdfReportGenerator(private val context: Context) {
         )
     }
 
-    private fun getMonthName(year: Int, month: Int): String {
-        val cal = Calendar.getInstance()
-        cal.set(year, month, 1)
-        val sdf = SimpleDateFormat("MMMM_yyyy", Locale.ITALIAN)
-        val raw = sdf.format(cal.time)
-        return capitalizeFirst(raw)
+    private fun signedMinutes(minutes: Int): String {
+        val sign = if (minutes >= 0) "+" else "-"
+        val absolute = kotlin.math.abs(minutes)
+        return "$sign${MonthlyStatsHelper.minutesToText(absolute)}"
     }
 
-    private fun capitalizeFirst(s: String): String {
-        if (s.isEmpty()) return s
-        return s.substring(0, 1).uppercase(Locale.ITALIAN) + s.substring(1)
-    }
+    private fun parseDate(date: String): Date =
+        SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).parse(date)
+            ?: throw IllegalArgumentException("Data non valida: $date")
 
-    private fun drawPdf(
-        canvas: Canvas,
-        year: Int, month: Int,
-        totalHours: Float, expectedHours: Float, ordinaryHours: Float,
-        overtimeHours: Float, bankHours: Float, travelMinutes: Int, mealBadges: Int,
-        teatrinoMontaggio: Int, teatrinoSmontaggio: Int, teatrinoIntero: Int, servizio: Int,
-        presenceByLocation: Map<String, Int>,
-        groupedByDay: Map<String, List<WorkEntry>>,
-        productionDays: Set<String>
-    ) {
-        val margin = 30f
-        val pageWidth = 595f
+    private fun formatShortDate(date: String): String =
+        SimpleDateFormat("dd/MM", Locale.ITALIAN).format(parseDate(date))
 
-        val black = Color.BLACK
-        val white = Color.WHITE
-        val lightGray = Color.parseColor("#F0F0F0")
-        val mediumGray = Color.parseColor("#CCCCCC")
-        val darkGray = Color.parseColor("#333333")
+    private fun monthDate(year: Int, month: Int): Date =
+        Calendar.getInstance().apply { set(year, month - 1, 1) }.time
 
-        val titlePaint = Paint().apply {
-            color = black
-            textSize = 20f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            isAntiAlias = true
-        }
-        val headerPaint = Paint().apply {
-            color = black
-            textSize = 9f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            isAntiAlias = true
-        }
-        val bodyPaint = Paint().apply {
-            color = darkGray
-            textSize = 8f
-            isAntiAlias = true
-        }
-        val smallPaint = Paint().apply {
-            color = Color.GRAY
-            textSize = 6f
-            isAntiAlias = true
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.ITALIC)
-        }
-        val linePaint = Paint().apply {
-            color = mediumGray
-            strokeWidth = 0.5f
-            isAntiAlias = true
-        }
-        val thickLinePaint = Paint().apply {
-            color = black
-            strokeWidth = 1.5f
-            isAntiAlias = true
-        }
-        val whiteTextPaint = Paint().apply {
-            color = white
-            textSize = 8f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            isAntiAlias = true
-        }
-        val subtitlePaint = Paint().apply {
-            color = darkGray
-            textSize = 20f
-            isAntiAlias = true
-        }
+    private fun getMonthName(year: Int, month: Int): String =
+        SimpleDateFormat("MMMM_yyyy", Locale.ITALIAN)
+            .format(monthDate(year, month))
+            .replaceFirstChar { it.uppercase(Locale.ITALIAN) }
 
-        var y = margin + 10f
-
-        // TITOLO
-        canvas.drawText("RIEPILOGO MESE", margin, y, titlePaint)
-        val monthName = getMonthName(year, month)
-        val titleWidth = titlePaint.measureText("RIEPILOGO MESE")
-        canvas.drawText(": $monthName", margin + titleWidth + 10f, y, subtitlePaint)
-        y += 6f
-        canvas.drawLine(margin, y, pageWidth - margin, y, thickLinePaint)
-        y += 15f
-
-        // BOX RIEPILOGO
-        val boxHeight = 110f
-        val boxRect = RectF(margin, y, pageWidth - margin, y + boxHeight)
-        val borderPaint = Paint().apply { 
-            color = black
-            strokeWidth = 1f
-            style = Paint.Style.STROKE
-            isAntiAlias = true 
-        }
-        canvas.drawRect(boxRect, borderPaint)
-        val boxBgPaint = Paint().apply { color = white; isAntiAlias = true }
-        canvas.drawRect(margin + 1f, y + 1f, pageWidth - margin - 1f, y + boxHeight - 1f, boxBgPaint)
-
-        val col1X = margin + 10f
-        val col2X = pageWidth / 2 + 5f
-        var lineY = y + 14f
-        val lineSpacing = 13f
-
-        canvas.drawText("ORE LAVORATE: ${formatHours(totalHours)}", col1X, lineY, headerPaint); lineY += lineSpacing
-        canvas.drawText("Ore attese: ${formatHours(expectedHours)}", col1X, lineY, bodyPaint); lineY += lineSpacing
-        canvas.drawText("Ordinarie: ${formatHours(ordinaryHours)}", col1X, lineY, bodyPaint); lineY += lineSpacing
-        canvas.drawText("Straordinarie: ${formatHours(overtimeHours)}", col1X, lineY, bodyPaint); lineY += lineSpacing
-        canvas.drawText("Banca ore: ${formatHours(bankHours)}", col1X, lineY, bodyPaint); lineY += lineSpacing
-        canvas.drawText("Viaggio: ${travelMinutes} min", col1X, lineY, bodyPaint); lineY += lineSpacing
-        canvas.drawText("Buoni pasto: $mealBadges", col1X, lineY, bodyPaint)
-
-        lineY = y + 14f
-        canvas.drawText("TEATRINO MONTAGGIO: $teatrinoMontaggio gg", col2X, lineY, headerPaint); lineY += lineSpacing
-        canvas.drawText("Teatrino Smontaggio: $teatrinoSmontaggio gg", col2X, lineY, bodyPaint); lineY += lineSpacing
-        canvas.drawText("Teatrino Intero: $teatrinoIntero gg", col2X, lineY, bodyPaint); lineY += lineSpacing
-        canvas.drawText("Servizio: $servizio gg", col2X, lineY, bodyPaint); lineY += lineSpacing + 3f
-        
-        canvas.drawText("PRESENZA PER SEDE:", col2X, lineY, headerPaint); lineY += lineSpacing
-        
-        val locationEntries = presenceByLocation.entries.toList()
-        for (i in locationEntries.indices) {
-            val locEntry = locationEntries[i]
-            canvas.drawText("  - ${locEntry.key}: ${locEntry.value} gg", col2X, lineY, bodyPaint)
-            lineY += lineSpacing
-        }
-
-        y += boxHeight + 12f
-
-        // TABELLA GIORNI
-        val colWidths = floatArrayOf(35f, 115f, 95f, 85f, 110f)
-        val headers = arrayOf("Giorno", "Marcate", "Icone", "Luogo", "Attività")
-        val tableWidth = colWidths.sum()
-
-        val headerRect = RectF(margin, y, margin + tableWidth, y + 14f)
-        val headerBgPaint = Paint().apply { color = black; isAntiAlias = true }
-        canvas.drawRect(headerRect, headerBgPaint)
-        
-        var x = margin + 5f
-        for (i in headers.indices) {
-            canvas.drawText(headers[i], x, y + 10f, whiteTextPaint)
-            x += colWidths[i]
-        }
-        y += 14f
-
-        val tableBottom = y + (groupedByDay.size * 14f) + 5f
-        canvas.drawLine(margin, y, margin, tableBottom, thickLinePaint)
-        canvas.drawLine(margin + tableWidth, y, margin + tableWidth, tableBottom, thickLinePaint)
-
-          val sortedKeys = groupedByDay.keys.sorted()
-      
-        
-        var rowBg = false
-        for (i in sortedKeys.indices) {
-            val date = sortedKeys[i]
-            val dayEntries = groupedByDay[date]
-            if (dayEntries == null) continue
-            
-            val dayNum = date.split("-").last().toIntOrNull() ?: 0
-            val isProduction = productionDays.contains(date)
-
-            if (rowBg) {
-                val bgPaint = Paint().apply { color = lightGray; isAntiAlias = true }
-                canvas.drawRect(margin + 1f, y, margin + tableWidth - 1f, y + 14f, bgPaint)
-            }
-            rowBg = !rowBg
-
-            canvas.drawLine(margin, y, margin + tableWidth, y, linePaint)
-            canvas.drawText("$dayNum", margin + 5f, y + 10f, headerPaint)
-
-            // Marcate
-            val times = mutableListOf<String>()
-            for (j in dayEntries.indices) {
-                val entry = dayEntries[j]
-                val cal = Calendar.getInstance()
-                cal.timeInMillis = entry.timestamp
-                times.add(String.format("%02d:%02d", cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE)))
-            }
-            val timeRange = if (times.size >= 2) "${times[0]}-${times[times.size - 1]}" else times.joinToString(", ")
-            canvas.drawText(timeRange, margin + colWidths[0] + 5f, y + 10f, bodyPaint)
-
-            // Icone
-            val icons = mutableListOf<String>()
-            for (j in dayEntries.indices) {
-                val entry = dayEntries[j]
-                if (entry.activity == "Teatrino Montaggio" || entry.activity == "Teatrino Smontaggio" || entry.activity == "Teatrino Intero") {
-                    icons.add("[T]")
-                } else if (entry.activity == "Servizio") {
-                    icons.add("[S]")
-                }
-            }
-            if (isProduction) icons.add("[P]")
-            
-            if (dayEntries.size >= 2) {
-                var firstTime = dayEntries[0].timestamp
-                var lastTime = dayEntries[0].timestamp
-                for (j in dayEntries.indices) {
-                    val entry = dayEntries[j]
-                    if (entry.timestamp < firstTime) firstTime = entry.timestamp
-                    if (entry.timestamp > lastTime) lastTime = entry.timestamp
-                }
-                val hours = (lastTime - firstTime) / 3600000f
-                if (hours > 6) icons.add("[BP]")
-            }
-            
-            val travelLocations = listOf("Vignola", "Bologna", "Castelfranco")
-            var needsTravel = false
-            for (j in dayEntries.indices) {
-                if (travelLocations.contains(dayEntries[j].location)) {
-                    needsTravel = true
-                    break
-                }
-            }
-            if (needsTravel) icons.add("[V]")
-            
-            canvas.drawText(icons.joinToString(" "), margin + colWidths[0] + colWidths[1] + 5f, y + 10f, bodyPaint)
-
-            // Luogo
-            val location = dayEntries[0].location
-            canvas.drawText(location, margin + colWidths[0] + colWidths[1] + colWidths[2] + 5f, y + 10f, bodyPaint)
-
-            // Attività
-            val activity = dayEntries[0].activity
-            canvas.drawText(activity, margin + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + 5f, y + 10f, bodyPaint)
-
-            y += 14f
-        }
-
-        canvas.drawLine(margin, y, margin + tableWidth, y, thickLinePaint)
-        y += 10f
-
-        canvas.drawText("Legenda: [T]=Teatrino  [S]=Servizio  [P]=Produzione  [BP]=Buono Pasto  [V]=Viaggio", margin, y, smallPaint)
-        y += 10f
-
-        canvas.drawText(
-            "Nota: le marcature riportate sono indicative e possono variare di alcuni minuti rispetto ai rilevamenti del marcatempo aziendale.",
-            margin, y, smallPaint
-        )
-    }
-
-    private fun formatHours(hours: Float): String {
-        return "${hours.toInt()}h"
-    }
-
-    private suspend fun calculateTotalHours(entries: List<WorkEntry>): Float {
-        val grouped = mutableMapOf<String, MutableList<WorkEntry>>()
-        for (entry in entries) {
-            val list = grouped[entry.date]
-            if (list == null) {
-                val newList = mutableListOf<WorkEntry>()
-                newList.add(entry)
-                grouped[entry.date] = newList
+    private fun textPaint(size: Float, color: Int, bold: Boolean = false) =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            textSize = size
+            this.color = color
+            typeface = if (bold) {
+                Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             } else {
-                list.add(entry)
+                Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
             }
         }
-        
-        var total = 0f
-        val mapEntries = grouped.entries.toList()
-        for (i in mapEntries.indices) {
-            val mapEntry = mapEntries[i]
-            val dayEntries = mapEntry.value
-            
-            dayEntries.sortWith(Comparator { a, b -> 
-                a.timestamp.compareTo(b.timestamp) 
-            })
-            
-            var j = 0
-            while (j < dayEntries.size - 1) {
-                val diff = (dayEntries[j + 1].timestamp - dayEntries[j].timestamp) / 3600000f
-                total += diff
-                j += 2
-            }
-        }
-        return total
-    }
-
-    private suspend fun calculateTravelMinutes(entries: List<WorkEntry>): Int {
-        val travelLocations = listOf("Vignola", "Bologna", "Castelfranco")
-        var count = 0
-        for (entry in entries) {
-            if (travelLocations.contains(entry.location)) {
-                count++
-            }
-        }
-        return count * 30
-    }
-
-    private suspend fun calculateMealBadges(entries: List<WorkEntry>): Int {
-        val grouped = mutableMapOf<String, MutableList<WorkEntry>>()
-        for (entry in entries) {
-            val list = grouped[entry.date]
-            if (list == null) {
-                val newList = mutableListOf<WorkEntry>()
-                newList.add(entry)
-                grouped[entry.date] = newList
-            } else {
-                list.add(entry)
-            }
-        }
-        
-        var badges = 0
-        val mapEntries = grouped.entries.toList()
-        for (i in mapEntries.indices) {
-            val mapEntry = mapEntries[i]
-            val dayEntries = mapEntry.value
-            
-            if (dayEntries.size >= 2) {
-                var firstTime = dayEntries[0].timestamp
-                var lastTime = dayEntries[0].timestamp
-                
-                for (j in dayEntries.indices) {
-                    val currentEntry = dayEntries[j]
-                    if (currentEntry.timestamp < firstTime) {
-                        firstTime = currentEntry.timestamp
-                    }
-                    if (currentEntry.timestamp > lastTime) {
-                        lastTime = currentEntry.timestamp
-                    }
-                }
-                
-                val hours = (lastTime - firstTime) / 3600000f
-                if (hours > 6) {
-                    badges++
-                }
-            }
-        }
-        return badges
-    }
 }

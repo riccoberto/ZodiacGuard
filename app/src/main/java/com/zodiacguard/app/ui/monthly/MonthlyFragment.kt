@@ -17,6 +17,7 @@ import com.zodiacguard.app.data.MonthlyStatsHelper
 import com.zodiacguard.app.data.PdfReportGenerator
 import com.zodiacguard.app.data.WorkDataStore
 import com.zodiacguard.app.databinding.FragmentMonthlyBinding
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -31,6 +32,8 @@ class MonthlyFragment : Fragment() {
     
     private var currentYear: Int = Calendar.getInstance().get(Calendar.YEAR)
     private var currentMonth: Int = Calendar.getInstance().get(Calendar.MONTH) + 1 // 1-12
+    private var currentStats: MonthlyStatsHelper.MonthlyStats? = null
+    private var statsLoadJob: Job? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -74,17 +77,25 @@ class MonthlyFragment : Fragment() {
     }
 
     private fun loadStats() {
-        viewLifecycleOwner.lifecycleScope.launch {
+        val year = currentYear
+        val month = currentMonth
+        currentStats = null
+        binding.btnShareReport.isEnabled = false
+        statsLoadJob?.cancel()
+        statsLoadJob = viewLifecycleOwner.lifecycleScope.launch {
             val allEntries = workDataStore.entriesFlow.first()
             val weeklyHours = contractDataStore.weeklyHoursFlow.first()
             val workDays = contractDataStore.workDaysFlow.first()
             val productionDates = workDataStore.productionDaysFlow.first()
             
             val stats = MonthlyStatsHelper.calculateMonthlyStats(
-                allEntries, productionDates, currentYear, currentMonth, weeklyHours, workDays
+                allEntries, productionDates, year, month, weeklyHours, workDays
             )
 
+            if (year != currentYear || month != currentMonth) return@launch
+            currentStats = stats
             displayStats(stats, weeklyHours, workDays)
+            binding.btnShareReport.isEnabled = true
         }
     }
 
@@ -148,19 +159,27 @@ class MonthlyFragment : Fragment() {
 
     // NUOVA FUNZIONE: Genera e condivide PDF
     private fun shareReportAsPdf() {
+        val stats = currentStats
+        if (stats == null) {
+            Toast.makeText(requireContext(), "Riepilogo mensile non ancora disponibile", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val year = currentYear
+        val month = currentMonth
+        val monthLabel = binding.tvMonthYear.text.toString()
+
         // Disabilita il pulsante per evitare doppi click
         binding.btnShareReport.isEnabled = false
         binding.btnShareReport.text = "⏳ Generazione PDF in corso..."
         
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                // Nota: currentMonth è 1-12, ma il generatore si aspetta 0-11 (stile Java Calendar)
-                val uri = PdfReportGenerator(requireContext()).generateMonthlyPdf(currentYear, currentMonth - 1)
+                val uri = PdfReportGenerator(requireContext()).generateMonthlyPdf(year, month, stats)
                 
                 if (uri != null) {
                     val intent = Intent(Intent.ACTION_SEND).apply {
                         type = "application/pdf"
-                        putExtra(Intent.EXTRA_SUBJECT, "Riepilogo ${binding.tvMonthYear.text}")
+                        putExtra(Intent.EXTRA_SUBJECT, "Riepilogo $monthLabel")
                         putExtra(Intent.EXTRA_STREAM, uri)
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
