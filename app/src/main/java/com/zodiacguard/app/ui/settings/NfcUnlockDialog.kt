@@ -37,14 +37,16 @@ class NfcUnlockDialog(
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialog = super.onCreateDialog(savedInstanceState)
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-        
-        // Allarga il dialog
-        dialog.window?.setLayout(
-            WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.WRAP_CONTENT
-        )
-        
         return dialog
+    }
+
+    override fun onStart() {
+        super.onStart()
+        val metrics = resources.displayMetrics
+        val sideMargin = (32 * metrics.density).toInt()
+        val maxWidth = (480 * metrics.density).toInt()
+        val width = minOf(maxWidth, metrics.widthPixels - sideMargin)
+        dialog?.window?.setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
     }
 
     override fun onCreateView(
@@ -87,7 +89,7 @@ class NfcUnlockDialog(
         btnCheckOut.isEnabled = false
 
         // Slider per sbloccare
-        sliderUnlock.addOnChangeListener(Slider.OnChangeListener { slider, value, fromUser ->
+        sliderUnlock.addOnChangeListener(Slider.OnChangeListener { _, value, fromUser ->
             if (fromUser && value >= 100f && !isUnlocked) {
                 isUnlocked = true
                 // Abilita la sezione dettagli
