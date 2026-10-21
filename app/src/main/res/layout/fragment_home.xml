@@ -19,14 +19,6 @@
         android:letterSpacing="0.14"
         android:layout_marginBottom="8dp" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Il tuo tempo, sotto controllo."
-        android:textColor="@color/zodiac_text_muted"
-        android:textSize="14sp"
-        android:layout_marginBottom="36dp" />
-
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnDashboard"
         android:layout_width="match_parent"
@@ -39,7 +31,7 @@
         app:iconPadding="12dp"
         app:backgroundTint="#66BB6A"
         android:textColor="@color/white"
-        android:layout_marginBottom="12dp" />
+        android:layout_marginBottom="16dp" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnWeekly"
@@ -52,7 +44,7 @@
         app:iconPadding="12dp"
         app:backgroundTint="@color/zodiac_gold"
         android:textColor="@color/zodiac_navy"
-        android:layout_marginBottom="12dp" />
+        android:layout_marginBottom="16dp" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnMonthly"
@@ -65,7 +57,7 @@
         app:iconPadding="12dp"
         app:backgroundTint="@color/zodiac_gold"
         android:textColor="@color/zodiac_navy"
-        android:layout_marginBottom="12dp" />
+        android:layout_marginBottom="16dp" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnSettings"

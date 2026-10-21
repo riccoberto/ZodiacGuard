@@ -48,6 +48,7 @@ class WeeklyFragment : Fragment() {
         }
 
         binding.btnShareReport.setOnClickListener { shareReport() }
+        binding.btnZoomChart.setOnClickListener { binding.pieChart.showExpandedChart() }
 
         loadStats()
     }

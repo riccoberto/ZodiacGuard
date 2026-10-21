@@ -66,6 +66,7 @@ class MonthlyFragment : Fragment() {
 
         // Collega il pulsante al nuovo generatore PDF
         binding.btnShareReport.setOnClickListener { shareReportAsPdf() }
+        binding.btnZoomChart.setOnClickListener { binding.pieChart.showExpandedChart() }
 
         loadStats()
     }

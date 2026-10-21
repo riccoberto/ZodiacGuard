@@ -1,16 +1,18 @@
 package com.zodiacguard.app.ui.monthly
 
 import android.content.Context
-import android.app.AlertDialog
+import android.app.Dialog
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.util.AttributeSet
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
+import com.zodiacguard.app.R
 import kotlin.math.roundToInt
 
 class PieChartView @JvmOverloads constructor(
@@ -138,15 +140,21 @@ class PieChartView @JvmOverloads constructor(
 
     override fun performClick(): Boolean = super.performClick()
 
-    private fun showExpandedChart() {
+    fun showExpandedChart() {
         val density = resources.displayMetrics.density
+        val screenWidthDp = (resources.displayMetrics.widthPixels / density).roundToInt()
+        val screenHeightDp = (resources.displayMetrics.heightPixels / density).roundToInt()
+        val dialogWidthDp = minOf(420, screenWidthDp - 40).coerceAtLeast(240)
+        val chartSizeDp = minOf(dialogWidthDp - 32, screenHeightDp - 260).coerceAtLeast(220)
         val dialogContent = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            setBackgroundResource(R.drawable.bg_dialog_nfc_unlock)
             setPadding(
-                (20 * density).roundToInt(),
-                (8 * density).roundToInt(),
-                (20 * density).roundToInt(),
-                (8 * density).roundToInt()
+                (16 * density).roundToInt(),
+                (16 * density).roundToInt(),
+                (16 * density).roundToInt(),
+                (16 * density).roundToInt()
             )
         }
         val enlargedChart = PieChartView(context).apply {
@@ -159,17 +167,17 @@ class PieChartView @JvmOverloads constructor(
         dialogContent.addView(
             enlargedChart,
             LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                (minOf(340, (resources.displayMetrics.widthPixels / density).roundToInt() - 72) * density)
-                    .roundToInt()
+                (chartSizeDp * density).roundToInt(),
+                (chartSizeDp * density).roundToInt()
             )
         )
         dialogContent.addView(
             TextView(context).apply {
-                text = "Tocca fuori dal grafico o premi Chiudi per tornare al riepilogo."
-                textSize = 13f
-                setTextColor(Color.rgb(170, 183, 202))
-                gravity = android.view.Gravity.CENTER
+                text = "DISTRIBUZIONE DELLE ORE"
+                textSize = 12f
+                setTextColor(Color.rgb(242, 201, 76))
+                gravity = Gravity.CENTER
+                letterSpacing = 0.08f
             },
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -179,10 +187,33 @@ class PieChartView @JvmOverloads constructor(
             }
         )
 
-        AlertDialog.Builder(context)
-            .setTitle("Distribuzione ore")
-            .setView(dialogContent)
-            .setPositiveButton("Chiudi", null)
-            .show()
+        val dialog = Dialog(context)
+        val closeButton = com.google.android.material.button.MaterialButton(context).apply {
+            text = "CHIUDI"
+            setTextColor(Color.rgb(16, 24, 39))
+            backgroundTintList =
+                android.content.res.ColorStateList.valueOf(Color.rgb(242, 201, 76))
+            setOnClickListener { dialog.dismiss() }
+        }
+        dialogContent.addView(
+            closeButton,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                (48 * density).roundToInt()
+            ).apply {
+                topMargin = (12 * density).roundToInt()
+            }
+        )
+        dialog.setContentView(dialogContent)
+        dialog.setCanceledOnTouchOutside(true)
+        dialog.show()
+        dialog.window?.apply {
+            setBackgroundDrawableResource(android.R.color.transparent)
+            setLayout(
+                (dialogWidthDp * density).roundToInt(),
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+            setGravity(Gravity.CENTER)
+        }
     }
 }
