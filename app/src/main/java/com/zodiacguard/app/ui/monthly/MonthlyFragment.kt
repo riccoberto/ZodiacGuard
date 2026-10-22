@@ -66,7 +66,6 @@ class MonthlyFragment : Fragment() {
 
         // Collega il pulsante al nuovo generatore PDF
         binding.btnShareReport.setOnClickListener { shareReportAsPdf() }
-        binding.btnZoomChart.setOnClickListener { binding.pieChart.showExpandedChart() }
 
         loadStats()
     }
@@ -126,7 +125,8 @@ class MonthlyFragment : Fragment() {
                 Pair(stats.totalBankMinutes.toFloat(), Color.parseColor("#64B5F6")),
                 Pair(stats.totalTravelMinutes.toFloat(), Color.parseColor("#B388FF"))
             ),
-            expectedMinutes.toFloat()
+            expectedMinutes.toFloat(),
+            stats.totalWorkedMinutes
         )
 
         binding.tvOutOfTown.text = "🚗 Giornate fuori sede: ${stats.outOfTownDays}"
@@ -157,6 +157,15 @@ class MonthlyFragment : Fragment() {
         }
         binding.recyclerViewAgenda.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewAgenda.adapter = agendaAdapter
+        binding.btnToggleAgenda.visibility =
+            if (agendaAdapter.hasMoreThanInitialDays()) View.VISIBLE else View.GONE
+        binding.btnToggleAgenda.text = getString(R.string.show_all_days)
+        binding.btnToggleAgenda.setOnClickListener {
+            val showingAllDays = agendaAdapter.toggleExpanded()
+            binding.btnToggleAgenda.text = getString(
+                if (showingAllDays) R.string.show_fewer_days else R.string.show_all_days
+            )
+        }
     }
 
     // NUOVA FUNZIONE: Genera e condivide PDF

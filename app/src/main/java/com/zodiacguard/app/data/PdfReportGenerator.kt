@@ -35,7 +35,7 @@ class PdfReportGenerator(private val context: Context) {
         private const val ROW_HEIGHT = 19f
         private const val FOOTER_TOP = 798f
 
-        private val COLUMN_WIDTHS = floatArrayOf(45f, 139f, 68f, 56f, 102f, 145f)
+        private val COLUMN_WIDTHS = floatArrayOf(45f, 193f, 60f, 51f, 82f, 124f)
         private val COLUMN_HEADERS = arrayOf(
             "GIORNO", "MARCATURE", "ICONE", "SEDE", "ATTIVITA", "TOTALE / STR"
         )
@@ -210,9 +210,21 @@ class PdfReportGenerator(private val context: Context) {
 
     private fun drawDay(canvas: Canvas, baseline: Float, day: MonthlyStatsHelper.DailySummary) {
         val starts = columnStarts()
-        val markings = day.entries.sortedBy { it.timestamp }.joinToString(" · ") { entry ->
+        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+        val dayMarkings = day.entries.sortedBy { it.timestamp }.joinToString(" · ") { entry ->
             val kind = if (entry.type == "ENTRATA") "E" else "U"
-            "${SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(entry.timestamp))} $kind"
+            "${timeFormat.format(Date(entry.timestamp))} $kind"
+        }
+        val oneWayTravel = day.travelMinutes / 2
+        val markings = if (oneWayTravel > 0) {
+            val travelLabel = if (oneWayTravel >= 60) {
+                "${oneWayTravel / 60}h"
+            } else {
+                "${oneWayTravel}m"
+            }
+            "$travelLabel prima · $dayMarkings · $travelLabel dopo"
+        } else {
+            dayMarkings
         }
         drawFittedText(canvas, markings, starts[1] + 3f, baseline, COLUMN_WIDTHS[1] - 6f, smallPaint)
 
@@ -269,7 +281,7 @@ class PdfReportGenerator(private val context: Context) {
         drawFittedText(canvas, note, PAGE_MARGIN, FOOTER_TOP + 13f, CONTENT_WIDTH, smallPaint)
         drawFittedText(
             canvas,
-            "P = produzione · BP = buono pasto · T = teatrino · KM = rimborso chilometrico",
+            "P = produzione · BP = buono pasto · T = teatrino · KM = rimborso km · viaggio indicato prima e dopo le marcature",
             PAGE_MARGIN,
             FOOTER_TOP + 23f,
             CONTENT_WIDTH,

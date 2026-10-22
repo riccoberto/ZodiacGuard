@@ -13,11 +13,11 @@
         android:layout_height="wrap_content"
         android:text="ZGUARD"
         android:textColor="@color/zodiac_gold"
-        android:textSize="36sp"
+        android:textSize="44sp"
         android:textStyle="bold"
         android:fontFamily="sans-serif-medium"
         android:letterSpacing="0.14"
-        android:layout_marginBottom="8dp" />
+        android:layout_marginBottom="32dp" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnDashboard"

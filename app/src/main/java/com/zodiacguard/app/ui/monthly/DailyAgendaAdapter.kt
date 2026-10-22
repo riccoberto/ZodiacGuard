@@ -12,6 +12,9 @@ class DailyAgendaAdapter(
     private val onDayClick: (MonthlyStatsHelper.DailySummary) -> Unit
 ) : RecyclerView.Adapter<DailyAgendaAdapter.ViewHolder>() {
 
+    private var showAllDays = false
+    private val initialVisibleDays = 7
+
     class ViewHolder(val binding: ItemDailyAgendaBinding) : RecyclerView.ViewHolder(binding.root)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -20,7 +23,7 @@ class DailyAgendaAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val day = dailyStats[position]
+        val day = visibleDailyStats()[position]
         
         holder.binding.tvDate.text = MonthlyStatsHelper.formatDate(day.date)
         holder.binding.tvActivityLocation.text = "${day.activity} - ${day.location}"
@@ -44,10 +47,21 @@ class DailyAgendaAdapter(
         }
     }
 
-    override fun getItemCount() = dailyStats.size
+    override fun getItemCount() = visibleDailyStats().size
 
     fun updateData(newStats: List<MonthlyStatsHelper.DailySummary>) {
         dailyStats = newStats.sortedBy { it.date }
         notifyDataSetChanged()
     }
+
+    fun hasMoreThanInitialDays(): Boolean = dailyStats.size > initialVisibleDays
+
+    fun toggleExpanded(): Boolean {
+        showAllDays = !showAllDays
+        notifyDataSetChanged()
+        return showAllDays
+    }
+
+    private fun visibleDailyStats(): List<MonthlyStatsHelper.DailySummary> =
+        if (showAllDays) dailyStats else dailyStats.take(initialVisibleDays)
 }

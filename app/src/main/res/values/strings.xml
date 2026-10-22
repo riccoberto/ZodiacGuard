@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Z Guard</string>
+    <string name="show_all_days">MOSTRA TUTTI I GIORNI</string>
+    <string name="show_fewer_days">MOSTRA MENO</string>
 </resources>

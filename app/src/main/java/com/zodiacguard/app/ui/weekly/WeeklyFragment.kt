@@ -48,8 +48,6 @@ class WeeklyFragment : Fragment() {
         }
 
         binding.btnShareReport.setOnClickListener { shareReport() }
-        binding.btnZoomChart.setOnClickListener { binding.pieChart.showExpandedChart() }
-
         loadStats()
     }
 
@@ -94,7 +92,8 @@ class WeeklyFragment : Fragment() {
                 Pair(stats.totalBankMinutes.toFloat(), Color.parseColor("#64B5F6")),
                 Pair(stats.totalTravelMinutes.toFloat(), Color.parseColor("#B388FF"))
             ),
-            expectedMinutes.toFloat()
+            expectedMinutes.toFloat(),
+            stats.totalWorkedMinutes
         )
 
         binding.tvLegendOrdinary.text = "🟡 Ordinarie: ${formatMin(stats.totalOrdinaryMinutes)}"

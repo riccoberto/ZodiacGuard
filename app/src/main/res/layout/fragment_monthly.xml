@@ -149,19 +149,7 @@
             android:layout_height="280dp"
             android:layout_gravity="center_horizontal"
             android:layout_marginBottom="4dp"
-            android:contentDescription="Grafico distribuzione ore. Tocca per ingrandire." />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnZoomChart"
-            android:layout_width="wrap_content"
-            android:layout_height="44dp"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="16dp"
-            android:text="INGRANDISCI GRAFICO"
-            android:textSize="12sp"
-            android:textColor="@color/zodiac_gold"
-            app:backgroundTint="@color/zodiac_surface_raised"
-            app:cornerRadius="14dp" />
+            android:contentDescription="Grafico distribuzione ore lavorate e viaggio." />
 
         <TextView
             android:layout_width="wrap_content"
@@ -268,6 +256,19 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnToggleAgenda"
+            android:layout_width="wrap_content"
+            android:layout_height="44dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone"
+            android:text="@string/show_all_days"
+            android:textSize="12sp"
+            android:textColor="@color/zodiac_gold"
+            app:backgroundTint="@color/zodiac_surface_raised"
+            app:cornerRadius="14dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnShareReport"
