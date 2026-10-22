@@ -24,6 +24,7 @@ class BackupManager(private val context: Context) {
     private val workDataStore = WorkDataStore(context)
     private val contractDataStore = ContractDataStore(context)
     private val nfcBadgeManager = NfcBadgeManager(context)
+    private val manualCounterDataStore = ManualCounterDataStore(context)
 
     companion object {
         private const val TAG = "BackupManager"
@@ -42,8 +43,10 @@ class BackupManager(private val context: Context) {
             val entries = workDataStore.entriesFlow.first()
             val productionDays = workDataStore.productionDaysFlow.first()
             val weeklyHours = contractDataStore.weeklyHoursFlow.first()
+            val weeklyMinutes = contractDataStore.weeklyMinutesFlow.first()
             val workDays = contractDataStore.workDaysFlow.first()
             val nfcUid = nfcBadgeManager.savedBadgeUid.first()
+            val manualCounters = manualCounterDataStore.countersFlow.first()
 
             // 2. Raccogli Note
             val dates = entries.map { it.date }.distinct()
@@ -62,10 +65,23 @@ class BackupManager(private val context: Context) {
             
             val settings = JSONObject()
             settings.put("weeklyHours", weeklyHours)
+            settings.put("weeklyMinutes", weeklyMinutes)
             settings.put("workDays", workDays)
             settings.put("nfcBadgeUid", nfcUid ?: "")
             settings.put("displayName", UserProfilePreferences.getDisplayName(context))
             backupJson.put("settings", settings)
+
+            val countersArray = JSONArray()
+            manualCounters.forEach { counter ->
+                countersArray.put(
+                    JSONObject()
+                        .put("id", counter.id)
+                        .put("title", counter.title)
+                        .put("initialMinutes", counter.initialMinutes)
+                        .put("currentMinutes", counter.currentMinutes)
+                )
+            }
+            backupJson.put("manualCounters", countersArray)
 
             val prodArray = JSONArray()
             productionDays.forEach { prodArray.put(it) }

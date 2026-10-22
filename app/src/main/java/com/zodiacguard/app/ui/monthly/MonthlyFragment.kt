@@ -86,21 +86,27 @@ class MonthlyFragment : Fragment() {
         statsLoadJob = viewLifecycleOwner.lifecycleScope.launch {
             val allEntries = workDataStore.entriesFlow.first()
             val weeklyHours = contractDataStore.weeklyHoursFlow.first()
+            val weeklyMinutes = contractDataStore.weeklyMinutesFlow.first()
             val workDays = contractDataStore.workDaysFlow.first()
             val productionDates = workDataStore.productionDaysFlow.first()
             
             val stats = MonthlyStatsHelper.calculateMonthlyStats(
-                allEntries, productionDates, year, month, weeklyHours, workDays
+                allEntries, productionDates, year, month, weeklyHours, workDays, weeklyMinutes
             )
 
             if (year != currentYear || month != currentMonth) return@launch
             currentStats = stats
-            displayStats(stats, weeklyHours, workDays)
+            displayStats(stats, weeklyHours, weeklyMinutes, workDays)
             binding.btnShareReport.isEnabled = true
         }
     }
 
-    private fun displayStats(stats: MonthlyStatsHelper.MonthlyStats, weeklyHours: Int, workDays: Int) {
+    private fun displayStats(
+        stats: MonthlyStatsHelper.MonthlyStats,
+        weeklyHours: Int,
+        weeklyMinutes: Int,
+        workDays: Int
+    ) {
         binding.tvTotalWorked.text = "Totale lavorate: ${MonthlyStatsHelper.minutesToText(stats.totalWorkedMinutes)}"
         binding.tvContractExpected.text = "Contratto attese (${stats.workingDaysInMonth} gg): ${MonthlyStatsHelper.minutesToText(stats.totalContractMinutes)}"
         binding.tvTotalOrdinary.text = "Ordinarie: ${MonthlyStatsHelper.minutesToText(stats.totalOrdinaryMinutes)}"
@@ -115,7 +121,7 @@ class MonthlyFragment : Fragment() {
         }
         binding.tvBalance.text = balanceText
 
-        val dailyContractMinutes = (weeklyHours * 60) / workDays
+        val dailyContractMinutes = (weeklyHours * 60 + weeklyMinutes) / workDays
         val expectedMinutes = dailyContractMinutes * stats.workingDaysInMonth
         
         binding.pieChart.setData(

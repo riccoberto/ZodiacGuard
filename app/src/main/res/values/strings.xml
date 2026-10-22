@@ -13,4 +13,26 @@
     <string name="update_unknown_sources_message">Per installare l’aggiornamento, consenti a Z Guard di installare app da questa origine nelle impostazioni che si apriranno.</string>
     <string name="update_open_settings">APRI IMPOSTAZIONI</string>
     <string name="km_reimbursement">Rimborso chilometrico</string>
+    <string name="manual_counters_title">Contatori manuali</string>
+    <string name="manual_counter_add">NUOVO CONTATORE</string>
+    <string name="manual_counter_empty">Nessun contatore creato. Premi «Nuovo contatore» per aggiungerne uno.</string>
+    <string name="manual_counter_create_title">Crea contatore</string>
+    <string name="manual_counter_name">Titolo</string>
+    <string name="manual_counter_initial_total">Totale iniziale</string>
+    <string name="manual_counter_current_total">Disponibili</string>
+    <string name="manual_counter_current_total_format">Disponibili: %1$s</string>
+    <string name="manual_counter_initial_value">Totale iniziale (non modificabile): %1$s</string>
+    <string name="manual_counter_add_units">AGGIUNGI</string>
+    <string name="manual_counter_remove_units">TOGLI</string>
+    <string name="manual_counter_delete">ELIMINA</string>
+    <string name="manual_counter_delete_title">Eliminare il contatore?</string>
+    <string name="manual_counter_delete_message">Il contatore «%1$s» e il suo valore verranno eliminati.</string>
+    <string name="manual_counter_days">Giorni</string>
+    <string name="manual_counter_hours">Ore</string>
+    <string name="manual_counter_minutes">Minuti</string>
+    <string name="contract_weekly_minutes">Minuti contrattuali settimanali</string>
+    <string name="manual_counter_title_required">Inserisci un titolo.</string>
+    <string name="manual_counter_invalid_total">Inserisci un totale valido. Ore e minuti possono superare 24 e 60; il totale massimo è limitato.</string>
+    <string name="manual_counter_invalid_adjustment">Inserisci un valore valido da aggiungere o togliere.</string>
+    <string name="manual_counter_operation_error">Operazione sul contatore non riuscita: %1$s</string>
 </resources>

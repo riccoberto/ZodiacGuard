@@ -1,7 +1,8 @@
 # ZodiacGuard
 
 App Android per registrare entrate e uscite di lavoro, note giornaliere e attivita,
-con riepiloghi settimanali e mensili, esportazione PDF, backup e marcatura rapida NFC.
+con riepiloghi settimanali e mensili, esportazione PDF, backup, marcatura rapida NFC
+e contatori manuali configurabili.
 
 ## Build
 

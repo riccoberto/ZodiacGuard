@@ -58,18 +58,24 @@ class WeeklyFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             val allEntries = workDataStore.entriesFlow.first()
             val weeklyHours = contractDataStore.weeklyHoursFlow.first()
+            val weeklyMinutes = contractDataStore.weeklyMinutesFlow.first()
             val workDays = contractDataStore.workDaysFlow.first()
             
             val productionDates = workDataStore.productionDaysFlow.first()
             
             val stats = WeeklyStatsHelper.calculateWeeklyStats(
-                allEntries, productionDates, year, week, weeklyHours, workDays
+                allEntries, productionDates, year, week, weeklyHours, workDays, weeklyMinutes
             )
-            displayStats(stats, weeklyHours, workDays)
+            displayStats(stats, weeklyHours, weeklyMinutes, workDays)
         }
     }
 
-    private fun displayStats(stats: WeeklyStatsHelper.WeeklyStats, weeklyHours: Int, workDays: Int) {
+    private fun displayStats(
+        stats: WeeklyStatsHelper.WeeklyStats,
+        weeklyHours: Int,
+        weeklyMinutes: Int,
+        workDays: Int
+    ) {
         binding.tvWeekLabel.text = "Settimana ${calendar.get(Calendar.WEEK_OF_YEAR)} - ${stats.weekStartDate} / ${stats.weekEndDate}"
         
         binding.tvTotalWorked.text = "Totale: ${formatMin(stats.totalWorkedMinutes)}"
@@ -81,8 +87,8 @@ class WeeklyFragment : Fragment() {
         val sign = if (stats.balanceMinutes >= 0) "+" else ""
         binding.tvBalance.text = "Saldo: $sign${formatMin(stats.balanceMinutes)}"
 
-        val dailyContractMinutes = (weeklyHours * 60) / workDays
-        val expectedMinutes = dailyContractMinutes * 6
+        val dailyContractMinutes = (weeklyHours * 60 + weeklyMinutes) / workDays
+        val expectedMinutes = dailyContractMinutes * workDays
         
         // NUOVI COLORI
         binding.pieChart.setData(

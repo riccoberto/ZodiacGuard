@@ -17,6 +17,8 @@ import androidx.lifecycle.lifecycleScope
 import com.zodiacguard.app.data.BackupManager
 import com.zodiacguard.app.data.ContractDataStore
 import com.zodiacguard.app.data.NfcBadgeManager
+import com.zodiacguard.app.data.ManualCounter
+import com.zodiacguard.app.data.ManualCounterDataStore
 import com.zodiacguard.app.data.UserProfilePreferences
 import com.zodiacguard.app.data.WorkDataStore
 import com.zodiacguard.app.data.WorkEntry
@@ -96,6 +98,11 @@ class SettingsFragment : Fragment() {
             }
         }
         viewLifecycleOwner.lifecycleScope.launch {
+            contractDataStore.weeklyMinutesFlow.collectLatest { minutes ->
+                if (isAdded && _binding != null) binding.etWeeklyMinutes.setText(minutes.toString())
+            }
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
             contractDataStore.workDaysFlow.collectLatest { days ->
                 if (isAdded && _binding != null) binding.etWorkDays.setText(days.toString())
             }
@@ -104,13 +111,22 @@ class SettingsFragment : Fragment() {
         // 2. Salva i valori contrattuali
         binding.btnSaveContract.setOnClickListener {
             val hours = binding.etWeeklyHours.text.toString().toIntOrNull() ?: 38
+            val minutes = binding.etWeeklyMinutes.text.toString().toIntOrNull() ?: 0
             val days = binding.etWorkDays.text.toString().toIntOrNull() ?: 6
+            if (hours < 0 || minutes !in 0..59 || days !in 1..7 || (hours == 0 && minutes == 0)) {
+                Toast.makeText(
+                    requireContext(),
+                    "Inserisci ore valide, minuti da 0 a 59 e giorni da 1 a 7",
+                    Toast.LENGTH_LONG
+                ).show()
+                return@setOnClickListener
+            }
             UserProfilePreferences.saveDisplayName(
                 requireContext(),
                 binding.etDisplayName.text?.toString().orEmpty()
             )
             viewLifecycleOwner.lifecycleScope.launch {
-                contractDataStore.saveContract(hours, days)
+                contractDataStore.saveContract(hours, minutes, days)
                 Toast.makeText(requireContext(), "Impostazioni salvate!", Toast.LENGTH_SHORT).show()
             }
         }
@@ -216,6 +232,7 @@ class SettingsFragment : Fragment() {
                 
                 val workDataStore = WorkDataStore(requireContext())
                 val contractDataStore = ContractDataStore(requireContext())
+                val manualCounterDataStore = ManualCounterDataStore(requireContext())
                 
                 // 1. Ripristina impostazioni contratto
                 if (backupJson.has("settings")) {
@@ -226,10 +243,27 @@ class SettingsFragment : Fragment() {
                             settings.optString("displayName", "")
                         )
                     }
+
                     val weeklyHours = settings.optInt("weeklyHours", 38)
+                    val weeklyMinutes = settings.optInt("weeklyMinutes", 0)
                     val workDays = settings.optInt("workDays", 6)
-                    contractDataStore.saveContract(weeklyHours, workDays)
-                    logDebug("Contratto ripristinato: $weeklyHours ore, $workDays giorni")
+                    contractDataStore.saveContract(weeklyHours, weeklyMinutes, workDays)
+                    logDebug("Contratto ripristinato: $weeklyHours ore e $weeklyMinutes minuti, $workDays giorni")
+                }
+
+                if (backupJson.has("manualCounters")) {
+                    val savedCounters = backupJson.getJSONArray("manualCounters")
+                    val counters = (0 until savedCounters.length()).map { index ->
+                        val counter = savedCounters.getJSONObject(index)
+                        ManualCounter(
+                            id = counter.getString("id"),
+                            title = counter.getString("title"),
+                            initialMinutes = counter.getInt("initialMinutes"),
+                            currentMinutes = counter.getInt("currentMinutes")
+                        )
+                    }
+                    manualCounterDataStore.replaceCounters(counters)
+                    logDebug("Contatori manuali ripristinati: ${counters.size}")
                 }
                 
                 // 2. Ripristina badge NFC

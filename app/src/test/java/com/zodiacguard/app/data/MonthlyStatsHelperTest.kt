@@ -58,6 +58,24 @@ class MonthlyStatsHelperTest {
         assertEquals(95, stats.totalBankMinutes)
     }
 
+    @Test
+    fun weeklyContractMinutesIncludeTheConfiguredMinuteRemainder() {
+        val stats = MonthlyStatsHelper.calculateMonthlyStats(
+            allEntries = emptyList(),
+            productionDays = emptySet(),
+            year = 2026,
+            month = 10,
+            weeklyHours = 38,
+            workDays = 6,
+            weeklyMinutes = 30
+        )
+
+        assertEquals(
+            385 * stats.workingDaysInMonth,
+            stats.totalContractMinutes
+        )
+    }
+
     private fun workEntry(hour: Int, type: String): WorkEntry {
         val timestamp = Calendar.getInstance().apply {
             set(2026, Calendar.OCTOBER, 5, hour, 0, 0)

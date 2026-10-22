@@ -69,13 +69,14 @@ object MonthlyStatsHelper {
         year: Int,
         month: Int,
         weeklyHours: Int,
-        workDays: Int
+        workDays: Int,
+        weeklyMinutes: Int = 0
     ): MonthlyStats {
         val monthPrefix = String.format(Locale.ROOT, "%04d-%02d", year, month)
         val monthEntries = allEntries.filter { it.date.startsWith(monthPrefix) }
 
         val workingDaysInMonth = countWorkingDaysInMonth(year, month)
-        val dailyContractMinutes = (weeklyHours * 60) / workDays
+        val dailyContractMinutes = (weeklyHours * 60 + weeklyMinutes) / workDays
         val totalContractMinutes = dailyContractMinutes * workingDaysInMonth
 
         if (monthEntries.isEmpty()) {

@@ -52,6 +52,19 @@
         android:layout_height="60dp"
         android:text="RIEPILOGO MENSILE"
         android:textSize="15sp"
+        app:icon="@drawable/ic_home_counters"
+        app:iconGravity="textStart"
+        app:iconPadding="12dp"
+        app:backgroundTint="@color/zodiac_gold"
+        android:textColor="@color/zodiac_navy"
+        android:layout_marginBottom="16dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnCounters"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="CONTATORI MANUALI"
+        android:textSize="15sp"
         app:icon="@drawable/ic_home_monthly"
         app:iconGravity="textStart"
         app:iconPadding="12dp"

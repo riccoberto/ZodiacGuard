@@ -10,5 +10,6 @@
     <fragment android:id="@+id/monthlyFragment" android:name="com.zodiacguard.app.ui.monthly.MonthlyFragment" android:label="Riepilogo Mensile" />
     <fragment android:id="@+id/weeklyFragment" android:name="com.zodiacguard.app.ui.weekly.WeeklyFragment" android:label="Riepilogo Settimanale" />
     <fragment android:id="@+id/dayDetailFragment" android:name="com.zodiacguard.app.ui.monthly.DayDetailFragment" android:label="Dettaglio Giorno" />
+    <fragment android:id="@+id/manualCountersFragment" android:name="com.zodiacguard.app.ui.counters.ManualCountersFragment" android:label="Contatori Manuali" />
 
 </navigation>

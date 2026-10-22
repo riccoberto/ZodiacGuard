@@ -16,13 +16,15 @@ class ContractDataStore(private val context: Context) {
 
     companion object {
         val KEY_WEEKLY_HOURS = intPreferencesKey("weekly_hours")
+        val KEY_WEEKLY_MINUTES = intPreferencesKey("weekly_minutes")
         val KEY_WORK_DAYS = intPreferencesKey("work_days")
     }
 
     // Salva i parametri del contratto
-    suspend fun saveContract(weeklyHours: Int, workDays: Int) {
+    suspend fun saveContract(weeklyHours: Int, weeklyMinutes: Int, workDays: Int) {
         context.contractDataStore.edit { prefs ->
             prefs[KEY_WEEKLY_HOURS] = weeklyHours
+            prefs[KEY_WEEKLY_MINUTES] = weeklyMinutes
             prefs[KEY_WORK_DAYS] = workDays
         }
     }
@@ -30,6 +32,14 @@ class ContractDataStore(private val context: Context) {
     // Legge le ore settimanali (default 38)
     val weeklyHoursFlow: Flow<Int> = context.contractDataStore.data.map { prefs ->
         prefs[KEY_WEEKLY_HOURS] ?: 38
+    }
+
+    val weeklyMinutesFlow: Flow<Int> = context.contractDataStore.data.map { prefs ->
+        prefs[KEY_WEEKLY_MINUTES] ?: 0
+    }
+
+    val weeklyContractMinutesFlow: Flow<Int> = context.contractDataStore.data.map { prefs ->
+        (prefs[KEY_WEEKLY_HOURS] ?: 38) * 60 + (prefs[KEY_WEEKLY_MINUTES] ?: 0)
     }
 
     // Legge i giorni lavorativi (default 6)

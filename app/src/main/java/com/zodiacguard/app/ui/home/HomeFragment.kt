@@ -36,6 +36,10 @@ class HomeFragment : Fragment() {
             findNavController().navigate(R.id.monthlyFragment)
         }
 
+        binding.btnCounters.setOnClickListener {
+            findNavController().navigate(R.id.manualCountersFragment)
+        }
+
         binding.btnSettings.setOnClickListener {
             findNavController().navigate(R.id.settingsFragment)
         }

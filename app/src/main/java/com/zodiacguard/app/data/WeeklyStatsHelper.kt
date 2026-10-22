@@ -26,7 +26,8 @@ object WeeklyStatsHelper {
         year: Int,
         weekOfYear: Int,
         weeklyHours: Int,
-        workDays: Int
+        workDays: Int,
+        weeklyMinutes: Int = 0
     ): WeeklyStats {
         val weekEntries = allEntries.filter { entry ->
             val cal = Calendar.getInstance()
@@ -61,7 +62,8 @@ object WeeklyStatsHelper {
         var mealTickets = 0
 
         val workingDaysInWeek = workDays.coerceAtMost(entriesByDate.size)
-        val totalContractMinutes = (weeklyHours * 60) / 6 * workingDaysInWeek
+        val dailyContractMinutes = (weeklyHours * 60 + weeklyMinutes) / workDays
+        val totalContractMinutes = dailyContractMinutes * workingDaysInWeek
 
         for ((date, entries) in entriesByDate) {
             val sorted = entries.sortedBy { it.timestamp }
