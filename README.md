@@ -32,8 +32,8 @@ Per abilitare le release:
    `ANDROID_KEY_PASSWORD` e `ANDROID_STORE_PASSWORD`.
    Su PowerShell, il valore Base64 del keystore si ottiene con
    `[Convert]::ToBase64String([IO.File]::ReadAllBytes(".\zodiacguard-release.jks"))`.
-3. Pubblicare il primo tag `v1.0.1` (è maggiore della versione `1.0.0` delle build
-   già distribuite) e, in seguito, usare tag crescenti. Il workflow
+3. Pubblicare il primo tag `v1.0.0` per distribuire la versione 1.0 e, in seguito,
+   usare tag crescenti come `v1.0.1`. Il workflow
    `Publish Zodiac Guard release` firma l'APK e lo allega alla release; l'app lo
    individua tramite l'API pubblica di GitHub.
 
