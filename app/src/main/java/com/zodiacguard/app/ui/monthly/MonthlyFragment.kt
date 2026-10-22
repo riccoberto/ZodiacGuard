@@ -126,7 +126,7 @@ class MonthlyFragment : Fragment() {
                 Pair(stats.totalTravelMinutes.toFloat(), Color.parseColor("#B388FF"))
             ),
             expectedMinutes.toFloat(),
-            stats.totalWorkedMinutes
+            stats.totalWorkedMinutes + stats.totalTravelMinutes
         )
 
         binding.tvOutOfTown.text = "🚗 Giornate fuori sede: ${stats.outOfTownDays}"

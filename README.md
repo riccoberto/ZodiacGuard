@@ -32,10 +32,14 @@ Per abilitare le release:
    `ANDROID_KEY_PASSWORD` e `ANDROID_STORE_PASSWORD`.
    Su PowerShell, il valore Base64 del keystore si ottiene con
    `[Convert]::ToBase64String([IO.File]::ReadAllBytes(".\zodiacguard-release.jks"))`.
-3. Pubblicare un tag di versione crescente, per esempio `v1.0.1`. Il workflow
+3. Pubblicare il primo tag `v1.0.1` (è maggiore della versione `1.0.0` delle build
+   già distribuite) e, in seguito, usare tag crescenti. Il workflow
    `Publish Zodiac Guard release` firma l'APK e lo allega alla release; l'app lo
    individua tramite l'API pubblica di GitHub.
 
 Non committare mai il keystore o le password. Gli APK debug prodotti dal normale
 workflow Actions non sono il canale di aggiornamento: le release devono essere
-firmate dalla chiave stabile configurata nei secrets.
+firmate dalla chiave stabile configurata nei secrets. Per passare alla prima
+release da un APK debug già installato, esportare prima il backup, disinstallare
+la build debug, installare l'APK firmato scaricato dalla release e ripristinare
+il backup una sola volta. Gli aggiornamenti successivi conserveranno i dati.

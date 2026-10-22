@@ -36,9 +36,10 @@
                 android:id="@+id/tvTravelBadge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text=""
+                android:text="🚗 KM"
                 android:textSize="14sp"
                 android:layout_marginStart="6dp"
+                android:contentDescription="@string/km_reimbursement"
                 android:visibility="gone" />
             
             <TextView

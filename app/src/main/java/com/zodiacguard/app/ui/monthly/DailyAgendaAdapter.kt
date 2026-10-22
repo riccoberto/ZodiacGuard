@@ -32,8 +32,8 @@ class DailyAgendaAdapter(
         // Simbolo teatrino
         holder.binding.tvTeatrinoBadge.visibility = if (day.isTeatrino) View.VISIBLE else View.GONE
         
-        // Simbolo rimborsi km (fuori Modena)
-        holder.binding.tvTravelBadge.visibility = if (day.location != "Modena") View.VISIBLE else View.GONE
+        holder.binding.tvTravelBadge.visibility =
+            if (day.travelMinutes > 0) View.VISIBLE else View.GONE
         
         // Simbolo produzione
         holder.binding.tvProductionBadge.visibility = if (day.isProduction) View.VISIBLE else View.GONE

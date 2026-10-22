@@ -93,7 +93,7 @@ class WeeklyFragment : Fragment() {
                 Pair(stats.totalTravelMinutes.toFloat(), Color.parseColor("#B388FF"))
             ),
             expectedMinutes.toFloat(),
-            stats.totalWorkedMinutes
+            stats.totalWorkedMinutes + stats.totalTravelMinutes
         )
 
         binding.tvLegendOrdinary.text = "🟡 Ordinarie: ${formatMin(stats.totalOrdinaryMinutes)}"

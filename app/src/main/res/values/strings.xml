@@ -12,4 +12,5 @@
     <string name="update_unknown_sources_title">Consenti installazioni</string>
     <string name="update_unknown_sources_message">Per installare l’aggiornamento, consenti a Z Guard di installare app da questa origine nelle impostazioni che si apriranno.</string>
     <string name="update_open_settings">APRI IMPOSTAZIONI</string>
+    <string name="km_reimbursement">Rimborso chilometrico</string>
 </resources>
