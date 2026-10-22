@@ -2,4 +2,5 @@
 <paths>
     <external-files-path name="app_external_files" path="." />
     <files-path name="app_backups" path="ZGuard/" />
+    <cache-path name="app_update_apks" path="updates/" />
 </paths>

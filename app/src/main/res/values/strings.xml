@@ -3,4 +3,13 @@
     <string name="app_name">Z Guard</string>
     <string name="show_all_days">MOSTRA TUTTI I GIORNI</string>
     <string name="show_fewer_days">MOSTRA MENO</string>
+    <string name="update_available_title">Aggiornamento disponibile</string>
+    <string name="update_available_message">È disponibile la versione %1$s. Vuoi scaricarla e installarla?</string>
+    <string name="update_install">AGGIORNA</string>
+    <string name="update_later">PIÙ TARDI</string>
+    <string name="update_downloading">Download aggiornamento in corso…</string>
+    <string name="update_download_error">Impossibile scaricare o avviare l’aggiornamento: %1$s</string>
+    <string name="update_unknown_sources_title">Consenti installazioni</string>
+    <string name="update_unknown_sources_message">Per installare l’aggiornamento, consenti a Z Guard di installare app da questa origine nelle impostazioni che si apriranno.</string>
+    <string name="update_open_settings">APRI IMPOSTAZIONI</string>
 </resources>

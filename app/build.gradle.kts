@@ -3,6 +3,14 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+val releaseSigningValues = mapOf(
+    "keystorePath" to providers.environmentVariable("ANDROID_KEYSTORE_PATH").orNull,
+    "keyAlias" to providers.environmentVariable("ANDROID_KEY_ALIAS").orNull,
+    "keyPassword" to providers.environmentVariable("ANDROID_KEY_PASSWORD").orNull,
+    "storePassword" to providers.environmentVariable("ANDROID_STORE_PASSWORD").orNull
+)
+val hasReleaseSigning = releaseSigningValues.values.all { !it.isNullOrBlank() }
+
 android {
     namespace = "com.zodiacguard.app"
     compileSdk = 34
@@ -11,13 +19,27 @@ android {
         applicationId = "com.zodiacguard.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = providers.gradleProperty("versionCode").orNull?.toInt() ?: 1
+        versionName = providers.gradleProperty("versionName").orNull ?: "1.0.0"
+    }
+
+    signingConfigs {
+        create("release") {
+            if (hasReleaseSigning) {
+                storeFile = file(requireNotNull(releaseSigningValues["keystorePath"]))
+                keyAlias = requireNotNull(releaseSigningValues["keyAlias"])
+                keyPassword = requireNotNull(releaseSigningValues["keyPassword"])
+                storePassword = requireNotNull(releaseSigningValues["storePassword"])
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
