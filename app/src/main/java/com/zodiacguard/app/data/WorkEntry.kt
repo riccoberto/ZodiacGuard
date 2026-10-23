@@ -44,5 +44,37 @@ data class WorkEntry(
                 null
             }
         }
+
+    }
+}
+
+data class WorkEntryMergeResult(
+    val entries: List<WorkEntry>,
+    val addedCount: Int
+)
+
+object WorkEntryMerger {
+    fun merge(
+        existing: List<WorkEntry>,
+        incoming: List<WorkEntry>
+    ): WorkEntryMergeResult {
+        val existingCounts = existing.groupingBy { it }.eachCount()
+        val incomingCounts = mutableMapOf<WorkEntry, Int>()
+        val merged = existing.toMutableList()
+        var addedCount = 0
+
+        incoming.forEach { entry ->
+            val occurrence = incomingCounts.getOrDefault(entry, 0)
+            incomingCounts[entry] = occurrence + 1
+            if (occurrence >= existingCounts.getOrDefault(entry, 0)) {
+                merged.add(entry)
+                addedCount++
+            }
+        }
+
+        return WorkEntryMergeResult(
+            entries = merged.sortedBy { it.timestamp },
+            addedCount = addedCount
+        )
     }
 }

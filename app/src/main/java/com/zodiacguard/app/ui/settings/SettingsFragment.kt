@@ -23,6 +23,7 @@ import com.zodiacguard.app.data.ManualCounterDataStore
 import com.zodiacguard.app.data.UserProfilePreferences
 import com.zodiacguard.app.data.WorkDataStore
 import com.zodiacguard.app.data.WorkEntry
+import com.zodiacguard.app.data.WorkEntryMerger
 import com.zodiacguard.app.databinding.FragmentSettingsBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
@@ -258,9 +259,7 @@ class SettingsFragment : Fragment() {
                 val entries = parseBackupEntries(backupJson)
                 validateBackupStructure(backupJson)
                 val currentEntries = WorkDataStore(requireContext()).entriesFlow.first()
-                val newEntryCount = entries.count { incoming ->
-                    currentEntries.none { it.timestamp == incoming.timestamp }
-                }
+                val newEntryCount = WorkEntryMerger.merge(currentEntries, entries).addedCount
                 val backupDate = backupJson.optString("lastUpdate").ifBlank {
                     "data non disponibile"
                 }
@@ -474,20 +473,16 @@ class SettingsFragment : Fragment() {
                 }
 
                 val existingEntries = workDataStore.entriesFlow.first()
-                val addedEntries = importedEntries.count { imported ->
-                    existingEntries.none { it.timestamp == imported.timestamp }
-                }
-                val mergedEntries = (existingEntries + importedEntries)
-                    .distinctBy { it.timestamp }
-                    .sortedBy { it.timestamp }
-                workDataStore.saveAllEntries(mergedEntries)
+                val mergeResult = WorkEntryMerger.merge(existingEntries, importedEntries)
+                workDataStore.saveAllEntries(mergeResult.entries)
                 val backupSaved = withContext(Dispatchers.IO) {
                     backupManager.createBackupNow()
                 }
                 if (!backupSaved) {
                     logDebug("Attenzione: ripristino completato, backup aggiornato solo parzialmente")
                 }
-                val message = "Aggiunte $addedEntries marcature; i dati presenti sono stati conservati."
+                val message =
+                    "Aggiunte ${mergeResult.addedCount} marcature; i dati presenti sono stati conservati."
                 logDebug("RIPRISTINO COMPLETATO: $message")
                 Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
             } catch (e: Exception) {
