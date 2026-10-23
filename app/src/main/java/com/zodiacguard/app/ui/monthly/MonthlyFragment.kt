@@ -18,6 +18,7 @@ import com.zodiacguard.app.data.PdfReportGenerator
 import com.zodiacguard.app.data.UserProfilePreferences
 import com.zodiacguard.app.data.WorkDataStore
 import com.zodiacguard.app.databinding.FragmentMonthlyBinding
+import com.zodiacguard.app.ui.navigation.navigateWithTransition
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -159,7 +160,7 @@ class MonthlyFragment : Fragment() {
         val agendaAdapter = DailyAgendaAdapter(stats.dailyStats) { day ->
             val bundle = Bundle()
             bundle.putString("date", day.date)
-            findNavController().navigate(R.id.dayDetailFragment, bundle)
+            findNavController().navigateWithTransition(R.id.dayDetailFragment, bundle)
         }
         binding.recyclerViewAgenda.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewAgenda.adapter = agendaAdapter
