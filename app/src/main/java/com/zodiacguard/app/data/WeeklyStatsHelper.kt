@@ -1,6 +1,8 @@
 package com.zodiacguard.app.data
 
 import java.util.Calendar
+import java.util.Locale
+import java.text.SimpleDateFormat
 
 object WeeklyStatsHelper {
 
@@ -26,27 +28,32 @@ object WeeklyStatsHelper {
         year: Int,
         weekOfYear: Int,
         weeklyHours: Int,
-        workDays: Int,
         weeklyMinutes: Int = 0
     ): WeeklyStats {
-        val weekEntries = allEntries.filter { entry ->
-            val cal = Calendar.getInstance()
-            cal.timeInMillis = entry.timestamp
-            cal.get(Calendar.YEAR) == year && cal.get(Calendar.WEEK_OF_YEAR) == weekOfYear
+        val weekCalendar = Calendar.getInstance(Locale.ITALY).apply {
+            firstDayOfWeek = Calendar.MONDAY
+            minimalDaysInFirstWeek = 4
+            clear()
+            setWeekDate(year, weekOfYear, Calendar.MONDAY)
         }
-        
-        // Calcola date inizio e fine settimana
-        val cal = Calendar.getInstance()
-        cal.set(Calendar.YEAR, year)
-        cal.set(Calendar.WEEK_OF_YEAR, weekOfYear)
-        cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
-        val startDate = String.format("%02d/%02d", cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.MONTH) + 1)
-        
-        cal.add(Calendar.DAY_OF_MONTH, 5) // Sabato (6 giorni lavorativi)
-        val endDate = String.format("%02d/%02d", cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.MONTH) + 1)
+        val startDateIso = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT)
+            .format(weekCalendar.time)
+        val startDate = SimpleDateFormat("dd/MM", Locale.ITALY).format(weekCalendar.time)
+        weekCalendar.add(Calendar.DAY_OF_YEAR, 6)
+        val endDateIso = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT)
+            .format(weekCalendar.time)
+        val endDate = SimpleDateFormat("dd/MM", Locale.ITALY).format(weekCalendar.time)
+
+        val weekEntries = allEntries.filter { entry ->
+            entry.date in startDateIso..endDateIso
+        }
+        val totalContractMinutes = weeklyHours * 60 + weeklyMinutes
 
         if (weekEntries.isEmpty()) {
-            return WeeklyStats(0, 0, 0, 0, 0, 0, 0, emptyMap(), emptyMap(), 0, 0, startDate, endDate)
+            return WeeklyStats(
+                0, 0, 0, 0, 0, totalContractMinutes, -totalContractMinutes,
+                emptyMap(), emptyMap(), 0, 0, startDate, endDate
+            )
         }
 
         val entriesByDate = weekEntries.groupBy { it.date }
@@ -60,10 +67,6 @@ object WeeklyStatsHelper {
         val locationsCount = mutableMapOf<String, Int>()
         var outOfTownDays = 0
         var mealTickets = 0
-
-        val workingDaysInWeek = workDays.coerceAtMost(entriesByDate.size)
-        val dailyContractMinutes = (weeklyHours * 60 + weeklyMinutes) / workDays
-        val totalContractMinutes = dailyContractMinutes * workingDaysInWeek
 
         for ((date, entries) in entriesByDate) {
             val sorted = entries.sortedBy { it.timestamp }

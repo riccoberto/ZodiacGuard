@@ -34,11 +34,15 @@ class ManualCounterAdapter(
         binding.tvCounterTitle.text = counter.title
         binding.tvCounterValue.text = binding.root.context.getString(
             R.string.manual_counter_current_total_format,
-            formatDuration(counter.currentMinutes)
+            formatDuration(counter.currentMinutes, counter.dayLengthMinutes)
         )
         binding.tvCounterInitial.text = binding.root.context.getString(
             R.string.manual_counter_initial_value,
-            formatDuration(counter.initialMinutes)
+            formatDuration(counter.initialMinutes, counter.dayLengthMinutes)
+        )
+        binding.tvCounterDayLength.text = binding.root.context.getString(
+            R.string.manual_counter_day_length,
+            formatDuration(counter.dayLengthMinutes, counter.dayLengthMinutes)
         )
 
         binding.btnAddUnits.setOnClickListener {
@@ -67,13 +71,19 @@ class ManualCounterAdapter(
         val daysText = daysField.text.toString()
         val hoursText = hoursField.text.toString()
         val minutesText = minutesField.text.toString()
-        val days = daysText.toLongOrNull() ?: 0L
-        val hours = hoursText.toLongOrNull() ?: 0L
-        val minutes = minutesText.toLongOrNull() ?: 0L
+        val days = daysText.toLongOrNull() ?: if (daysText.isEmpty()) 0L else null
+        val hours = hoursText.toLongOrNull() ?: if (hoursText.isEmpty()) 0L else null
+        val minutes = minutesText.toLongOrNull() ?: if (minutesText.isEmpty()) 0L else null
+        if (days == null || hours == null || minutes == null ||
+            days < 0 || hours < 0 || minutes !in 0..59
+        ) {
+            showInvalidAdjustment(daysField)
+            return
+        }
         val amount = try {
             Math.addExact(
                 Math.addExact(
-                    Math.multiplyExact(days, MINUTES_PER_DAY),
+                    Math.multiplyExact(days, counter.dayLengthMinutes.toLong()),
                     Math.multiplyExact(hours, MINUTES_PER_HOUR)
                 ),
                 minutes
@@ -82,18 +92,11 @@ class ManualCounterAdapter(
             0L
         }
         val updatedTotal = counter.currentMinutes.toLong() + amount * direction
-        if ((daysText.isNotEmpty() && days == 0L) ||
-            (hoursText.isNotEmpty() && hours == 0L) ||
-            (minutesText.isNotEmpty() && minutes == 0L) ||
-            amount <= 0 ||
+        if (amount <= 0 ||
             amount > Int.MAX_VALUE ||
             updatedTotal !in 0..Int.MAX_VALUE.toLong()
         ) {
-            Toast.makeText(
-                daysField.context,
-                R.string.manual_counter_invalid_adjustment,
-                Toast.LENGTH_SHORT
-            ).show()
+            showInvalidAdjustment(daysField)
             return
         }
 
@@ -103,15 +106,23 @@ class ManualCounterAdapter(
         minutesField.text.clear()
     }
 
-    private fun formatDuration(totalMinutes: Int): String {
-        val days = totalMinutes / MINUTES_PER_DAY
-        val hours = totalMinutes % MINUTES_PER_DAY / MINUTES_PER_HOUR
-        val minutes = totalMinutes % MINUTES_PER_HOUR
+    private fun formatDuration(totalMinutes: Int, dayLengthMinutes: Int): String {
+        val days = totalMinutes / dayLengthMinutes
+        val remainder = totalMinutes % dayLengthMinutes
+        val hours = remainder / MINUTES_PER_HOUR
+        val minutes = remainder % MINUTES_PER_HOUR
         return "$days g  $hours h  $minutes min"
+    }
+
+    private fun showInvalidAdjustment(view: EditText) {
+        Toast.makeText(
+            view.context,
+            R.string.manual_counter_invalid_adjustment,
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     private companion object {
         const val MINUTES_PER_HOUR = 60
-        const val MINUTES_PER_DAY = 24 * MINUTES_PER_HOUR
     }
 }

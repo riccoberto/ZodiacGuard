@@ -11,11 +11,13 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.zodiacguard.app.R
+import com.zodiacguard.app.data.ContractDataStore
 import com.zodiacguard.app.data.ManualCounter
 import com.zodiacguard.app.data.ManualCounterDataStore
 import com.zodiacguard.app.databinding.DialogManualCounterBinding
 import com.zodiacguard.app.databinding.FragmentManualCountersBinding
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class ManualCountersFragment : Fragment() {
@@ -23,6 +25,7 @@ class ManualCountersFragment : Fragment() {
     private var _binding: FragmentManualCountersBinding? = null
     private val binding get() = _binding!!
     private lateinit var counterDataStore: ManualCounterDataStore
+    private lateinit var contractDataStore: ContractDataStore
     private lateinit var counterAdapter: ManualCounterAdapter
 
     override fun onCreateView(
@@ -32,6 +35,7 @@ class ManualCountersFragment : Fragment() {
     ): View {
         _binding = FragmentManualCountersBinding.inflate(inflater, container, false)
         counterDataStore = ManualCounterDataStore(requireContext())
+        contractDataStore = ContractDataStore(requireContext())
         return binding.root
     }
 
@@ -43,7 +47,13 @@ class ManualCountersFragment : Fragment() {
         )
         binding.recyclerViewCounters.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewCounters.adapter = counterAdapter
-        binding.btnAddCounter.setOnClickListener { showCreateCounterDialog() }
+        binding.btnAddCounter.setOnClickListener {
+            viewLifecycleOwner.lifecycleScope.launch {
+                val weeklyContractMinutes = contractDataStore.weeklyContractMinutesFlow.first()
+                val workDays = contractDataStore.workDaysFlow.first().coerceAtLeast(1)
+                showCreateCounterDialog((weeklyContractMinutes / workDays).coerceAtLeast(1))
+            }
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             counterDataStore.countersFlow.collectLatest { counters ->
@@ -54,8 +64,10 @@ class ManualCountersFragment : Fragment() {
         }
     }
 
-    private fun showCreateCounterDialog() {
+    private fun showCreateCounterDialog(defaultDayLengthMinutes: Int) {
         val dialogBinding = DialogManualCounterBinding.inflate(layoutInflater)
+        dialogBinding.etDayLengthHours.setText((defaultDayLengthMinutes / MINUTES_PER_HOUR).toString())
+        dialogBinding.etDayLengthMinutes.setText((defaultDayLengthMinutes % MINUTES_PER_HOUR).toString())
         val dialog = AlertDialog.Builder(requireContext())
             .setTitle(R.string.manual_counter_create_title)
             .setView(dialogBinding.root)
@@ -66,10 +78,33 @@ class ManualCountersFragment : Fragment() {
         dialog.setOnShowListener {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 val title = dialogBinding.etCounterTitle.text?.toString()?.trim().orEmpty()
+                val dayLengthHours =
+                    dialogBinding.etDayLengthHours.text?.toString()?.toLongOrNull() ?: 0L
+                val dayLengthMinutes =
+                    dialogBinding.etDayLengthMinutes.text?.toString()?.toLongOrNull() ?: 0L
+                val dayLength = try {
+                    Math.addExact(
+                        Math.multiplyExact(dayLengthHours, MINUTES_PER_HOUR),
+                        dayLengthMinutes
+                    )
+                } catch (_: ArithmeticException) {
+                    0L
+                }
+                if (dayLengthHours < 0 || dayLengthMinutes !in 0..59 ||
+                    dayLength !in 1..Int.MAX_VALUE.toLong()
+                ) {
+                    Toast.makeText(
+                        requireContext(),
+                        R.string.manual_counter_invalid_day_length,
+                        Toast.LENGTH_LONG
+                    ).show()
+                    return@setOnClickListener
+                }
                 val minutes = parseDurationMinutes(
                     dialogBinding.etInitialDays.text?.toString(),
                     dialogBinding.etInitialHours.text?.toString(),
-                    dialogBinding.etInitialMinutes.text?.toString()
+                    dialogBinding.etInitialMinutes.text?.toString(),
+                    dayLength.toInt()
                 )
                 if (title.isBlank()) {
                     dialogBinding.etCounterTitle.error =
@@ -87,7 +122,7 @@ class ManualCountersFragment : Fragment() {
 
                 viewLifecycleOwner.lifecycleScope.launch {
                     try {
-                        counterDataStore.addCounter(title, minutes)
+                        counterDataStore.addCounter(title, minutes, dayLength.toInt())
                         dialog.dismiss()
                     } catch (exception: Exception) {
                         Log.e(TAG, "Creazione contatore fallita", exception)
@@ -140,14 +175,25 @@ class ManualCountersFragment : Fragment() {
             .show()
     }
 
-    private fun parseDurationMinutes(days: CharSequence?, hours: CharSequence?, minutes: CharSequence?): Int? {
-        val dayCount = days?.toString()?.toLongOrNull() ?: 0L
-        val hourCount = hours?.toString()?.toLongOrNull() ?: 0L
-        val minuteCount = minutes?.toString()?.toLongOrNull() ?: 0L
+    private fun parseDurationMinutes(
+        days: CharSequence?,
+        hours: CharSequence?,
+        minutes: CharSequence?,
+        dayLengthMinutes: Int
+    ): Int? {
+        val dayText = days?.toString().orEmpty()
+        val hourText = hours?.toString().orEmpty()
+        val minuteText = minutes?.toString().orEmpty()
+        val dayCount = dayText.toLongOrNull() ?: if (dayText.isEmpty()) 0L else null
+        val hourCount = hourText.toLongOrNull() ?: if (hourText.isEmpty()) 0L else null
+        val minuteCount = minuteText.toLongOrNull() ?: if (minuteText.isEmpty()) 0L else null
+        if (dayCount == null || hourCount == null || minuteCount == null ||
+            dayCount < 0 || hourCount < 0 || minuteCount !in 0..59
+        ) return null
         return try {
             val total = Math.addExact(
                 Math.addExact(
-                    Math.multiplyExact(dayCount, MINUTES_PER_DAY),
+                    Math.multiplyExact(dayCount, dayLengthMinutes.toLong()),
                     Math.multiplyExact(hourCount, MINUTES_PER_HOUR)
                 ),
                 minuteCount
@@ -166,6 +212,5 @@ class ManualCountersFragment : Fragment() {
     private companion object {
         const val TAG = "ManualCountersFragment"
         const val MINUTES_PER_HOUR = 60L
-        const val MINUTES_PER_DAY = 24L * MINUTES_PER_HOUR
     }
 }

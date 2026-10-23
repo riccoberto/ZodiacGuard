@@ -32,7 +32,10 @@
     <string name="manual_counter_minutes">Minuti</string>
     <string name="contract_weekly_minutes">Minuti contrattuali settimanali</string>
     <string name="manual_counter_title_required">Inserisci un titolo.</string>
-    <string name="manual_counter_invalid_total">Inserisci un totale valido. Ore e minuti possono superare 24 e 60; il totale massimo è limitato.</string>
+    <string name="manual_counter_invalid_total">Inserisci un totale valido, con ore non negative e minuti da 0 a 59.</string>
     <string name="manual_counter_invalid_adjustment">Inserisci un valore valido da aggiungere o togliere.</string>
     <string name="manual_counter_operation_error">Operazione sul contatore non riuscita: %1$s</string>
+    <string name="manual_counter_day_length_input">Durata di un giorno per questo contatore</string>
+    <string name="manual_counter_day_length">1 giorno = %1$s</string>
+    <string name="manual_counter_invalid_day_length">La durata di un giorno deve essere maggiore di zero; i minuti vanno da 0 a 59.</string>
 </resources>

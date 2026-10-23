@@ -15,6 +15,7 @@ import com.zodiacguard.app.databinding.FragmentWeeklyBinding
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.*
+import java.util.Locale
 
 class WeeklyFragment : Fragment() {
 
@@ -23,7 +24,10 @@ class WeeklyFragment : Fragment() {
     private lateinit var workDataStore: WorkDataStore
     private lateinit var contractDataStore: ContractDataStore
     
-    private var calendar = Calendar.getInstance()
+    private var calendar = Calendar.getInstance(Locale.ITALY).apply {
+        firstDayOfWeek = Calendar.MONDAY
+        minimalDaysInFirstWeek = 4
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -52,33 +56,29 @@ class WeeklyFragment : Fragment() {
     }
 
     private fun loadStats() {
-        val year = calendar.get(Calendar.YEAR)
+        val year = calendar.getWeekYear()
         val week = calendar.get(Calendar.WEEK_OF_YEAR)
         
         viewLifecycleOwner.lifecycleScope.launch {
             val allEntries = workDataStore.entriesFlow.first()
             val weeklyHours = contractDataStore.weeklyHoursFlow.first()
             val weeklyMinutes = contractDataStore.weeklyMinutesFlow.first()
-            val workDays = contractDataStore.workDaysFlow.first()
             
             val productionDates = workDataStore.productionDaysFlow.first()
             
             val stats = WeeklyStatsHelper.calculateWeeklyStats(
-                allEntries, productionDates, year, week, weeklyHours, workDays, weeklyMinutes
+                allEntries, productionDates, year, week, weeklyHours, weeklyMinutes
             )
-            displayStats(stats, weeklyHours, weeklyMinutes, workDays)
+            displayStats(stats)
         }
     }
 
-    private fun displayStats(
-        stats: WeeklyStatsHelper.WeeklyStats,
-        weeklyHours: Int,
-        weeklyMinutes: Int,
-        workDays: Int
-    ) {
+    private fun displayStats(stats: WeeklyStatsHelper.WeeklyStats) {
         binding.tvWeekLabel.text = "Settimana ${calendar.get(Calendar.WEEK_OF_YEAR)} - ${stats.weekStartDate} / ${stats.weekEndDate}"
         
         binding.tvTotalWorked.text = "Totale: ${formatMin(stats.totalWorkedMinutes)}"
+        binding.tvContractExpected.text =
+            "Contratto settimanale: ${formatMin(stats.totalContractMinutes)}"
         binding.tvTotalOrdinary.text = "Ordinarie: ${formatMin(stats.totalOrdinaryMinutes)}"
         binding.tvTotalOvertime.text = "Straordinari: ${formatMin(stats.totalOvertimeMinutes)}"
         binding.tvTotalBank.text = "Banca ore: ${formatMin(stats.totalBankMinutes)}"
@@ -87,8 +87,7 @@ class WeeklyFragment : Fragment() {
         val sign = if (stats.balanceMinutes >= 0) "+" else ""
         binding.tvBalance.text = "Saldo: $sign${formatMin(stats.balanceMinutes)}"
 
-        val dailyContractMinutes = (weeklyHours * 60 + weeklyMinutes) / workDays
-        val expectedMinutes = dailyContractMinutes * workDays
+        val expectedMinutes = stats.totalContractMinutes
         
         // NUOVI COLORI
         binding.pieChart.setData(
@@ -118,13 +117,19 @@ class WeeklyFragment : Fragment() {
     }
 
     private fun shareReport() {
+        val summary = binding.tvTeatriniCount.text.toString()
+        val locations = binding.tvLocationsCount.text.toString()
         val text = """
             📈 RIEPILOGO SETTIMANALE - ${binding.tvWeekLabel.text.toString()}
             Totale: ${binding.tvTotalWorked.text.toString().substringAfter(": ")}
+            Contratto settimanale: ${binding.tvContractExpected.text.toString().substringAfter(": ")}
+            Ordinarie: ${binding.tvTotalOrdinary.text.toString().substringAfter(": ")}
             Straordinari: ${binding.tvTotalOvertime.text.toString().substringAfter(": ")}
             Banca ore: ${binding.tvTotalBank.text.toString().substringAfter(": ")}
             Viaggio: ${binding.tvTotalTravel.text.toString().substringAfter(": ")}
             Saldo: ${binding.tvBalance.text.toString().substringAfter(": ")}
+            Teatrini: ${statsSummary(summary)}
+            Sedi nella settimana: ${statsSummary(locations)}
             🚗 Fuori sede: ${binding.tvOutOfTown.text.toString().substringAfter(": ")}
             🍽️ Buoni pasto: ${binding.tvMealTickets.text.toString().substringAfter(": ")}
         """.trimIndent()
@@ -139,6 +144,9 @@ class WeeklyFragment : Fragment() {
     private fun formatMin(min: Int): String {
         return "${min / 60}h ${min % 60}m"
     }
+
+    private fun statsSummary(value: String): String =
+        value.ifBlank { "Nessuno" }.replace("\n", ", ")
 
     override fun onDestroyView() { super.onDestroyView(); _binding = null }
 }

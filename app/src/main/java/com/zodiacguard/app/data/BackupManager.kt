@@ -79,6 +79,7 @@ class BackupManager(private val context: Context) {
                         .put("title", counter.title)
                         .put("initialMinutes", counter.initialMinutes)
                         .put("currentMinutes", counter.currentMinutes)
+                        .put("dayLengthMinutes", counter.dayLengthMinutes)
                 )
             }
             backupJson.put("manualCounters", countersArray)

@@ -33,6 +33,14 @@
         android:textColor="#AAB7CA"
         android:textSize="12sp" />
 
+    <TextView
+        android:id="@+id/tvCounterDayLength"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:textColor="#AAB7CA"
+        android:textSize="12sp" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

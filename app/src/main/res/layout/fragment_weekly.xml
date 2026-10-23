@@ -68,6 +68,7 @@
             android:layout_marginBottom="20dp">
             
             <TextView android:id="@+id/tvTotalWorked" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Totale: 0h 00m" android:textColor="@color/white" android:textSize="14sp" android:layout_marginBottom="4dp" />
+            <TextView android:id="@+id/tvContractExpected" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Contratto settimanale: 0h 00m" android:textColor="#FFB74D" android:textSize="14sp" android:layout_marginBottom="4dp" />
             <TextView android:id="@+id/tvTotalOrdinary" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Ordinarie: 0h 00m" android:textColor="#FFD700" android:textSize="14sp" android:layout_marginBottom="4dp" />
             <TextView android:id="@+id/tvTotalOvertime" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Straordinari: 0h 00m" android:textColor="#FF5252" android:textSize="14sp" android:layout_marginBottom="4dp" />
             <TextView android:id="@+id/tvTotalBank" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Banca ore: 0h 00m" android:textColor="#64B5F6" android:textSize="14sp" android:layout_marginBottom="4dp" />

@@ -259,7 +259,9 @@ class SettingsFragment : Fragment() {
                             id = counter.getString("id"),
                             title = counter.getString("title"),
                             initialMinutes = counter.getInt("initialMinutes"),
-                            currentMinutes = counter.getInt("currentMinutes")
+                            currentMinutes = counter.getInt("currentMinutes"),
+                            dayLengthMinutes = counter.optInt("dayLengthMinutes", 24 * 60)
+                                .coerceAtLeast(1)
                         )
                     }
                     manualCounterDataStore.replaceCounters(counters)

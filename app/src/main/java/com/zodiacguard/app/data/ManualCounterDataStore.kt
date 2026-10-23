@@ -15,11 +15,14 @@ import java.util.UUID
 private val Context.manualCounterDataStore: DataStore<Preferences> by
     preferencesDataStore(name = "manual_counters")
 
+private const val LEGACY_COUNTER_DAY_LENGTH_MINUTES = 24 * 60
+
 data class ManualCounter(
     val id: String,
     val title: String,
     val initialMinutes: Int,
-    val currentMinutes: Int
+    val currentMinutes: Int,
+    val dayLengthMinutes: Int = LEGACY_COUNTER_DAY_LENGTH_MINUTES
 )
 
 class ManualCounterDataStore(private val context: Context) {
@@ -31,9 +34,14 @@ class ManualCounterDataStore(private val context: Context) {
             decodeCounters(preferences[countersKey].orEmpty())
         }
 
-    suspend fun addCounter(title: String, initialMinutes: Int) {
+    suspend fun addCounter(
+        title: String,
+        initialMinutes: Int,
+        dayLengthMinutes: Int
+    ) {
         require(title.isNotBlank())
         require(initialMinutes >= 0)
+        require(dayLengthMinutes > 0)
         context.manualCounterDataStore.edit { preferences ->
             val counters = decodeCounters(preferences[countersKey].orEmpty()).toMutableList()
             counters.add(
@@ -41,7 +49,8 @@ class ManualCounterDataStore(private val context: Context) {
                     id = UUID.randomUUID().toString(),
                     title = title.trim(),
                     initialMinutes = initialMinutes,
-                    currentMinutes = initialMinutes
+                    currentMinutes = initialMinutes,
+                    dayLengthMinutes = dayLengthMinutes
                 )
             )
             preferences[countersKey] = encodeCounters(counters)
@@ -87,7 +96,11 @@ class ManualCounterDataStore(private val context: Context) {
                 id = item.getString("id"),
                 title = item.getString("title"),
                 initialMinutes = item.getInt("initialMinutes"),
-                currentMinutes = item.getInt("currentMinutes")
+                currentMinutes = item.getInt("currentMinutes"),
+                dayLengthMinutes = item.optInt(
+                    "dayLengthMinutes",
+                    LEGACY_COUNTER_DAY_LENGTH_MINUTES
+                ).coerceAtLeast(1)
             )
         }
     }
@@ -101,6 +114,7 @@ class ManualCounterDataStore(private val context: Context) {
                         .put("title", counter.title)
                         .put("initialMinutes", counter.initialMinutes)
                         .put("currentMinutes", counter.currentMinutes)
+                        .put("dayLengthMinutes", counter.dayLengthMinutes)
                 )
             }
         }.toString()
