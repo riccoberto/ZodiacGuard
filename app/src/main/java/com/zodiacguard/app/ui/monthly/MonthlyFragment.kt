@@ -128,10 +128,9 @@ class MonthlyFragment : Fragment() {
 
         binding.pieChart.setData(
             listOf(
-                Pair(chartDistribution.ordinaryWorkMinutes.toFloat(), Color.parseColor("#FFD700")),
+                Pair(chartDistribution.ordinaryMinutes.toFloat(), Color.parseColor("#FFD700")),
                 Pair(chartDistribution.overtimeMinutes.toFloat(), Color.parseColor("#FF5252")),
-                Pair(chartDistribution.bankMinutes.toFloat(), Color.parseColor("#64B5F6")),
-                Pair(chartDistribution.travelMinutes.toFloat(), Color.parseColor("#B388FF"))
+                Pair(chartDistribution.bankMinutes.toFloat(), Color.parseColor("#64B5F6"))
             ),
             expectedMinutes.toFloat(),
             stats.totalWorkedMinutes

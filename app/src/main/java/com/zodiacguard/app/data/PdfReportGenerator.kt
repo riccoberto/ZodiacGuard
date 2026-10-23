@@ -105,7 +105,7 @@ class PdfReportGenerator(private val context: Context) {
         canvas.drawText("RIEPILOGO ORE", PAGE_MARGIN, 64f, headingPaint)
 
         val metrics = listOf(
-            "Lavorate ${MonthlyStatsHelper.minutesToText(stats.totalWorkedMinutes)}",
+            "Lavorate + viaggio ${MonthlyStatsHelper.minutesToText(stats.totalWorkedMinutes)}",
             "Contratto attese (${stats.workingDaysInMonth} gg) ${MonthlyStatsHelper.minutesToText(stats.totalContractMinutes)}",
             "Ordinarie ${MonthlyStatsHelper.minutesToText(stats.totalOrdinaryMinutes)}",
             "Straordinari ${MonthlyStatsHelper.minutesToText(stats.totalOvertimeMinutes)}",

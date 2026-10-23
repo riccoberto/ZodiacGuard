@@ -23,10 +23,9 @@ object MonthlyStatsHelper {
     )
 
     data class MonthlyChartDistribution(
-        val ordinaryWorkMinutes: Int,
+        val ordinaryMinutes: Int,
         val overtimeMinutes: Int,
-        val bankMinutes: Int,
-        val travelMinutes: Int
+        val bankMinutes: Int
     )
 
     data class DailySummary(
@@ -52,11 +51,9 @@ object MonthlyStatsHelper {
     }
 
     fun getMonthlyChartDistribution(stats: MonthlyStats) = MonthlyChartDistribution(
-        ordinaryWorkMinutes = (stats.totalOrdinaryMinutes - stats.totalTravelMinutes)
-            .coerceAtLeast(0),
+        ordinaryMinutes = stats.totalOrdinaryMinutes,
         overtimeMinutes = stats.totalOvertimeMinutes,
-        bankMinutes = stats.totalBankMinutes,
-        travelMinutes = stats.totalTravelMinutes
+        bankMinutes = stats.totalBankMinutes
     )
 
     fun getDatesInMonth(year: Int, month: Int): List<String> {
@@ -243,7 +240,7 @@ object MonthlyStatsHelper {
         sb.appendLine()
         
         sb.appendLine("⏰ RIEPILOGO ORE")
-        sb.appendLine("Totale lavorate: ${minutesToText(stats.totalWorkedMinutes)}")
+        sb.appendLine("Totale lavorate + viaggio: ${minutesToText(stats.totalWorkedMinutes)}")
         sb.appendLine("Contratto attese (${stats.workingDaysInMonth} gg): ${minutesToText(stats.totalContractMinutes)}")
         sb.appendLine("Ordinarie: ${minutesToText(stats.totalOrdinaryMinutes)}")
         sb.appendLine("Straordinari: ${minutesToText(stats.totalOvertimeMinutes)}")

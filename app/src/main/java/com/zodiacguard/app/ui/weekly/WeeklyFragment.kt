@@ -76,7 +76,7 @@ class WeeklyFragment : Fragment() {
     private fun displayStats(stats: WeeklyStatsHelper.WeeklyStats) {
         binding.tvWeekLabel.text = "Settimana ${calendar.get(Calendar.WEEK_OF_YEAR)} - ${stats.weekStartDate} / ${stats.weekEndDate}"
         
-        binding.tvTotalWorked.text = "Totale: ${formatMin(stats.totalWorkedMinutes)}"
+        binding.tvTotalWorked.text = "Totale lavorate + viaggio: ${formatMin(stats.totalWorkedMinutes)}"
         binding.tvContractExpected.text =
             "Contratto settimanale: ${formatMin(stats.totalContractMinutes)}"
         binding.tvTotalOrdinary.text = "Ordinarie: ${formatMin(stats.totalOrdinaryMinutes)}"
@@ -94,17 +94,17 @@ class WeeklyFragment : Fragment() {
             listOf(
                 Pair(stats.totalOrdinaryMinutes.toFloat(), Color.parseColor("#FFD700")),
                 Pair(stats.totalOvertimeMinutes.toFloat(), Color.parseColor("#FF5252")),
-                Pair(stats.totalBankMinutes.toFloat(), Color.parseColor("#64B5F6")),
-                Pair(stats.totalTravelMinutes.toFloat(), Color.parseColor("#B388FF"))
+                Pair(stats.totalBankMinutes.toFloat(), Color.parseColor("#64B5F6"))
             ),
             expectedMinutes.toFloat(),
-            stats.totalWorkedMinutes + stats.totalTravelMinutes
+            stats.totalWorkedMinutes
         )
 
         binding.tvLegendOrdinary.text = "🟡 Ordinarie: ${formatMin(stats.totalOrdinaryMinutes)}"
         binding.tvLegendOvertime.text = "🔴 Straordinari: ${formatMin(stats.totalOvertimeMinutes)}"
         binding.tvLegendBank.text = "🔵 Banca Ore: ${formatMin(stats.totalBankMinutes)}"
-        binding.tvLegendTravel.text = "🟣 Viaggio: ${formatMin(stats.totalTravelMinutes)}"
+        binding.tvLegendTravel.text =
+            "🟣 Viaggio (compreso nel totale): ${formatMin(stats.totalTravelMinutes)}"
 
         binding.tvTeatriniCount.text = if (stats.teatriniCount.isEmpty()) "Nessun teatrino" 
             else stats.teatriniCount.entries.joinToString("\n") { "${it.key}: ${it.value}" }

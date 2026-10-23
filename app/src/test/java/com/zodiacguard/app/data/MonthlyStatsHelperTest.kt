@@ -44,14 +44,14 @@ class MonthlyStatsHelperTest {
         val distribution = MonthlyStatsHelper.getMonthlyChartDistribution(stats)
 
         assertEquals(570, stats.totalWorkedMinutes)
-        assertEquals(90, distribution.travelMinutes)
-        assertEquals(295, distribution.ordinaryWorkMinutes)
+        assertEquals(90, stats.totalTravelMinutes)
+        assertEquals(385, distribution.ordinaryMinutes)
+        assertEquals(185, distribution.bankMinutes)
         assertEquals(
             stats.totalWorkedMinutes,
-            distribution.ordinaryWorkMinutes +
+            distribution.ordinaryMinutes +
                 distribution.overtimeMinutes +
-                distribution.bankMinutes +
-                distribution.travelMinutes
+                distribution.bankMinutes
         )
     }
 
