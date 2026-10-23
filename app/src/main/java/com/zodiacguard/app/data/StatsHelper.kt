@@ -4,6 +4,83 @@ object StatsHelper {
     
     const val DAILY_TARGET_MINUTES = 385 // 6h 25m
 
+    data class DailyTimeInput(
+        val totalMinutes: Int,
+        val travelMinutes: Int,
+        val isProduction: Boolean
+    )
+
+    data class DailyTimeBreakdown(
+        val ordinaryMinutes: Int,
+        val overtimeMinutes: Int,
+        val bankMinutes: Int,
+        val ordinaryTravelMinutes: Int,
+        val overtimeTravelMinutes: Int,
+        val bankTravelMinutes: Int
+    )
+
+    data class ChartDistribution(
+        val ordinaryMinutes: Int = 0,
+        val overtimeMinutes: Int = 0,
+        val bankMinutes: Int = 0,
+        val ordinaryTravelMinutes: Int = 0,
+        val overtimeTravelMinutes: Int = 0,
+        val bankTravelMinutes: Int = 0
+    ) {
+        val totalMinutes: Int
+            get() = ordinaryMinutes + overtimeMinutes + bankMinutes
+
+        val totalTravelMinutes: Int
+            get() = ordinaryTravelMinutes + overtimeTravelMinutes + bankTravelMinutes
+    }
+
+    fun classifyDailyTime(
+        totalMinutes: Int,
+        travelMinutes: Int,
+        isProduction: Boolean
+    ): DailyTimeBreakdown {
+        val total = totalMinutes.coerceAtLeast(0)
+        val travel = travelMinutes.coerceIn(0, total)
+        val ordinary = minOf(total, DAILY_TARGET_MINUTES)
+        val extra = maxOf(0, total - DAILY_TARGET_MINUTES)
+        val markedWork = total - travel
+        val ordinaryMarkedWork = minOf(markedWork, DAILY_TARGET_MINUTES)
+        val ordinaryTravel = minOf(
+            travel,
+            (DAILY_TARGET_MINUTES - ordinaryMarkedWork).coerceAtLeast(0)
+        )
+        val extraTravel = travel - ordinaryTravel
+
+        return DailyTimeBreakdown(
+            ordinaryMinutes = ordinary,
+            overtimeMinutes = if (isProduction) extra else 0,
+            bankMinutes = if (isProduction) 0 else extra,
+            ordinaryTravelMinutes = ordinaryTravel,
+            overtimeTravelMinutes = if (isProduction) extraTravel else 0,
+            bankTravelMinutes = if (isProduction) 0 else extraTravel
+        )
+    }
+
+    // Trip times are not stored, so marked work is allocated before the added travel.
+    fun calculateChartDistribution(days: List<DailyTimeInput>): ChartDistribution =
+        days.fold(ChartDistribution()) { totals, day ->
+            val breakdown = classifyDailyTime(
+                day.totalMinutes,
+                day.travelMinutes,
+                day.isProduction
+            )
+            ChartDistribution(
+                ordinaryMinutes = totals.ordinaryMinutes + breakdown.ordinaryMinutes,
+                overtimeMinutes = totals.overtimeMinutes + breakdown.overtimeMinutes,
+                bankMinutes = totals.bankMinutes + breakdown.bankMinutes,
+                ordinaryTravelMinutes =
+                    totals.ordinaryTravelMinutes + breakdown.ordinaryTravelMinutes,
+                overtimeTravelMinutes =
+                    totals.overtimeTravelMinutes + breakdown.overtimeTravelMinutes,
+                bankTravelMinutes = totals.bankTravelMinutes + breakdown.bankTravelMinutes
+            )
+        }
+
     data class DailyStats(
         val totalMinutes: Int,
         val ordinaryMinutes: Int,

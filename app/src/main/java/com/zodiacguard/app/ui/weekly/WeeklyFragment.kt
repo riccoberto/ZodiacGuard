@@ -88,23 +88,31 @@ class WeeklyFragment : Fragment() {
         binding.tvBalance.text = "Saldo: $sign${formatMin(stats.balanceMinutes)}"
 
         val expectedMinutes = stats.totalContractMinutes
-        
+        val distribution = stats.chartDistribution
+
         // NUOVI COLORI
         binding.pieChart.setData(
             listOf(
-                Pair(stats.totalOrdinaryMinutes.toFloat(), Color.parseColor("#FFD700")),
-                Pair(stats.totalOvertimeMinutes.toFloat(), Color.parseColor("#FF5252")),
-                Pair(stats.totalBankMinutes.toFloat(), Color.parseColor("#64B5F6"))
+                Pair(distribution.ordinaryMinutes.toFloat(), Color.parseColor("#FFD700")),
+                Pair(distribution.overtimeMinutes.toFloat(), Color.parseColor("#FF5252")),
+                Pair(distribution.bankMinutes.toFloat(), Color.parseColor("#64B5F6"))
             ),
             expectedMinutes.toFloat(),
-            stats.totalWorkedMinutes
+            stats.totalWorkedMinutes,
+            listOf(
+                distribution.ordinaryTravelMinutes.toFloat(),
+                distribution.overtimeTravelMinutes.toFloat(),
+                distribution.bankTravelMinutes.toFloat()
+            )
         )
 
         binding.tvLegendOrdinary.text = "🟡 Ordinarie: ${formatMin(stats.totalOrdinaryMinutes)}"
         binding.tvLegendOvertime.text = "🔴 Straordinari: ${formatMin(stats.totalOvertimeMinutes)}"
         binding.tvLegendBank.text = "🔵 Banca Ore: ${formatMin(stats.totalBankMinutes)}"
         binding.tvLegendTravel.text =
-            "🟣 Viaggio (compreso nel totale): ${formatMin(stats.totalTravelMinutes)}"
+            "🟣 Viaggio sovrapposto, già incluso: ${formatMin(stats.totalTravelMinutes)}"
+        binding.tvLegendExpected.text = "🟤 Anello interno: ore attese"
+        binding.tvLegendOverrun.text = "🟠 Anello esterno: oltre il contratto"
 
         binding.tvTeatriniCount.text = if (stats.teatriniCount.isEmpty()) "Nessun teatrino" 
             else stats.teatriniCount.entries.joinToString("\n") { "${it.key}: ${it.value}" }

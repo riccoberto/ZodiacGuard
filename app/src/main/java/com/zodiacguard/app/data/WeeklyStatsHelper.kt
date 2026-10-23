@@ -11,6 +11,7 @@ object WeeklyStatsHelper {
         val totalOvertimeMinutes: Int,
         val totalBankMinutes: Int,
         val totalTravelMinutes: Int,
+        val chartDistribution: StatsHelper.ChartDistribution,
         val totalWorkedMinutes: Int,
         val totalContractMinutes: Int,
         val balanceMinutes: Int,
@@ -51,7 +52,8 @@ object WeeklyStatsHelper {
 
         if (weekEntries.isEmpty()) {
             return WeeklyStats(
-                0, 0, 0, 0, 0, totalContractMinutes, -totalContractMinutes,
+                0, 0, 0, 0, StatsHelper.ChartDistribution(),
+                0, totalContractMinutes, -totalContractMinutes,
                 emptyMap(), emptyMap(), 0, 0, startDate, endDate
             )
         }
@@ -63,6 +65,7 @@ object WeeklyStatsHelper {
         var totalBank = 0
         var totalTravel = 0
         var totalWorked = 0
+        val dailyTimeInputs = mutableListOf<StatsHelper.DailyTimeInput>()
         val teatriniCount = mutableMapOf<String, Int>()
         val locationsCount = mutableMapOf<String, Int>()
         var outOfTownDays = 0
@@ -91,18 +94,21 @@ object WeeklyStatsHelper {
             }
 
             val totalDayMinutes = workMinutes + travelMinutes
-            val ordinaryDay = minOf(totalDayMinutes, 385)
-            val extraDay = maxOf(0, totalDayMinutes - 385)
+            val breakdown = StatsHelper.classifyDailyTime(
+                totalDayMinutes,
+                travelMinutes,
+                isProduction
+            )
 
             totalWorked += totalDayMinutes
             totalTravel += travelMinutes
+            dailyTimeInputs.add(
+                StatsHelper.DailyTimeInput(totalDayMinutes, travelMinutes, isProduction)
+            )
 
-            if (isProduction) {
-                totalOvertime += extraDay
-            } else {
-                totalBank += extraDay
-            }
-            totalOrdinary += ordinaryDay
+            totalOvertime += breakdown.overtimeMinutes
+            totalBank += breakdown.bankMinutes
+            totalOrdinary += breakdown.ordinaryMinutes
 
             val activity = sorted.first().activity
             if (activity.startsWith("Teatrino")) {
@@ -130,6 +136,7 @@ object WeeklyStatsHelper {
 
         return WeeklyStats(
             totalOrdinary, totalOvertime, totalBank, totalTravel,
+            StatsHelper.calculateChartDistribution(dailyTimeInputs),
             totalWorked, totalContractMinutes, balance,
             teatriniCount, locationsCount, outOfTownDays, mealTickets,
             startDate, endDate

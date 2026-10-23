@@ -136,7 +136,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Distribuzione ore (sfondo marrone = ore attese)"
+            android:text="Distribuzione delle ore"
             android:textColor="@color/zodiac_gold"
             android:textSize="18sp"
             android:textStyle="bold"
@@ -150,6 +150,47 @@
             android:layout_gravity="center_horizontal"
             android:layout_marginBottom="4dp"
             android:contentDescription="Grafico distribuzione ore lavorate e viaggio." />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_surface_card"
+            android:padding="16dp"
+            android:layout_marginBottom="20dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🟡 Ordinarie  ·  🔴 Straordinari  ·  🔵 Banca ore"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                android:layout_marginBottom="6dp" />
+
+            <TextView
+                android:id="@+id/tvChartTravelLegend"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🟣 Viaggio sovrapposto, già incluso nel totale"
+                android:textColor="#D9C2FF"
+                android:textSize="13sp"
+                android:layout_marginBottom="6dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🟤 Anello interno: ore attese  ·  🟠 Anello esterno: oltre il contratto"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                android:layout_marginBottom="6dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Stima: prima le ore marcate, poi il viaggio. L'eccedenza è straordinario in Produzione, altrimenti banca ore."
+                android:textColor="#AAB7CA"
+                android:textSize="12sp" />
+        </LinearLayout>
 
         <TextView
             android:layout_width="wrap_content"

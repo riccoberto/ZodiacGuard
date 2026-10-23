@@ -22,12 +22,6 @@ object MonthlyStatsHelper {
         val workingDaysInMonth: Int
     )
 
-    data class MonthlyChartDistribution(
-        val ordinaryMinutes: Int,
-        val overtimeMinutes: Int,
-        val bankMinutes: Int
-    )
-
     data class DailySummary(
         val date: String,
         val totalMinutes: Int,
@@ -50,11 +44,16 @@ object MonthlyStatsHelper {
         return todayAndFuture.sortedBy { it.date } + past.sortedByDescending { it.date }
     }
 
-    fun getMonthlyChartDistribution(stats: MonthlyStats) = MonthlyChartDistribution(
-        ordinaryMinutes = stats.totalOrdinaryMinutes,
-        overtimeMinutes = stats.totalOvertimeMinutes,
-        bankMinutes = stats.totalBankMinutes
-    )
+    fun getMonthlyChartDistribution(stats: MonthlyStats): StatsHelper.ChartDistribution =
+        StatsHelper.calculateChartDistribution(
+            stats.dailyStats.map { day ->
+                StatsHelper.DailyTimeInput(
+                    day.totalMinutes,
+                    day.travelMinutes,
+                    day.isProduction
+                )
+            }
+        )
 
     fun getDatesInMonth(year: Int, month: Int): List<String> {
         val calendar = Calendar.getInstance().apply {
@@ -141,18 +140,18 @@ object MonthlyStatsHelper {
             }
 
             val totalDayMinutes = workMinutes + travelMinutes
-            val ordinaryDay = minOf(totalDayMinutes, 385)
-            val extraDay = maxOf(0, totalDayMinutes - 385)
+            val breakdown = StatsHelper.classifyDailyTime(
+                totalDayMinutes,
+                travelMinutes,
+                isProduction
+            )
 
             totalWorked += totalDayMinutes
             totalTravel += travelMinutes
 
-            if (isProduction) {
-                totalOvertime += extraDay
-            } else {
-                totalBank += extraDay
-            }
-            totalOrdinary += ordinaryDay
+            totalOvertime += breakdown.overtimeMinutes
+            totalBank += breakdown.bankMinutes
+            totalOrdinary += breakdown.ordinaryMinutes
 
             val activity = sorted.first().activity
             val isTeatrino = activity.startsWith("Teatrino")
@@ -194,7 +193,7 @@ object MonthlyStatsHelper {
                     isTeatrino,
                     sorted,
                     mealTickets = dailyMealTickets,
-                    overtimeMinutes = if (isProduction) extraDay else 0
+                    overtimeMinutes = breakdown.overtimeMinutes
                 )
             )
         }

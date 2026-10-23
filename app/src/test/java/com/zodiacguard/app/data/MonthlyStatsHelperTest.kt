@@ -47,11 +47,48 @@ class MonthlyStatsHelperTest {
         assertEquals(90, stats.totalTravelMinutes)
         assertEquals(385, distribution.ordinaryMinutes)
         assertEquals(185, distribution.bankMinutes)
+        assertEquals(0, distribution.ordinaryTravelMinutes)
+        assertEquals(90, distribution.bankTravelMinutes)
+        assertEquals(570, distribution.totalMinutes)
+        assertEquals(90, distribution.totalTravelMinutes)
         assertEquals(
             stats.totalWorkedMinutes,
             distribution.ordinaryMinutes +
                 distribution.overtimeMinutes +
                 distribution.bankMinutes
+        )
+    }
+
+    @Test
+    fun productionTravelBeyondDailyTargetOverlaysProductionOvertime() {
+        val stats = MonthlyStatsHelper.calculateMonthlyStats(
+            allEntries = listOf(
+                workEntry(8, "ENTRATA", "Vignola"),
+                workEntry(16, "USCITA", "Vignola")
+            ),
+            productionDays = setOf("2026-10-05"),
+            year = 2026,
+            month = 10,
+            weeklyHours = 38,
+            workDays = 6
+        )
+
+        val distribution = MonthlyStatsHelper.getMonthlyChartDistribution(stats)
+
+        assertEquals(185, distribution.overtimeMinutes)
+        assertEquals(90, distribution.overtimeTravelMinutes)
+        assertEquals(0, distribution.bankMinutes)
+        assertEquals(
+            distribution.totalMinutes,
+            distribution.ordinaryMinutes +
+                distribution.overtimeMinutes +
+                distribution.bankMinutes
+        )
+        assertEquals(
+            distribution.totalTravelMinutes,
+            distribution.ordinaryTravelMinutes +
+                distribution.overtimeTravelMinutes +
+                distribution.bankTravelMinutes
         )
     }
 

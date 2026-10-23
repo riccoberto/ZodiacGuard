@@ -125,6 +125,8 @@ class MonthlyFragment : Fragment() {
         val dailyContractMinutes = (weeklyHours * 60 + weeklyMinutes) / workDays
         val expectedMinutes = dailyContractMinutes * stats.workingDaysInMonth
         val chartDistribution = MonthlyStatsHelper.getMonthlyChartDistribution(stats)
+        binding.tvChartTravelLegend.text =
+            "Viaggio sovrapposto, già incluso nel totale: ${MonthlyStatsHelper.minutesToText(stats.totalTravelMinutes)}"
 
         binding.pieChart.setData(
             listOf(
@@ -133,7 +135,12 @@ class MonthlyFragment : Fragment() {
                 Pair(chartDistribution.bankMinutes.toFloat(), Color.parseColor("#64B5F6"))
             ),
             expectedMinutes.toFloat(),
-            stats.totalWorkedMinutes
+            stats.totalWorkedMinutes,
+            listOf(
+                chartDistribution.ordinaryTravelMinutes.toFloat(),
+                chartDistribution.overtimeTravelMinutes.toFloat(),
+                chartDistribution.bankTravelMinutes.toFloat()
+            )
         )
 
         binding.tvOutOfTown.text = "🚗 Giornate fuori sede: ${stats.outOfTownDays}"

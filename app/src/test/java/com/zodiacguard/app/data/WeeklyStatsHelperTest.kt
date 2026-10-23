@@ -31,7 +31,51 @@ class WeeklyStatsHelperTest {
         assertEquals(-2070, stats.balanceMinutes)
     }
 
-    private fun workEntry(date: String, hour: Int, type: String): WorkEntry {
+    @Test
+    fun weeklyChartOverlaysTravelOnBankOrProductionOvertimeWithoutAddingItTwice() {
+        val entries = listOf(
+            workEntry("2025-12-29", 8, "ENTRATA", "Vignola"),
+            workEntry("2025-12-29", 16, "USCITA", "Vignola")
+        )
+        val nonProduction = WeeklyStatsHelper.calculateWeeklyStats(
+            allEntries = entries,
+            productionDays = emptySet(),
+            year = 2026,
+            weekOfYear = 1,
+            weeklyHours = 38,
+            weeklyMinutes = 30
+        )
+        val production = WeeklyStatsHelper.calculateWeeklyStats(
+            allEntries = entries,
+            productionDays = setOf("2025-12-29"),
+            year = 2026,
+            weekOfYear = 1,
+            weeklyHours = 38,
+            weeklyMinutes = 30
+        )
+
+        assertEquals(570, nonProduction.totalWorkedMinutes)
+        assertEquals(90, nonProduction.totalTravelMinutes)
+        assertEquals(90, nonProduction.chartDistribution.bankTravelMinutes)
+        assertEquals(0, nonProduction.chartDistribution.overtimeTravelMinutes)
+        assertEquals(90, production.chartDistribution.overtimeTravelMinutes)
+        assertEquals(0, production.chartDistribution.bankTravelMinutes)
+        assertEquals(
+            production.totalWorkedMinutes,
+            production.chartDistribution.totalMinutes
+        )
+        assertEquals(
+            production.totalTravelMinutes,
+            production.chartDistribution.totalTravelMinutes
+        )
+    }
+
+    private fun workEntry(
+        date: String,
+        hour: Int,
+        type: String,
+        location: String = "Modena"
+    ): WorkEntry {
         val timestamp = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).parse(date)!!
             .let { parsed ->
                 Calendar.getInstance().apply {
@@ -42,6 +86,6 @@ class WeeklyStatsHelperTest {
                     set(Calendar.MILLISECOND, 0)
                 }.timeInMillis
             }
-        return WorkEntry(timestamp, type, "Servizio", "Modena", date)
+        return WorkEntry(timestamp, type, "Servizio", location, date)
     }
 }

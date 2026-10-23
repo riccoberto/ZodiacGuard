@@ -94,7 +94,10 @@
             <TextView android:id="@+id/tvLegendOrdinary" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="🟡 Ordinarie: 0h 00m" android:textColor="#FFD700" android:textSize="12sp" android:layout_marginBottom="4dp" />
             <TextView android:id="@+id/tvLegendOvertime" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="🔴 Straordinari: 0h 00m" android:textColor="#FF5252" android:textSize="12sp" android:layout_marginBottom="4dp" />
             <TextView android:id="@+id/tvLegendBank" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="🔵 Banca Ore: 0h 00m" android:textColor="#64B5F6" android:textSize="12sp" android:layout_marginBottom="4dp" />
-            <TextView android:id="@+id/tvLegendTravel" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="🟣 Viaggio: 0h 00m" android:textColor="#B388FF" android:textSize="12sp" />
+            <TextView android:id="@+id/tvLegendTravel" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="🟣 Viaggio sovrapposto, già incluso: 0h 00m" android:textColor="#D9C2FF" android:textSize="12sp" android:layout_marginBottom="4dp" />
+            <TextView android:id="@+id/tvLegendExpected" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="🟤 Anello interno: ore attese" android:textColor="@color/white" android:textSize="12sp" android:layout_marginBottom="4dp" />
+            <TextView android:id="@+id/tvLegendOverrun" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="🟠 Anello esterno: oltre il contratto" android:textColor="@color/white" android:textSize="12sp" android:layout_marginBottom="4dp" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Stima: prima le ore marcate, poi il viaggio. L'eccedenza è straordinario in Produzione, altrimenti banca ore." android:textColor="#AAB7CA" android:textSize="12sp" />
         </LinearLayout>
 
         <TextView
