@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/zodiac_navy"
+    android:background="@color/app_background"
     android:padding="20dp">
 
     <LinearLayout
@@ -33,7 +33,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Settimana 42"
-                android:textColor="@color/white"
+                android:textColor="@color/app_text"
                 android:textSize="19sp"
                 android:textStyle="bold"
                 android:fontFamily="sans-serif-medium"
@@ -67,13 +67,13 @@
             android:padding="18dp"
             android:layout_marginBottom="20dp">
             
-            <TextView android:id="@+id/tvTotalWorked" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Totale: 0h 00m" android:textColor="@color/white" android:textSize="14sp" android:layout_marginBottom="4dp" />
+            <TextView android:id="@+id/tvTotalWorked" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Totale: 0h 00m" android:textColor="@color/app_text" android:textSize="14sp" android:layout_marginBottom="4dp" />
             <TextView android:id="@+id/tvContractExpected" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Contratto settimanale: 0h 00m" android:textColor="#FFB74D" android:textSize="14sp" android:layout_marginBottom="4dp" />
             <TextView android:id="@+id/tvTotalOrdinary" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Ordinarie: 0h 00m" android:textColor="#FFD700" android:textSize="14sp" android:layout_marginBottom="4dp" />
             <TextView android:id="@+id/tvTotalOvertime" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Straordinari: 0h 00m" android:textColor="#FF5252" android:textSize="14sp" android:layout_marginBottom="4dp" />
             <TextView android:id="@+id/tvTotalBank" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Banca ore: 0h 00m" android:textColor="#64B5F6" android:textSize="14sp" android:layout_marginBottom="4dp" />
             <TextView android:id="@+id/tvTotalTravel" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Viaggio: 0h 00m" android:textColor="#B388FF" android:textSize="14sp" android:layout_marginBottom="4dp" />
-            <TextView android:id="@+id/tvBalance" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Saldo: 0h 00m" android:textColor="@color/white" android:textSize="14sp" android:textStyle="bold" />
+            <TextView android:id="@+id/tvBalance" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Saldo: 0h 00m" android:textColor="@color/app_text" android:textSize="14sp" android:textStyle="bold" />
         </LinearLayout>
 
         <com.zodiacguard.app.ui.monthly.PieChartView
@@ -95,8 +95,8 @@
             <TextView android:id="@+id/tvLegendOvertime" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="🔴 Straordinari: 0h 00m" android:textColor="#FF5252" android:textSize="12sp" android:layout_marginBottom="4dp" />
             <TextView android:id="@+id/tvLegendBank" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="🔵 Banca Ore: 0h 00m" android:textColor="#64B5F6" android:textSize="12sp" android:layout_marginBottom="4dp" />
             <TextView android:id="@+id/tvLegendTravel" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="🟣 Viaggio sovrapposto, già incluso: 0h 00m" android:textColor="#D9C2FF" android:textSize="12sp" android:layout_marginBottom="4dp" />
-            <TextView android:id="@+id/tvLegendExpected" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="🟤 Anello interno: ore attese" android:textColor="@color/white" android:textSize="12sp" android:layout_marginBottom="4dp" />
-            <TextView android:id="@+id/tvLegendOverrun" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="🟠 Anello esterno: oltre il contratto" android:textColor="@color/white" android:textSize="12sp" android:layout_marginBottom="4dp" />
+            <TextView android:id="@+id/tvLegendExpected" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="🟤 Anello interno: ore attese" android:textColor="@color/app_text" android:textSize="12sp" android:layout_marginBottom="4dp" />
+            <TextView android:id="@+id/tvLegendOverrun" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="🟠 Anello esterno: oltre il contratto" android:textColor="@color/app_text" android:textSize="12sp" android:layout_marginBottom="4dp" />
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Stima: prima le ore marcate, poi il viaggio. L'eccedenza è straordinario in Produzione, altrimenti banca ore." android:textColor="#AAB7CA" android:textSize="12sp" />
         </LinearLayout>
 
@@ -118,11 +118,11 @@
             android:padding="16dp"
             android:layout_marginBottom="20dp">
             
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Teatrini:" android:textColor="@color/white" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="4dp" />
-            <TextView android:id="@+id/tvTeatriniCount" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Nessun teatrino" android:textColor="@color/white" android:textSize="14sp" android:layout_marginBottom="12dp" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Teatrini:" android:textColor="@color/app_text" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="4dp" />
+            <TextView android:id="@+id/tvTeatriniCount" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Nessun teatrino" android:textColor="@color/app_text" android:textSize="14sp" android:layout_marginBottom="12dp" />
             
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Presenze per sede:" android:textColor="@color/white" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="4dp" />
-            <TextView android:id="@+id/tvLocationsCount" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Nessuna presenza" android:textColor="@color/white" android:textSize="14sp" android:layout_marginBottom="4dp" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Presenze per sede:" android:textColor="@color/app_text" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="4dp" />
+            <TextView android:id="@+id/tvLocationsCount" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Nessuna presenza" android:textColor="@color/app_text" android:textSize="14sp" android:layout_marginBottom="4dp" />
             
             <TextView android:id="@+id/tvOutOfTown" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="🚗 Fuori sede: 0 gg" android:textColor="#B388FF" android:textSize="14sp" android:layout_marginBottom="4dp" />
             <TextView android:id="@+id/tvMealTickets" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="🍽️ Buoni pasto: 0" android:textColor="@color/zodiac_gold" android:textSize="14sp" />

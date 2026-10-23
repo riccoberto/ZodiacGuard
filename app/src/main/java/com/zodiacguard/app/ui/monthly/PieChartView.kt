@@ -24,9 +24,9 @@ class PieChartView @JvmOverloads constructor(
     }
     private val travelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = TRAVEL_OVERLAY_COLOR
-        alpha = 225
+        alpha = 155
         style = Paint.Style.STROKE
-        strokeCap = Paint.Cap.ROUND
+        strokeCap = Paint.Cap.BUTT
     }
     private val outerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
@@ -169,6 +169,13 @@ class PieChartView @JvmOverloads constructor(
             val travelSweep = minOf(travelMinutes, visibleValue) / targetMinutes * 360f
             val visibleTravelSweep = minOf(travelSweep, arcSweep)
             if (visibleTravelSweep > 0f) {
+                val segmentClip = android.graphics.Path().apply {
+                    moveTo(ringBounds.centerX(), ringBounds.centerY())
+                    arcTo(ringBounds, arcStart, arcSweep)
+                    close()
+                }
+                canvas.save()
+                canvas.clipPath(segmentClip)
                 canvas.drawArc(
                     ringBounds,
                     arcStart,
@@ -176,6 +183,7 @@ class PieChartView @JvmOverloads constructor(
                     false,
                     travelPaint
                 )
+                canvas.restore()
             }
 
             consumedMinutes += visibleValue

@@ -2,11 +2,14 @@
 <resources>
     <!-- Colori principali Zodiac Guard -->
     <color name="zodiac_navy">#101827</color>
-    <color name="zodiac_gold">#F2C94C</color>
-    <color name="zodiac_surface">#192437</color>
-    <color name="zodiac_surface_raised">#202E44</color>
-    <color name="zodiac_outline">#34435B</color>
-    <color name="zodiac_text_muted">#AAB7CA</color>
+    <color name="zodiac_gold">#9B6A00</color>
+    <color name="zodiac_surface">#FFFFFFFF</color>
+    <color name="zodiac_surface_raised">#E9EEF5</color>
+    <color name="zodiac_outline">#CFD7E3</color>
+    <color name="zodiac_text_muted">#68758A</color>
+    <color name="app_background">#F3F6FA</color>
+    <color name="app_text">#253247</color>
+    <color name="app_text_secondary">#5D6A7D</color>
     
     <!-- Colori standard necessari -->
     <color name="black">#FF000000</color>

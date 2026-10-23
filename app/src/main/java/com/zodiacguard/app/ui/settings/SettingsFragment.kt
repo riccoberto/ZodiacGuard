@@ -21,6 +21,7 @@ import com.zodiacguard.app.data.NfcBadgeManager
 import com.zodiacguard.app.data.ManualCounter
 import com.zodiacguard.app.data.ManualCounterDataStore
 import com.zodiacguard.app.data.UserProfilePreferences
+import com.zodiacguard.app.data.ThemePreferences
 import com.zodiacguard.app.data.WorkDataStore
 import com.zodiacguard.app.data.WorkEntry
 import com.zodiacguard.app.data.WorkEntryMerger
@@ -81,12 +82,39 @@ class SettingsFragment : Fragment() {
         }
     }
 
+    private fun setupThemeSelector() {
+        val modes = listOf(
+            ThemePreferences.MODE_SYSTEM,
+            ThemePreferences.MODE_LIGHT,
+            ThemePreferences.MODE_DARK
+        )
+        val spinner = binding.spinnerTheme
+        spinner.setSelection(modes.indexOf(ThemePreferences.getMode(requireContext())))
+        spinner.onItemSelectedListener =
+            object : android.widget.AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: android.widget.AdapterView<*>,
+                    view: View?,
+                    position: Int,
+                    id: Long
+                ) {
+                    val mode = modes.getOrNull(position) ?: return
+                    if (mode != ThemePreferences.getMode(requireContext())) {
+                        ThemePreferences.saveMode(requireContext(), mode)
+                    }
+                }
+
+                override fun onNothingSelected(parent: android.widget.AdapterView<*>) = Unit
+            }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         logDebug("Fragment creato. NFC disponibile: ${nfcAdapter != null}")
 
         binding.etDisplayName.setText(UserProfilePreferences.getDisplayName(requireContext()))
+        setupThemeSelector()
         binding.etDisplayName.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
 

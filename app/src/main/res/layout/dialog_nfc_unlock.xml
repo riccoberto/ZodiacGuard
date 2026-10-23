@@ -27,7 +27,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Marcatura rapida"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/app_text"
             android:textSize="22sp"
             android:textStyle="bold"
             android:fontFamily="sans-serif-medium"
@@ -39,19 +39,19 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Badge rilevato"
-            android:textColor="#D7DCEC"
+            android:textColor="@color/app_text"
             android:textSize="13sp"
             android:gravity="center"
             android:layout_gravity="center_horizontal"
             android:layout_marginBottom="24dp"
             android:padding="10dp"
-            android:background="#222A40" />
+            android:background="@color/zodiac_surface" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Sblocca la marcatura"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/app_text"
             android:textSize="15sp"
             android:textStyle="bold"
             android:layout_marginBottom="4dp" />
@@ -60,7 +60,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Trascina il cursore fino in fondo per continuare."
-            android:textColor="#AAB3C5"
+            android:textColor="@color/app_text_secondary"
             android:textSize="12sp"
             android:layout_marginBottom="12dp" />
 
@@ -90,7 +90,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Attività"
-                android:textColor="#AAB3C5"
+                android:textColor="@color/app_text_secondary"
                 android:textSize="12sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="6dp" />
@@ -110,7 +110,7 @@
                     android:layout_height="wrap_content"
                     android:hint="Seleziona attività"
                     android:text="Servizio"
-                    android:textColor="#FFFFFF"
+                    android:textColor="@color/app_text"
                     android:textSize="15sp"
                     android:paddingVertical="12dp"
                     android:inputType="none" />
@@ -120,7 +120,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Luogo / Sede"
-                android:textColor="#AAB3C5"
+                android:textColor="@color/app_text_secondary"
                 android:textSize="12sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="6dp" />
@@ -140,7 +140,7 @@
                     android:layout_height="wrap_content"
                     android:hint="Seleziona luogo"
                     android:text="Modena"
-                    android:textColor="#FFFFFF"
+                    android:textColor="@color/app_text"
                     android:textSize="15sp"
                     android:paddingVertical="12dp"
                     android:inputType="none" />
@@ -159,7 +159,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Modalità Produzione"
-                    android:textColor="#FFFFFF"
+                    android:textColor="@color/app_text"
                     android:textSize="14sp"
                     android:fontFamily="sans-serif-medium" />
                 
@@ -192,7 +192,7 @@
                 android:textSize="14sp"
                 android:textStyle="bold"
                 app:backgroundTint="#66BB6A"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/app_text"
                 android:layout_marginEnd="8dp"
                 android:maxLines="1"
                 android:paddingStart="8dp"
@@ -208,7 +208,7 @@
                 android:textSize="14sp"
                 android:textStyle="bold"
                 app:backgroundTint="#FF5252"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/app_text"
                 android:maxLines="1"
                 android:paddingStart="8dp"
                 android:paddingEnd="8dp"
@@ -222,8 +222,8 @@
             android:text="ANNULLA"
             android:textSize="13sp"
             android:textStyle="bold"
-            app:backgroundTint="#222A40"
-            android:textColor="#D7DCEC"
+            app:backgroundTint="@color/zodiac_surface_raised"
+            android:textColor="@color/app_text"
             android:layout_marginTop="12dp"
             android:maxLines="1"
             app:cornerRadius="14dp" />

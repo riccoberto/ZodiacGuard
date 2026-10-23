@@ -60,3 +60,8 @@ L'importazione unisce le marcature senza duplicare quelle già presenti e non
 cancella i dati esistenti. Il backup locale privato viene conservato per gli
 aggiornamenti dell'app, ma non sopravvive alla disinstallazione: esportare e
 conservare un JSON esterno prima di disinstallare o cambiare telefono.
+
+## Tema
+
+In Impostazioni è possibile scegliere il tema chiaro, scuro o automatico.
+L'opzione automatica segue le preferenze di aspetto del dispositivo.

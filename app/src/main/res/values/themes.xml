@@ -2,7 +2,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Tema principale dell'applicazione -->
-    <style name="Theme.ZodiacGuard" parent="Theme.MaterialComponents.NoActionBar">
+    <style name="Theme.ZodiacGuard" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimary">@color/zodiac_gold</item>
         <item name="colorPrimaryVariant">@color/zodiac_gold</item>
         <item name="colorOnPrimary">@color/zodiac_navy</item>
@@ -10,14 +10,15 @@
         <item name="colorSecondaryVariant">@color/zodiac_gold</item>
         <item name="colorOnSecondary">@color/zodiac_navy</item>
         <item name="colorSurface">@color/zodiac_surface</item>
-        <item name="colorOnSurface">@color/white</item>
+        <item name="colorOnSurface">@color/app_text</item>
         <item name="colorAccent">@color/zodiac_gold</item>
         <item name="android:fontFamily">sans-serif</item>
         <item name="materialButtonStyle">@style/Widget.ZodiacGuard.Button</item>
         <item name="textInputStyle">@style/Widget.ZodiacGuard.TextInputLayout</item>
         <item name="android:colorControlHighlight">#33F2C94C</item>
-        <item name="android:statusBarColor" tools:targetApi="l">@color/zodiac_navy</item>
-        <item name="android:navigationBarColor" tools:targetApi="l">@color/zodiac_navy</item>
+        <item name="android:statusBarColor" tools:targetApi="l">@color/app_background</item>
+        <item name="android:navigationBarColor" tools:targetApi="l">@color/app_background</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">true</item>
     </style>
 
     <style name="Widget.ZodiacGuard.Button" parent="Widget.MaterialComponents.Button">
@@ -38,9 +39,10 @@
     <style name="Theme.Splash" parent="Theme.AppCompat.NoActionBar">
         <item name="android:windowFullscreen">true</item>
         <item name="android:windowContentOverlay">@null</item>
-        <item name="android:windowBackground">@color/zodiac_navy</item>
-        <item name="android:statusBarColor">@color/zodiac_navy</item>
-        <item name="android:navigationBarColor">@color/zodiac_navy</item>
+        <item name="android:windowBackground">@color/app_background</item>
+        <item name="android:statusBarColor">@color/app_background</item>
+        <item name="android:navigationBarColor">@color/app_background</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">true</item>
     </style>
 
 </resources>

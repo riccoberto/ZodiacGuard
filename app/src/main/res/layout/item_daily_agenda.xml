@@ -67,7 +67,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Servizio - Modena"
-            android:textColor="@color/white"
+            android:textColor="@color/app_text"
             android:textSize="12sp" />
     </LinearLayout>
 
@@ -82,7 +82,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="8h 30m"
-            android:textColor="@color/white"
+            android:textColor="@color/app_text"
             android:textSize="14sp"
             android:textStyle="bold"
             android:layout_marginEnd="8dp" />

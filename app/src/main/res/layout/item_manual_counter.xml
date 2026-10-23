@@ -21,7 +21,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
-        android:textColor="@color/white"
+        android:textColor="@color/app_text"
         android:textSize="16sp"
         android:textStyle="bold" />
 
@@ -56,7 +56,7 @@
             android:inputType="number"
             android:maxLines="1"
             android:selectAllOnFocus="true"
-            android:textColor="@color/white"
+            android:textColor="@color/app_text"
             android:textColorHint="#AAB7CA" />
 
         <EditText
@@ -69,7 +69,7 @@
             android:inputType="number"
             android:maxLines="1"
             android:selectAllOnFocus="true"
-            android:textColor="@color/white"
+            android:textColor="@color/app_text"
             android:textColorHint="#AAB7CA" />
 
         <EditText
@@ -82,7 +82,7 @@
             android:inputType="number"
             android:maxLines="1"
             android:selectAllOnFocus="true"
-            android:textColor="@color/white"
+            android:textColor="@color/app_text"
             android:textColorHint="#AAB7CA" />
     </LinearLayout>
 
@@ -115,7 +115,7 @@
             android:minWidth="0dp"
             android:text="@string/manual_counter_remove_units"
             android:textSize="12sp"
-            android:textColor="@color/white"
+            android:textColor="@color/app_text"
             app:backgroundTint="@color/zodiac_surface_raised"
             app:cornerRadius="12dp" />
 
@@ -127,7 +127,7 @@
             android:minWidth="0dp"
             android:text="@string/manual_counter_delete"
             android:textSize="10sp"
-            android:textColor="@color/white"
+            android:textColor="@color/app_text"
             app:backgroundTint="#8A3434"
             app:cornerRadius="12dp" />
     </LinearLayout>

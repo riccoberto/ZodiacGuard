@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="zodiac_navy">#101827</color>
+    <color name="zodiac_gold">#F2C94C</color>
+    <color name="zodiac_surface">#192437</color>
+    <color name="zodiac_surface_raised">#202E44</color>
+    <color name="zodiac_outline">#34435B</color>
+    <color name="zodiac_text_muted">#AAB7CA</color>
+    <color name="app_background">#101827</color>
+    <color name="app_text">#F4F6FB</color>
+    <color name="app_text_secondary">#B5C0D0</color>
+</resources>

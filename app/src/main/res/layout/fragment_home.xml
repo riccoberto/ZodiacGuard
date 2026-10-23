@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/zodiac_navy"
+    android:background="@color/app_background"
     android:gravity="center"
     android:orientation="vertical"
     android:padding="24dp">
@@ -30,7 +30,7 @@
         app:iconGravity="textStart"
         app:iconPadding="12dp"
         app:backgroundTint="#66BB6A"
-        android:textColor="@color/white"
+        android:textColor="@color/app_text"
         android:layout_marginBottom="16dp" />
 
     <com.google.android.material.button.MaterialButton

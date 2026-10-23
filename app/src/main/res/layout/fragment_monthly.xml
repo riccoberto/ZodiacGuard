@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/zodiac_navy"
+    android:background="@color/app_background"
     android:padding="20dp">
 
     <LinearLayout
@@ -33,7 +33,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Ottobre 2026"
-                android:textColor="@color/white"
+                android:textColor="@color/app_text"
                 android:textSize="19sp"
                 android:textStyle="bold"
                 android:fontFamily="sans-serif-medium"
@@ -72,7 +72,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Totale lavorate: 0h 00m"
-                android:textColor="@color/white"
+                android:textColor="@color/app_text"
                 android:textSize="17sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="4dp" />
@@ -128,7 +128,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Saldo: 0h 00m"
-                android:textColor="@color/white"
+                android:textColor="@color/app_text"
                 android:textSize="17sp"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -163,7 +163,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="🟡 Ordinarie  ·  🔴 Straordinari  ·  🔵 Banca ore"
-                android:textColor="@color/white"
+                android:textColor="@color/app_text"
                 android:textSize="13sp"
                 android:layout_marginBottom="6dp" />
 
@@ -180,7 +180,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="🟤 Anello interno: ore attese  ·  🟠 Anello esterno: oltre il contratto"
-                android:textColor="@color/white"
+                android:textColor="@color/app_text"
                 android:textSize="13sp"
                 android:layout_marginBottom="6dp" />
 
@@ -214,7 +214,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Giorni con Teatrini:"
-                android:textColor="@color/white"
+                android:textColor="@color/app_text"
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="4dp" />
@@ -232,7 +232,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Teatrini per tipo:"
-                android:textColor="@color/white"
+                android:textColor="@color/app_text"
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="4dp" />
@@ -242,7 +242,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Nessun teatrino"
-                android:textColor="@color/white"
+                android:textColor="@color/app_text"
                 android:textSize="14sp"
                 android:layout_marginBottom="12dp" />
             
@@ -250,7 +250,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Presenze per sede:"
-                android:textColor="@color/white"
+                android:textColor="@color/app_text"
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="4dp" />
@@ -260,7 +260,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Nessuna presenza"
-                android:textColor="@color/white"
+                android:textColor="@color/app_text"
                 android:textSize="14sp"
                 android:layout_marginBottom="4dp" />
             
