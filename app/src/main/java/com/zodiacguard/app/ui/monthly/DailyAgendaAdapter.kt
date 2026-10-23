@@ -5,13 +5,16 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.zodiacguard.app.data.MonthlyStatsHelper
+import com.zodiacguard.app.data.WorkEntry
 import com.zodiacguard.app.databinding.ItemDailyAgendaBinding
 
 class DailyAgendaAdapter(
-    private var dailyStats: List<MonthlyStatsHelper.DailySummary>,
+    dailyStats: List<MonthlyStatsHelper.DailySummary>,
     private val onDayClick: (MonthlyStatsHelper.DailySummary) -> Unit
 ) : RecyclerView.Adapter<DailyAgendaAdapter.ViewHolder>() {
 
+    private var dailyStats =
+        MonthlyStatsHelper.sortDailyStatsNearestFirst(dailyStats, WorkEntry.getCurrentDate())
     private var showAllDays = false
     private val initialVisibleDays = 7
 
@@ -50,7 +53,8 @@ class DailyAgendaAdapter(
     override fun getItemCount() = visibleDailyStats().size
 
     fun updateData(newStats: List<MonthlyStatsHelper.DailySummary>) {
-        dailyStats = newStats.sortedBy { it.date }
+        dailyStats =
+            MonthlyStatsHelper.sortDailyStatsNearestFirst(newStats, WorkEntry.getCurrentDate())
         notifyDataSetChanged()
     }
 

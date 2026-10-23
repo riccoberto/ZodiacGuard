@@ -7,6 +7,55 @@ import java.util.Calendar
 class MonthlyStatsHelperTest {
 
     @Test
+    fun agendaPutsTodayAndUpcomingDaysBeforeMostRecentPastDays() {
+        val summaries = listOf(
+            dailySummary("2026-10-20"),
+            dailySummary("2026-10-24"),
+            dailySummary("2026-10-15"),
+            dailySummary("2026-10-23"),
+            dailySummary("2026-10-22")
+        )
+
+        val sorted = MonthlyStatsHelper.sortDailyStatsNearestFirst(
+            summaries,
+            referenceDate = "2026-10-23"
+        )
+
+        assertEquals(
+            listOf("2026-10-23", "2026-10-24", "2026-10-22", "2026-10-20", "2026-10-15"),
+            sorted.map { it.date }
+        )
+    }
+
+    @Test
+    fun chartDistributionCountsTravelOnlyOnce() {
+        val stats = MonthlyStatsHelper.calculateMonthlyStats(
+            allEntries = listOf(
+                workEntry(8, "ENTRATA", "Vignola"),
+                workEntry(16, "USCITA", "Vignola")
+            ),
+            productionDays = emptySet(),
+            year = 2026,
+            month = 10,
+            weeklyHours = 38,
+            workDays = 6
+        )
+
+        val distribution = MonthlyStatsHelper.getMonthlyChartDistribution(stats)
+
+        assertEquals(570, stats.totalWorkedMinutes)
+        assertEquals(90, distribution.travelMinutes)
+        assertEquals(295, distribution.ordinaryWorkMinutes)
+        assertEquals(
+            stats.totalWorkedMinutes,
+            distribution.ordinaryWorkMinutes +
+                distribution.overtimeMinutes +
+                distribution.bankMinutes +
+                distribution.travelMinutes
+        )
+    }
+
+    @Test
     fun getDatesInMonthIncludesEveryDayAndLeapDay() {
         assertEquals(28, MonthlyStatsHelper.getDatesInMonth(2025, 2).size)
         assertEquals("2025-02-01", MonthlyStatsHelper.getDatesInMonth(2025, 2).first())
@@ -76,11 +125,22 @@ class MonthlyStatsHelperTest {
         )
     }
 
-    private fun workEntry(hour: Int, type: String): WorkEntry {
+    private fun dailySummary(date: String) = MonthlyStatsHelper.DailySummary(
+        date = date,
+        totalMinutes = 0,
+        travelMinutes = 0,
+        isProduction = false,
+        location = "",
+        activity = "",
+        hasMealTicket = false,
+        isTeatrino = false
+    )
+
+    private fun workEntry(hour: Int, type: String, location: String = "Modena"): WorkEntry {
         val timestamp = Calendar.getInstance().apply {
             set(2026, Calendar.OCTOBER, 5, hour, 0, 0)
             set(Calendar.MILLISECOND, 0)
         }.timeInMillis
-        return WorkEntry(timestamp, type, "Servizio", "Modena", "2026-10-05")
+        return WorkEntry(timestamp, type, "Servizio", location, "2026-10-05")
     }
 }

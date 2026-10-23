@@ -108,7 +108,7 @@ class MonthlyFragment : Fragment() {
         weeklyMinutes: Int,
         workDays: Int
     ) {
-        binding.tvTotalWorked.text = "Totale lavorate: ${MonthlyStatsHelper.minutesToText(stats.totalWorkedMinutes)}"
+        binding.tvTotalWorked.text = "Totale lavorate + viaggio: ${MonthlyStatsHelper.minutesToText(stats.totalWorkedMinutes)}"
         binding.tvContractExpected.text = "Contratto attese (${stats.workingDaysInMonth} gg): ${MonthlyStatsHelper.minutesToText(stats.totalContractMinutes)}"
         binding.tvTotalOrdinary.text = "Ordinarie: ${MonthlyStatsHelper.minutesToText(stats.totalOrdinaryMinutes)}"
         binding.tvTotalOvertime.text = "Straordinari: ${MonthlyStatsHelper.minutesToText(stats.totalOvertimeMinutes)}"
@@ -124,16 +124,17 @@ class MonthlyFragment : Fragment() {
 
         val dailyContractMinutes = (weeklyHours * 60 + weeklyMinutes) / workDays
         val expectedMinutes = dailyContractMinutes * stats.workingDaysInMonth
-        
+        val chartDistribution = MonthlyStatsHelper.getMonthlyChartDistribution(stats)
+
         binding.pieChart.setData(
             listOf(
-                Pair(stats.totalOrdinaryMinutes.toFloat(), Color.parseColor("#FFD700")),
-                Pair(stats.totalOvertimeMinutes.toFloat(), Color.parseColor("#FF5252")),
-                Pair(stats.totalBankMinutes.toFloat(), Color.parseColor("#64B5F6")),
-                Pair(stats.totalTravelMinutes.toFloat(), Color.parseColor("#B388FF"))
+                Pair(chartDistribution.ordinaryWorkMinutes.toFloat(), Color.parseColor("#FFD700")),
+                Pair(chartDistribution.overtimeMinutes.toFloat(), Color.parseColor("#FF5252")),
+                Pair(chartDistribution.bankMinutes.toFloat(), Color.parseColor("#64B5F6")),
+                Pair(chartDistribution.travelMinutes.toFloat(), Color.parseColor("#B388FF"))
             ),
             expectedMinutes.toFloat(),
-            stats.totalWorkedMinutes + stats.totalTravelMinutes
+            stats.totalWorkedMinutes
         )
 
         binding.tvOutOfTown.text = "🚗 Giornate fuori sede: ${stats.outOfTownDays}"

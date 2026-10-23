@@ -22,6 +22,13 @@ object MonthlyStatsHelper {
         val workingDaysInMonth: Int
     )
 
+    data class MonthlyChartDistribution(
+        val ordinaryWorkMinutes: Int,
+        val overtimeMinutes: Int,
+        val bankMinutes: Int,
+        val travelMinutes: Int
+    )
+
     data class DailySummary(
         val date: String,
         val totalMinutes: Int,
@@ -34,6 +41,22 @@ object MonthlyStatsHelper {
         val entries: List<WorkEntry> = emptyList(),
         val mealTickets: Int = 0,
         val overtimeMinutes: Int = 0
+    )
+
+    fun sortDailyStatsNearestFirst(
+        dailyStats: List<DailySummary>,
+        referenceDate: String
+    ): List<DailySummary> {
+        val (todayAndFuture, past) = dailyStats.partition { it.date >= referenceDate }
+        return todayAndFuture.sortedBy { it.date } + past.sortedByDescending { it.date }
+    }
+
+    fun getMonthlyChartDistribution(stats: MonthlyStats) = MonthlyChartDistribution(
+        ordinaryWorkMinutes = (stats.totalOrdinaryMinutes - stats.totalTravelMinutes)
+            .coerceAtLeast(0),
+        overtimeMinutes = stats.totalOvertimeMinutes,
+        bankMinutes = stats.totalBankMinutes,
+        travelMinutes = stats.totalTravelMinutes
     )
 
     fun getDatesInMonth(year: Int, month: Int): List<String> {

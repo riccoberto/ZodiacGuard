@@ -42,7 +42,7 @@ class ManualCounterAdapter(
         )
         binding.tvCounterDayLength.text = binding.root.context.getString(
             R.string.manual_counter_day_length,
-            formatDuration(counter.dayLengthMinutes, counter.dayLengthMinutes)
+            formatDayLength(counter.dayLengthMinutes)
         )
 
         binding.btnAddUnits.setOnClickListener {
@@ -112,6 +112,12 @@ class ManualCounterAdapter(
         val hours = remainder / MINUTES_PER_HOUR
         val minutes = remainder % MINUTES_PER_HOUR
         return "$days g  $hours h  $minutes min"
+    }
+
+    private fun formatDayLength(dayLengthMinutes: Int): String {
+        val hours = dayLengthMinutes / MINUTES_PER_HOUR
+        val minutes = dayLengthMinutes % MINUTES_PER_HOUR
+        return "$hours h  $minutes min"
     }
 
     private fun showInvalidAdjustment(view: EditText) {
