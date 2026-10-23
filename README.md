@@ -45,3 +45,18 @@ firmate dalla chiave stabile configurata nei secrets. Per passare alla prima
 release da un APK debug già installato, esportare prima il backup, disinstallare
 la build debug, installare l'APK firmato scaricato dalla release e ripristinare
 il backup una sola volta. Gli aggiornamenti successivi conserveranno i dati.
+
+## Backup e ripristino
+
+Il backup JSON si aggiorna all'avvio e quando l'app passa in background. Su
+Android 10 e successivi il file principale si trova in `Download/ZGuard`, con
+fino a 20 copie storiche create quando i dati cambiano; l'app conserva anche un
+archivio locale privato per il recupero sullo stesso dispositivo. Da
+Impostazioni è possibile esportare manualmente un JSON, ripristinare un file
+oppure recuperare l'ultimo backup locale.
+
+Prima di importare, l'app mostra la data del file e il numero di marcature.
+L'importazione unisce le marcature senza duplicare quelle già presenti e non
+cancella i dati esistenti. Il backup locale privato viene conservato per gli
+aggiornamenti dell'app, ma non sopravvive alla disinstallazione: esportare e
+conservare un JSON esterno prima di disinstallare o cambiare telefono.

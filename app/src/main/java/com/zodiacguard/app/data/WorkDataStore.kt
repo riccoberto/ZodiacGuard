@@ -59,6 +59,20 @@ class WorkDataStore(private val context: Context) {
         }
     }
 
+    suspend fun saveAllProductionDays(dates: Set<String>) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_PRODUCTION_DAYS] = dates.joinToString(",")
+        }
+    }
+
+    suspend fun saveAllNotes(notes: Map<String, String>) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_NOTES] = notes.entries
+                .filter { it.value.isNotEmpty() }
+                .joinToString("|") { "${it.key}:${it.value}" }
+        }
+    }
+
     val entriesFlow: Flow<List<WorkEntry>> = context.dataStore.data.map { prefs ->
         val entriesString = prefs[KEY_ENTRIES] ?: ""
         if (entriesString.isEmpty()) emptyList()
@@ -73,6 +87,16 @@ class WorkDataStore(private val context: Context) {
         val notesString = prefs[KEY_NOTES] ?: ""
         if (notesString.isEmpty()) ""
         else notesString.split("|").firstOrNull { it.startsWith("$date:") }?.substringAfter("$date:") ?: ""
+    }
+
+    val notesFlow: Flow<Map<String, String>> = context.dataStore.data.map { prefs ->
+        (prefs[KEY_NOTES] ?: "")
+            .split("|")
+            .filter { it.isNotEmpty() && it.contains(":") }
+            .associate { note ->
+                val date = note.substringBefore(":")
+                date to note.substringAfter(":")
+            }
     }
 
     fun getProductionModeForDate(date: String): Flow<Boolean> = context.dataStore.data.map { prefs ->

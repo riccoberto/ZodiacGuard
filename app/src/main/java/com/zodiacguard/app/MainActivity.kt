@@ -91,6 +91,11 @@ class MainActivity : AppCompatActivity() {
         )
 
         checkForAppUpdate()
+        lifecycleScope.launch(Dispatchers.IO) {
+            if (!backupManager.performAutoBackup()) {
+                Log.w(TAG, "Backup di avvio non riuscito")
+            }
+        }
     }
 
     private fun checkForAppUpdate() {
@@ -222,6 +227,8 @@ class MainActivity : AppCompatActivity() {
             val success = backupManager.performAutoBackup()
             if (success) {
                 Log.d(TAG, "Backup automatico salvato via MediaStore")
+            } else {
+                Log.w(TAG, "Backup automatico all'uscita non riuscito")
             }
         }
     }

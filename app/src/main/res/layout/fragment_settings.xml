@@ -200,10 +200,24 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Il backup automatico viene salvato in Download/ZGuard. Per ripristinare, seleziona il file manualmente."
+            android:text="Il backup automatico viene aggiornato all'avvio e all'uscita. In Download/ZGuard trovi l'ultimo JSON e fino a 20 copie storiche. Importando un file, le marcature vengono unite senza cancellare quelle già presenti."
             android:textColor="#AAAAAA"
             android:textSize="14sp"
             android:layout_marginBottom="16dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSaveBackup"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="ESPORTA BACKUP JSON"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:icon="@drawable/ic_restore"
+            app:iconGravity="textStart"
+            app:iconPadding="12dp"
+            app:backgroundTint="@color/zodiac_gold"
+            android:textColor="@color/zodiac_navy"
+            android:layout_marginBottom="12dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnRestoreBackup"
@@ -217,6 +231,17 @@
             app:iconPadding="12dp"
             app:backgroundTint="#66BB6A"
             android:textColor="@color/white"
+            android:layout_marginBottom="16dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnRecoverAutoBackup"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="RECUPERA BACKUP AUTOMATICO LOCALE"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:backgroundTint="#64B5F6"
+            android:textColor="@color/zodiac_navy"
             android:layout_marginBottom="16dp" />
 
         <!-- Console di Debug -->
