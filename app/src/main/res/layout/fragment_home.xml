@@ -60,6 +60,19 @@
         android:layout_marginBottom="16dp" />
 
     <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnPremiums"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="FESTIVITÀ E MAGGIORAZIONI"
+        android:textSize="15sp"
+        app:icon="@drawable/ic_home_weekly"
+        app:iconGravity="textStart"
+        app:iconPadding="12dp"
+        app:backgroundTint="@color/zodiac_gold"
+        android:textColor="@color/zodiac_navy"
+        android:layout_marginBottom="16dp" />
+
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnCounters"
         android:layout_width="match_parent"
         android:layout_height="60dp"
