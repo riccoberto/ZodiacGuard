@@ -120,12 +120,12 @@ class PieChartView @JvmOverloads constructor(
         canvas.drawArc(ringBounds, 0f, 360f, false, ringPaint)
 
         val categoryTotal = data.sumOf { it.first.coerceAtLeast(0f).toDouble() }.toFloat()
-        val target = if (expectedTotal > 0f) expectedTotal else categoryTotal
+        val target = maxOf(expectedTotal, categoryTotal)
         if (categoryTotal > 0f && target > 0f) {
             drawCategories(
                 canvas,
                 target,
-                minOf(categoryTotal, target) * animationProgress,
+                categoryTotal * animationProgress,
                 ringStrokeWidth
             )
         }

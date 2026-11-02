@@ -75,9 +75,7 @@ class PdfReportGenerator(private val context: Context) {
 
             drawTitle(canvas, year, month, displayName)
             drawSummary(canvas, stats)
-            drawAgenda(canvas, year, month, stats)
-            drawFooter(canvas)
-            document.finishPage(page)
+            drawAgenda(document, page, year, month, stats)
 
             return savePdf(year, month, document)
         } catch (e: Exception) {
@@ -146,7 +144,8 @@ class PdfReportGenerator(private val context: Context) {
     }
 
     private fun drawAgenda(
-        canvas: Canvas,
+        document: PdfDocument,
+        firstPage: PdfDocument.Page,
         year: Int,
         month: Int,
         stats: MonthlyStatsHelper.MonthlyStats
@@ -161,15 +160,40 @@ class PdfReportGenerator(private val context: Context) {
             smallPaint
         )
         val tableTop = maxOf(TABLE_TOP, 141f + dayLines.size * 8f + 5f)
-        drawTableHeader(canvas, tableTop)
+        var currentPage = firstPage
+        var currentCanvas = firstPage.canvas
+        var pageNumber = 1
+        drawTableHeader(currentCanvas, tableTop)
+        var rowTop = tableTop + ROW_HEIGHT
+
+        fun startContinuationPage() {
+            drawFooter(currentCanvas)
+            document.finishPage(currentPage)
+            pageNumber++
+            currentPage = document.startPage(
+                PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber).create()
+            )
+            currentCanvas = currentPage.canvas
+            currentCanvas.drawColor(Color.WHITE)
+            currentCanvas.drawText("RIEPILOGO MENSILE · CONTINUA", PAGE_MARGIN, 31f, titlePaint)
+            currentCanvas.drawLine(
+                PAGE_MARGIN,
+                40f,
+                PAGE_WIDTH - PAGE_MARGIN,
+                40f,
+                linePaint
+            )
+            drawTableHeader(currentCanvas, 50f)
+            rowTop = 69f
+        }
 
         for ((index, date) in monthDates.withIndex()) {
             val day = daysByDate[date]
-            val rowTop = tableTop + ROW_HEIGHT * (index + 1)
+            if (rowTop + ROW_HEIGHT > FOOTER_TOP) startContinuationPage()
             val baseline = rowTop + 12f
 
             if (index % 2 == 0) {
-                canvas.drawRect(
+                currentCanvas.drawRect(
                     PAGE_MARGIN,
                     rowTop,
                     PAGE_WIDTH - PAGE_MARGIN,
@@ -178,19 +202,38 @@ class PdfReportGenerator(private val context: Context) {
                 )
             }
 
-            canvas.drawText(formatWeekday(date), PAGE_MARGIN + 3f, baseline, rowDatePaint)
+            currentCanvas.drawText(formatWeekday(date), PAGE_MARGIN + 3f, baseline, rowDatePaint)
             if (day != null) {
-                drawDay(canvas, baseline, day)
+                drawDay(currentCanvas, baseline, day)
             }
 
-            canvas.drawLine(
+            currentCanvas.drawLine(
                 PAGE_MARGIN,
                 rowTop + ROW_HEIGHT,
                 PAGE_WIDTH - PAGE_MARGIN,
                 rowTop + ROW_HEIGHT,
                 linePaint
             )
+            rowTop += ROW_HEIGHT
+
+            if (day?.includeNoteInPdf == true && day.note.isNotBlank()) {
+                val noteLines = wrapText("Nota: ${day.note}", CONTENT_WIDTH - 8f, smallPaint)
+                noteLines.forEach { line ->
+                    if (rowTop + 10f > FOOTER_TOP) startContinuationPage()
+                    currentCanvas.drawText(line, PAGE_MARGIN + 5f, rowTop + 8f, smallPaint)
+                    currentCanvas.drawLine(
+                        PAGE_MARGIN,
+                        rowTop + 10f,
+                        PAGE_WIDTH - PAGE_MARGIN,
+                        rowTop + 10f,
+                        linePaint
+                    )
+                    rowTop += 10f
+                }
+            }
         }
+        drawFooter(currentCanvas)
+        document.finishPage(currentPage)
     }
 
     private fun drawTableHeader(canvas: Canvas, top: Float) {

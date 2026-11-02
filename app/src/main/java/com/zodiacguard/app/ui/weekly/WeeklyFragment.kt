@@ -23,6 +23,7 @@ class WeeklyFragment : Fragment() {
     private val binding get() = _binding!!
     private lateinit var workDataStore: WorkDataStore
     private lateinit var contractDataStore: ContractDataStore
+    private var currentAbsenceSummary: List<String> = emptyList()
     
     private var calendar = Calendar.getInstance(Locale.ITALY).apply {
         firstDayOfWeek = Calendar.MONDAY
@@ -122,6 +123,17 @@ class WeeklyFragment : Fragment() {
 
         binding.tvOutOfTown.text = "🚗 Fuori sede: ${stats.outOfTownDays} gg"
         binding.tvMealTickets.text = "🍽️ Buoni pasto: ${stats.mealTickets}"
+        currentAbsenceSummary = buildList {
+            if (stats.holidayDates.isNotEmpty()) {
+                add("Ferie: ${stats.holidayDates.joinToString(", ") { formatShortDate(it) }}")
+            }
+            if (stats.sickDates.isNotEmpty()) {
+                add("Malattia: ${stats.sickDates.joinToString(", ") { formatShortDate(it) }}")
+            }
+        }
+        binding.tvAbsenceSummary.text = currentAbsenceSummary.joinToString("\n")
+        binding.tvAbsenceSummary.visibility =
+            if (currentAbsenceSummary.isEmpty()) View.GONE else View.VISIBLE
     }
 
     private fun shareReport() {
@@ -140,6 +152,7 @@ class WeeklyFragment : Fragment() {
             Sedi nella settimana: ${statsSummary(locations)}
             🚗 Fuori sede: ${binding.tvOutOfTown.text.toString().substringAfter(": ")}
             🍽️ Buoni pasto: ${binding.tvMealTickets.text.toString().substringAfter(": ")}
+            ${currentAbsenceSummary.joinToString("\n")}
         """.trimIndent()
 
         val intent = Intent(Intent.ACTION_SEND).apply {
@@ -152,6 +165,9 @@ class WeeklyFragment : Fragment() {
     private fun formatMin(min: Int): String {
         return "${min / 60}h ${min % 60}m"
     }
+
+    private fun formatShortDate(date: String): String =
+        date.substringAfterLast("-") + "/" + date.substringBeforeLast("-").substringAfterLast("-")
 
     private fun statsSummary(value: String): String =
         value.ifBlank { "Nessuno" }.replace("\n", ", ")

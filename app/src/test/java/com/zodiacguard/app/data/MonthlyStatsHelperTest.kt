@@ -145,6 +145,66 @@ class MonthlyStatsHelperTest {
     }
 
     @Test
+    fun absenceDayCountsAsOrdinaryContractHoursWithoutMealTicket() {
+        val entries = listOf(
+            workEntryAt(9, 0, "ENTRATA", "Ferie"),
+            workEntryAt(15, 25, "USCITA", "Ferie")
+        )
+
+        val stats = MonthlyStatsHelper.calculateMonthlyStats(
+            allEntries = entries,
+            productionDays = emptySet(),
+            year = 2026,
+            month = 10,
+            weeklyHours = 38,
+            workDays = 6
+        )
+        val day = stats.dailyStats.single()
+
+        assertEquals(385, stats.totalWorkedMinutes)
+        assertEquals(385, stats.totalOrdinaryMinutes)
+        assertEquals(0, stats.totalOvertimeMinutes)
+        assertEquals(0, stats.totalBankMinutes)
+        assertEquals("Ferie", day.activity)
+        assertEquals(0, stats.mealTickets)
+    }
+
+    @Test
+    fun selectedDailyNoteIsIncludedInMonthlyReportDataWithoutWorkEntries() {
+        val stats = MonthlyStatsHelper.calculateMonthlyStats(
+            allEntries = emptyList(),
+            productionDays = emptySet(),
+            year = 2026,
+            month = 10,
+            weeklyHours = 38,
+            workDays = 6,
+            dailyNotes = mapOf("2026-10-12" to "Visita medica"),
+            notesIncludedInPdf = setOf("2026-10-12")
+        )
+
+        assertEquals(1, stats.dailyStats.size)
+        assertEquals("Visita medica", stats.dailyStats.single().note)
+        assertEquals(true, stats.dailyStats.single().includeNoteInPdf)
+        assertEquals(0, stats.outOfTownDays)
+        assertEquals(emptyMap<String, Int>(), stats.locationsCount)
+    }
+
+    @Test
+    fun unselectedDailyNoteDoesNotAppearInMonthlyReportData() {
+        val stats = MonthlyStatsHelper.calculateMonthlyStats(
+            allEntries = emptyList(),
+            productionDays = emptySet(),
+            year = 2026,
+            month = 10,
+            weeklyHours = 38,
+            workDays = 6,
+            dailyNotes = mapOf("2026-10-12" to "Nota privata")
+        )
+
+        assertEquals(emptyList<MonthlyStatsHelper.DailySummary>(), stats.dailyStats)
+    }
+
+    @Test
     fun weeklyContractMinutesIncludeTheConfiguredMinuteRemainder() {
         val stats = MonthlyStatsHelper.calculateMonthlyStats(
             allEntries = emptyList(),
@@ -179,5 +239,13 @@ class MonthlyStatsHelperTest {
             set(Calendar.MILLISECOND, 0)
         }.timeInMillis
         return WorkEntry(timestamp, type, "Servizio", location, "2026-10-05")
+    }
+
+    private fun workEntryAt(hour: Int, minute: Int, type: String, activity: String): WorkEntry {
+        val timestamp = Calendar.getInstance().apply {
+            set(2026, Calendar.OCTOBER, 5, hour, minute, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        return WorkEntry(timestamp, type, activity, "Modena", "2026-10-05")
     }
 }

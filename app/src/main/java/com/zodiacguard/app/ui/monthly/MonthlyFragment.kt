@@ -90,9 +90,19 @@ class MonthlyFragment : Fragment() {
             val weeklyMinutes = contractDataStore.weeklyMinutesFlow.first()
             val workDays = contractDataStore.workDaysFlow.first()
             val productionDates = workDataStore.productionDaysFlow.first()
+            val dailyNotes = workDataStore.notesFlow.first()
+            val notesIncludedInPdf = workDataStore.notesIncludedInPdfFlow.first()
             
             val stats = MonthlyStatsHelper.calculateMonthlyStats(
-                allEntries, productionDates, year, month, weeklyHours, workDays, weeklyMinutes
+                allEntries,
+                productionDates,
+                year,
+                month,
+                weeklyHours,
+                workDays,
+                weeklyMinutes,
+                dailyNotes,
+                notesIncludedInPdf
             )
 
             if (year != currentYear || month != currentMonth) return@launch

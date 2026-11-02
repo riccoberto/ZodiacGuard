@@ -20,7 +20,9 @@ object WeeklyStatsHelper {
         val outOfTownDays: Int,
         val mealTickets: Int,
         val weekStartDate: String, // NUOVO
-        val weekEndDate: String     // NUOVO
+        val weekEndDate: String,    // NUOVO
+        val holidayDates: List<String> = emptyList(),
+        val sickDates: List<String> = emptyList()
     )
 
     fun calculateWeeklyStats(
@@ -70,9 +72,14 @@ object WeeklyStatsHelper {
         val locationsCount = mutableMapOf<String, Int>()
         var outOfTownDays = 0
         var mealTickets = 0
+        val holidayDates = mutableListOf<String>()
+        val sickDates = mutableListOf<String>()
 
         for ((date, entries) in entriesByDate) {
             val sorted = entries.sortedBy { it.timestamp }
+            val activity = sorted.first().activity
+            if (activity == "Ferie") holidayDates.add(date)
+            if (activity == "Malattia") sickDates.add(date)
             val isProduction = productionDays.contains(date)
             
             var workMinutes = 0
@@ -110,7 +117,6 @@ object WeeklyStatsHelper {
             totalBank += breakdown.bankMinutes
             totalOrdinary += breakdown.ordinaryMinutes
 
-            val activity = sorted.first().activity
             if (activity.startsWith("Teatrino")) {
                 teatriniCount[activity] = teatriniCount.getOrDefault(activity, 0) + 1
             }
@@ -139,7 +145,7 @@ object WeeklyStatsHelper {
             StatsHelper.calculateChartDistribution(dailyTimeInputs),
             totalWorked, totalContractMinutes, balance,
             teatriniCount, locationsCount, outOfTownDays, mealTickets,
-            startDate, endDate
+            startDate, endDate, holidayDates.sorted(), sickDates.sorted()
         )
     }
 }

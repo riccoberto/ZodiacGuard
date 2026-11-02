@@ -33,7 +33,9 @@ object MonthlyStatsHelper {
         val isTeatrino: Boolean,
         val entries: List<WorkEntry> = emptyList(),
         val mealTickets: Int = 0,
-        val overtimeMinutes: Int = 0
+        val overtimeMinutes: Int = 0,
+        val note: String = "",
+        val includeNoteInPdf: Boolean = false
     )
 
     fun sortDailyStatsNearestFirst(
@@ -89,7 +91,9 @@ object MonthlyStatsHelper {
         month: Int,
         weeklyHours: Int,
         workDays: Int,
-        weeklyMinutes: Int = 0
+        weeklyMinutes: Int = 0,
+        dailyNotes: Map<String, String> = emptyMap(),
+        notesIncludedInPdf: Set<String> = emptySet()
     ): MonthlyStats {
         val monthPrefix = String.format(Locale.ROOT, "%04d-%02d", year, month)
         val monthEntries = allEntries.filter { it.date.startsWith(monthPrefix) }
@@ -98,12 +102,16 @@ object MonthlyStatsHelper {
         val dailyContractMinutes = (weeklyHours * 60 + weeklyMinutes) / workDays
         val totalContractMinutes = dailyContractMinutes * workingDaysInMonth
 
-        if (monthEntries.isEmpty()) {
+        val includedNoteDates = notesIncludedInPdf.filter { date ->
+            date.startsWith(monthPrefix) && !dailyNotes[date].isNullOrBlank()
+        }.toSet()
+        if (monthEntries.isEmpty() && includedNoteDates.isEmpty()) {
             return MonthlyStats(0, 0, 0, 0, 0, totalContractMinutes, -totalContractMinutes, 
                 emptyMap(), emptyList(), emptyMap(), 0, 0, emptyList(), workingDaysInMonth)
         }
 
-        val entriesByDate = monthEntries.groupBy { it.date }
+        val entriesByDate = monthEntries.groupBy { it.date }.toMutableMap()
+        includedNoteDates.forEach { date -> entriesByDate.putIfAbsent(date, emptyList()) }
         
         var totalOrdinary = 0
         var totalOvertime = 0
@@ -132,7 +140,7 @@ object MonthlyStatsHelper {
                 }
             }
 
-            val location = sorted.first().location
+            val location = sorted.firstOrNull()?.location.orEmpty()
             val travelMinutes = when (location) {
                 "Vignola", "Castelfranco" -> 90
                 "Bologna" -> 120
@@ -153,7 +161,7 @@ object MonthlyStatsHelper {
             totalBank += breakdown.bankMinutes
             totalOrdinary += breakdown.ordinaryMinutes
 
-            val activity = sorted.first().activity
+            val activity = sorted.firstOrNull()?.activity.orEmpty()
             val isTeatrino = activity.startsWith("Teatrino")
             
             if (isTeatrino) {
@@ -161,8 +169,10 @@ object MonthlyStatsHelper {
                 teatriniDaysList.add(date)
             }
 
-            locationsCount[location] = locationsCount.getOrDefault(location, 0) + 1
-            if (location != "Modena") outOfTownDays++
+            if (location.isNotEmpty()) {
+                locationsCount[location] = locationsCount.getOrDefault(location, 0) + 1
+                if (location != "Modena") outOfTownDays++
+            }
 
             var hasMealTicket = false
             var dailyMealTickets = 0
@@ -193,7 +203,9 @@ object MonthlyStatsHelper {
                     isTeatrino,
                     sorted,
                     mealTickets = dailyMealTickets,
-                    overtimeMinutes = breakdown.overtimeMinutes
+                    overtimeMinutes = breakdown.overtimeMinutes,
+                    note = dailyNotes[date].orEmpty(),
+                    includeNoteInPdf = date in includedNoteDates
                 )
             )
         }

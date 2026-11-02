@@ -13,7 +13,9 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.appcompat.app.AlertDialog
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.combine
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.timepicker.MaterialTimePicker
@@ -39,6 +41,9 @@ class DashboardFragment : Fragment() {
     private var selectedLocation: String = "Modena"
     private var selectedDate: String = ""
     private var isProductionMode: Boolean = false
+    private var updatingDayModeSelection = false
+    private var dayModeReady = false
+    private var displayedDayMode = ""
     private var currentEntries: List<WorkEntry> = emptyList()
     private lateinit var entryAdapter: EntryAdapter
 
@@ -94,34 +99,23 @@ class DashboardFragment : Fragment() {
             updateStatsUI()
         }
 
-        // Switch Produzione
-        binding.switchProduction.setOnCheckedChangeListener { _, isChecked ->
-            isProductionMode = isChecked
-            if (isChecked) {
-                // Salva attività corrente solo se non è già Produzione
-                if (selectedActivity != "Produzione") {
-                    previousActivity = selectedActivity
+        binding.spinnerDayMode.onItemSelectedListener =
+            object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: AdapterView<*>,
+                    view: View?,
+                    position: Int,
+                    id: Long
+                ) {
+                    val mode = parent.getItemAtPosition(position).toString()
+                    if (dayModeReady && !updatingDayModeSelection && mode != displayedDayMode) {
+                        displayedDayMode = mode
+                        selectDayMode(mode)
+                    }
                 }
-                selectedActivity = "Produzione"
-                binding.spinnerActivity.isEnabled = false
-                binding.spinnerActivity.alpha = 0.5f
-                viewLifecycleOwner.lifecycleScope.launch {
-                    workDataStore.updateAllEntriesActivity(selectedDate, "Produzione")
-                }
-            } else {
-                // Torna a Servizio di default (o all'ultima attività non-produzione)
-                selectedActivity = if (previousActivity == "Produzione") "Servizio" else previousActivity
-                binding.spinnerActivity.isEnabled = true
-                binding.spinnerActivity.alpha = 1.0f
-                viewLifecycleOwner.lifecycleScope.launch {
-                    workDataStore.updateAllEntriesActivity(selectedDate, selectedActivity)
-                }
+
+                override fun onNothingSelected(parent: AdapterView<*>) = Unit
             }
-            viewLifecycleOwner.lifecycleScope.launch {
-                workDataStore.saveProductionMode(selectedDate, isChecked)
-            }
-            updateStatsUI()
-        }
 
         entryAdapter = EntryAdapter(emptyList(), 
             onEditClick = { entry -> showAddEditDialog(entry) },
@@ -139,6 +133,12 @@ class DashboardFragment : Fragment() {
                 viewLifecycleOwner.lifecycleScope.launch { workDataStore.saveNote(selectedDate, s.toString()) }
             }
         })
+
+        binding.switchIncludeNoteInPdf.setOnCheckedChangeListener { _, included ->
+            viewLifecycleOwner.lifecycleScope.launch {
+                workDataStore.setNoteIncludedInPdf(selectedDate, included)
+            }
+        }
 
         binding.btnCheckIn.setOnClickListener { showTimePickerAndRegister("ENTRATA") }
         binding.btnCheckOut.setOnClickListener { showTimePickerAndRegister("USCITA") }
@@ -184,12 +184,21 @@ class DashboardFragment : Fragment() {
     }
 
     private fun startObserving() {
+        dayModeReady = false
         dataJob?.cancel()
         dataJob = viewLifecycleOwner.lifecycleScope.launch {
             launch {
-                workDataStore.getEntriesForDate(selectedDate).collectLatest { entries ->
+                val date = selectedDate
+                combine(
+                    workDataStore.getEntriesForDate(date),
+                    workDataStore.getProductionModeForDate(date)
+                ) { entries, isProduction -> entries to isProduction }
+                    .collectLatest { (entries, isProduction) ->
                     currentEntries = entries
+                    isProductionMode = isProduction
                     entryAdapter.updateData(entries)
+                    dayModeReady = true
+                    updateDayModeSelection()
                     updateStatsUI()
                 }
             }
@@ -199,25 +208,125 @@ class DashboardFragment : Fragment() {
                 }
             }
             launch {
-                workDataStore.getProductionModeForDate(selectedDate).collectLatest { isProd ->
-                    if (binding.switchProduction.isChecked != isProd) {
-                        binding.switchProduction.isChecked = isProd
-                        isProductionMode = isProd
-                        if (isProd) {
-                            if (selectedActivity != "Produzione") {
-                                previousActivity = selectedActivity
-                            }
-                            selectedActivity = "Produzione"
-                            binding.spinnerActivity.isEnabled = false
-                            binding.spinnerActivity.alpha = 0.5f
-                        } else {
-                            selectedActivity = if (previousActivity == "Produzione") "Servizio" else previousActivity
-                            binding.spinnerActivity.isEnabled = true
-                            binding.spinnerActivity.alpha = 1.0f
-                        }
+                workDataStore.isNoteIncludedInPdf(selectedDate).collectLatest { included ->
+                    if (binding.switchIncludeNoteInPdf.isChecked != included) {
+                        binding.switchIncludeNoteInPdf.isChecked = included
                     }
                 }
             }
+        }
+    }
+
+    private fun updateDayModeSelection() {
+        val mode = when {
+            currentEntries.any { it.activity == "Ferie" } -> "Ferie"
+            currentEntries.any { it.activity == "Malattia" } -> "Malattia"
+            isProductionMode -> "Produzione"
+            else -> "Ordinaria"
+        }
+        val positions = mapOf(
+            "Ordinaria" to 0,
+            "Produzione" to 1,
+            "Ferie" to 2,
+            "Malattia" to 3
+        )
+        val position = positions.getValue(mode)
+        displayedDayMode = mode
+        if (binding.spinnerDayMode.selectedItemPosition != position) {
+            updatingDayModeSelection = true
+            binding.spinnerDayMode.setSelection(position)
+            updatingDayModeSelection = false
+        }
+        val isAbsence = mode == "Ferie" || mode == "Malattia"
+        binding.spinnerActivity.isEnabled = mode == "Ordinaria"
+        binding.spinnerActivity.alpha = if (mode == "Ordinaria") 1f else 0.5f
+        binding.btnCheckIn.isEnabled = !isAbsence
+        binding.btnCheckOut.isEnabled = !isAbsence
+        if (mode == "Produzione") selectedActivity = "Produzione"
+    }
+
+    private fun selectDayMode(mode: String) {
+        when (mode) {
+            "Ferie", "Malattia" -> selectAbsenceMode(mode)
+            "Produzione" -> {
+                if (selectedActivity != "Produzione") previousActivity = selectedActivity
+                selectedActivity = "Produzione"
+                isProductionMode = true
+                viewLifecycleOwner.lifecycleScope.launch {
+                    workDataStore.saveProductionMode(selectedDate, true)
+                    workDataStore.updateAllEntriesActivity(selectedDate, "Produzione")
+                }
+            }
+            else -> {
+                isProductionMode = false
+                val isAbsenceDay = currentEntries.any {
+                    it.activity == "Ferie" || it.activity == "Malattia"
+                }
+                if (isAbsenceDay) {
+                    AlertDialog.Builder(requireContext())
+                        .setTitle("Rimuovere la giornata?")
+                        .setMessage("Le marcature automatiche di ferie o malattia verranno rimosse.")
+                        .setNegativeButton("Annulla") { _, _ -> updateDayModeSelection() }
+                        .setPositiveButton("Rimuovi") { _, _ ->
+                            viewLifecycleOwner.lifecycleScope.launch {
+                                workDataStore.replaceEntriesForDate(selectedDate, emptyList())
+                                workDataStore.saveProductionMode(selectedDate, false)
+                            }
+                        }
+                        .show()
+                } else {
+                    selectedActivity =
+                        if (previousActivity == "Produzione") "Servizio" else previousActivity
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        workDataStore.saveProductionMode(selectedDate, false)
+                        workDataStore.updateAllEntriesActivity(selectedDate, selectedActivity)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun selectAbsenceMode(mode: String) {
+        val alreadySelected = currentEntries.size == 2 &&
+            currentEntries.all { it.activity == mode }
+        if (alreadySelected) return
+
+        val dateKey = selectedDate
+        val applyMode = {
+            val date = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).parse(dateKey)
+                ?: throw IllegalArgumentException("Data selezionata non valida")
+            val entries = listOf("ENTRATA" to 9 * 60, "USCITA" to 15 * 60 + 25)
+                .map { (type, minutes) ->
+                    val calendar = Calendar.getInstance().apply {
+                        time = date
+                        set(Calendar.HOUR_OF_DAY, minutes / 60)
+                        set(Calendar.MINUTE, minutes % 60)
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }
+                    WorkEntry(
+                        calendar.timeInMillis,
+                        type,
+                        mode,
+                        "Modena",
+                        dateKey
+                    )
+                }
+            viewLifecycleOwner.lifecycleScope.launch {
+                workDataStore.saveProductionMode(dateKey, false)
+                workDataStore.replaceEntriesForDate(dateKey, entries)
+            }
+        }
+
+        if (currentEntries.isEmpty()) {
+            applyMode()
+        } else {
+            AlertDialog.Builder(requireContext())
+                .setTitle("Sostituire le marcature?")
+                .setMessage("Le marcature già presenti nel giorno verranno sostituite con Ferie/Malattia 09:00–15:25.")
+                .setNegativeButton("Annulla") { _, _ -> updateDayModeSelection() }
+                .setPositiveButton("Sostituisci") { _, _ -> applyMode() }
+                .show()
         }
     }
 

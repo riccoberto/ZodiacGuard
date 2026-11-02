@@ -158,6 +158,9 @@ class BackupManager(private val context: Context) {
         backupJson.put("dailyNotes", JSONObject().apply {
             dailyNotes.forEach { (date, note) -> put(date, note) }
         })
+        backupJson.put("dailyNotesInPdf", JSONArray().apply {
+            workDataStore.notesIncludedInPdfFlow.first().forEach { put(it) }
+        })
         backupJson.put("entries", JSONArray().apply {
             entries.forEach { entry ->
                 put(

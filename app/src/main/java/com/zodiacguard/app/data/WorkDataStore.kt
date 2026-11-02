@@ -17,6 +17,7 @@ class WorkDataStore(private val context: Context) {
     companion object {
         val KEY_ENTRIES = stringPreferencesKey("work_entries")
         val KEY_NOTES = stringPreferencesKey("daily_notes")
+        val KEY_NOTES_INCLUDED_IN_PDF = stringPreferencesKey("daily_notes_in_pdf")
         val KEY_PRODUCTION_DAYS = stringPreferencesKey("production_days")
     }
 
@@ -34,6 +35,18 @@ class WorkDataStore(private val context: Context) {
         }
     }
 
+    suspend fun replaceEntriesForDate(date: String, entries: List<WorkEntry>) {
+        context.dataStore.edit { prefs ->
+            val currentEntries = (prefs[KEY_ENTRIES] ?: "")
+                .lineSequence()
+                .mapNotNull(WorkEntry::fromJson)
+                .filterNot { it.date == date }
+            prefs[KEY_ENTRIES] = (currentEntries + entries)
+                .sortedBy { it.timestamp }
+                .joinToString("\n", transform = WorkEntry::toJson)
+        }
+    }
+
     suspend fun deleteEntry(entry: WorkEntry) {
         val currentList = entriesFlow.first()
         val newList = currentList.filter { it.timestamp != entry.timestamp }
@@ -47,6 +60,17 @@ class WorkDataStore(private val context: Context) {
             entries.removeAll { it.startsWith("$date:") }
             if (note.isNotEmpty()) entries.add("$date:$note")
             prefs[KEY_NOTES] = entries.joinToString("|")
+        }
+    }
+
+    suspend fun setNoteIncludedInPdf(date: String, included: Boolean) {
+        context.dataStore.edit { prefs ->
+            val dates = (prefs[KEY_NOTES_INCLUDED_IN_PDF] ?: "")
+                .split(",")
+                .filter { it.isNotEmpty() }
+                .toMutableSet()
+            if (included) dates.add(date) else dates.remove(date)
+            prefs[KEY_NOTES_INCLUDED_IN_PDF] = dates.joinToString(",")
         }
     }
 
@@ -98,6 +122,21 @@ class WorkDataStore(private val context: Context) {
                 date to note.substringAfter(":")
             }
     }
+
+    fun isNoteIncludedInPdf(date: String): Flow<Boolean> =
+        context.dataStore.data.map { prefs ->
+            (prefs[KEY_NOTES_INCLUDED_IN_PDF] ?: "")
+                .split(",")
+                .contains(date)
+        }
+
+    val notesIncludedInPdfFlow: Flow<Set<String>> =
+        context.dataStore.data.map { prefs ->
+            (prefs[KEY_NOTES_INCLUDED_IN_PDF] ?: "")
+                .split(",")
+                .filter { it.isNotEmpty() }
+                .toSet()
+        }
 
     fun getProductionModeForDate(date: String): Flow<Boolean> = context.dataStore.data.map { prefs ->
         val current = prefs[KEY_PRODUCTION_DAYS] ?: ""

@@ -414,6 +414,19 @@ class SettingsFragment : Fragment() {
                 notes.getString(date)
             }
         }
+
+        if (backupJson.has("dailyNotesInPdf") &&
+            backupJson.optJSONArray("dailyNotesInPdf") == null
+        ) {
+            throw IOException("Elenco note da includere nel PDF non valido")
+        }
+        backupJson.optJSONArray("dailyNotesInPdf")?.let { dates ->
+            for (index in 0 until dates.length()) {
+                if (!dates.getString(index).matches(Regex("""\d{4}-\d{2}-\d{2}"""))) {
+                    throw IOException("Data di una nota da includere nel PDF non valida")
+                }
+            }
+        }
     }
 
     private fun applyBackup(backupJson: JSONObject, importedEntries: List<WorkEntry>) {
@@ -498,6 +511,15 @@ class SettingsFragment : Fragment() {
                     }
                     workDataStore.saveAllNotes(notes)
                     logDebug("Note ripristinate: $noteCount")
+                }
+
+                if (backupJson.has("dailyNotesInPdf")) {
+                    val includedDates = workDataStore.notesIncludedInPdfFlow.first() +
+                        (0 until backupJson.getJSONArray("dailyNotesInPdf").length())
+                            .map { backupJson.getJSONArray("dailyNotesInPdf").getString(it) }
+                    includedDates.forEach { date ->
+                        workDataStore.setNoteIncludedInPdf(date, true)
+                    }
                 }
 
                 val existingEntries = workDataStore.entriesFlow.first()

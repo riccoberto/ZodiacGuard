@@ -23,4 +23,11 @@
         <item>Scuro</item>
     </string-array>
 
+    <string-array name="day_modes">
+        <item>Ordinaria</item>
+        <item>Produzione</item>
+        <item>Ferie</item>
+        <item>Malattia</item>
+    </string-array>
+
 </resources>

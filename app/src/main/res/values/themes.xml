@@ -5,10 +5,10 @@
     <style name="Theme.ZodiacGuard" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimary">@color/zodiac_gold</item>
         <item name="colorPrimaryVariant">@color/zodiac_gold</item>
-        <item name="colorOnPrimary">@color/zodiac_navy</item>
+        <item name="colorOnPrimary">@color/white</item>
         <item name="colorSecondary">@color/zodiac_gold</item>
         <item name="colorSecondaryVariant">@color/zodiac_gold</item>
-        <item name="colorOnSecondary">@color/zodiac_navy</item>
+        <item name="colorOnSecondary">@color/white</item>
         <item name="colorSurface">@color/zodiac_surface</item>
         <item name="colorOnSurface">@color/app_text</item>
         <item name="colorAccent">@color/zodiac_gold</item>

@@ -126,6 +126,7 @@
             
             <TextView android:id="@+id/tvOutOfTown" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="🚗 Fuori sede: 0 gg" android:textColor="#B388FF" android:textSize="14sp" android:layout_marginBottom="4dp" />
             <TextView android:id="@+id/tvMealTickets" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="🍽️ Buoni pasto: 0" android:textColor="@color/zodiac_gold" android:textSize="14sp" />
+            <TextView android:id="@+id/tvAbsenceSummary" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="@color/app_text" android:textSize="14sp" android:layout_marginTop="8dp" android:visibility="gone" />
         </LinearLayout>
 
         <com.google.android.material.button.MaterialButton

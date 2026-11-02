@@ -70,6 +70,30 @@ class WeeklyStatsHelperTest {
         )
     }
 
+    @Test
+    fun weeklySummaryIncludesLeaveAndSicknessDates() {
+        val entries = listOf(
+            absenceEntry("2025-12-29", "Ferie", 9, "ENTRATA"),
+            absenceEntry("2025-12-29", "Ferie", 15, "USCITA"),
+            absenceEntry("2025-12-30", "Malattia", 9, "ENTRATA"),
+            absenceEntry("2025-12-30", "Malattia", 15, "USCITA")
+        )
+
+        val stats = WeeklyStatsHelper.calculateWeeklyStats(
+            allEntries = entries,
+            productionDays = emptySet(),
+            year = 2026,
+            weekOfYear = 1,
+            weeklyHours = 38
+        )
+
+        assertEquals(listOf("2025-12-29"), stats.holidayDates)
+        assertEquals(listOf("2025-12-30"), stats.sickDates)
+        assertEquals(770, stats.totalWorkedMinutes)
+        assertEquals(0, stats.totalOvertimeMinutes)
+        assertEquals(0, stats.totalBankMinutes)
+    }
+
     private fun workEntry(
         date: String,
         hour: Int,
@@ -87,5 +111,24 @@ class WeeklyStatsHelperTest {
                 }.timeInMillis
             }
         return WorkEntry(timestamp, type, "Servizio", location, date)
+    }
+
+    private fun absenceEntry(
+        date: String,
+        activity: String,
+        hour: Int,
+        type: String
+    ): WorkEntry {
+        val timestamp = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).parse(date)!!
+            .let { parsed ->
+                Calendar.getInstance().apply {
+                    time = parsed
+                    set(Calendar.HOUR_OF_DAY, hour)
+                    set(Calendar.MINUTE, if (hour == 15) 25 else 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }.timeInMillis
+            }
+        return WorkEntry(timestamp, type, activity, "Modena", date)
     }
 }
