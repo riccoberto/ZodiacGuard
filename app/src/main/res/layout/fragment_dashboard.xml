@@ -14,61 +14,82 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
+            android:orientation="vertical"
             android:layout_marginBottom="20dp"
             android:padding="14dp"
             android:background="@drawable/bg_surface_card">
-            
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnPrevDay"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:text="◀"
-                android:textSize="14sp"
-                app:backgroundTint="@color/zodiac_gold"
-                android:textColor="@color/zodiac_navy" />
-            
-            <TextView
-                android:id="@+id/tvDate"
-                android:layout_width="0dp"
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textColor="@color/app_text"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:gravity="center"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp" />
-            
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnNextDay"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:text="▶"
-                android:textSize="14sp"
-                app:backgroundTint="@color/zodiac_gold"
-                android:textColor="@color/zodiac_navy" />
-            
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnToday"
-                android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:text="OGGI"
-                android:textSize="12sp"
-                app:backgroundTint="#66BB6A"
-                android:textColor="@color/app_text"
-                android:layout_marginStart="8dp" />
-            
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnChangeDate"
-                android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:text="CALENDARIO"
-                android:textSize="12sp"
-                app:backgroundTint="@color/zodiac_gold"
-                android:textColor="@color/zodiac_navy"
-                android:layout_marginStart="4dp" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnPrevDay"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:minWidth="0dp"
+                    android:text="◀"
+                    android:textSize="14sp"
+                    app:backgroundTint="@color/zodiac_gold"
+                    android:textColor="@color/zodiac_navy" />
+
+                <TextView
+                    android:id="@+id/tvDate"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:textColor="@color/app_text"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnNextDay"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:minWidth="0dp"
+                    android:text="▶"
+                    android:textSize="14sp"
+                    app:backgroundTint="@color/zodiac_gold"
+                    android:textColor="@color/zodiac_navy" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnToday"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:minWidth="0dp"
+                    android:text="OGGI"
+                    android:textSize="12sp"
+                    app:backgroundTint="#66BB6A"
+                    android:textColor="@color/app_text"
+                    android:layout_marginEnd="4dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnChangeDate"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:minWidth="0dp"
+                    android:text="CALENDARIO"
+                    android:textSize="12sp"
+                    app:backgroundTint="@color/zodiac_gold"
+                    android:textColor="@color/zodiac_navy"
+                    android:layout_marginStart="4dp" />
+            </LinearLayout>
         </LinearLayout>
 
         <TextView
